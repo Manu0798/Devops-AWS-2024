@@ -352,7 +352,7 @@ Top Linux commands that are commonly used in DevOps: ♾
 24. chmod: Change file permissions
 25. chown: Change file ownership
 26. chgrp: Change group ownership
-27. ps: Display running processes
+27. ps: Display information about running processes
 28. top: Monitor system resources and processes
 29. kill: Terminate processes
 30. df: Display disk space usage
@@ -366,3 +366,4 @@ Top Linux commands that are commonly used in DevOps: ♾
 38. systemctl: Manage system services
 39. journalctl: Query the system journal
 40. crontab: Schedule cron jobs
+41. lsblk: Display the infomation about block devices.

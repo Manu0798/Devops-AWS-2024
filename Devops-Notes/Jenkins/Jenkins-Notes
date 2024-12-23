@@ -78,7 +78,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 -> later on you create one job
 -> In Build Triggers we have two main options 
   -> Build perdically [It will build the job based on the crontab eventhough there are no changes in the github repository]
-  -> POLL SCM [It will build the job whenever changes detect in our ghithub repo ]
+  -> POLL SCM [It will build the job whenever changes detect in our ghithub repo based on cronjob]
        * minute[0-59] 
        * hour[1-23]             
        * day of month [1-31]

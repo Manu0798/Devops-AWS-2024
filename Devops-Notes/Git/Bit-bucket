@@ -19,6 +19,7 @@
         click active
         skip certification
         give push and commit create
+-> Go to jenkins you will click Build when a change is pushed to BitBucket in build trigger in job
 -> To know the more details you will checkout below link
    https://youtu.be/AMviqVG3Ifo?si=OsRdNPYnYJoMBtZn
 

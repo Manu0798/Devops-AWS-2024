@@ -169,10 +169,29 @@ pipeline {
     }
 
     stages {
-        stage('Remove All Previous Docker Images') {
+        stage('Cleanup Workspace') {
             steps {
+                script {
+                    echo "Cleaning up the workspace..."
+                    cleanWs() // This cleans up the entire workspace directory.
+                }
+            }
+        }
+
+        stage('Remove All Previous Docker Images and Containers') {
+            steps {
+
                 // Remove all Docker images
                 sh 'docker rmi -f $(docker images -a -q) || true'
+                
+                // Clean up Docker volumes
+                sh 'docker volume prune -f || true'
+
+                // Clean up Docker build cache
+                sh 'docker builder prune -f || true'
+                
+                // Clean up unused networks
+                sh 'docker network prune -f || true'
             }
         }
 

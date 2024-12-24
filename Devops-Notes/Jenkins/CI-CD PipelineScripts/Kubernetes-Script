@@ -703,3 +703,44 @@ pipeline {
         }
     }
 }
+
+
+# If you want to delete the workspace data after build the job you have to use pipeline script as like below
+ post {
+        always {
+            script {
+                def jobName = 'Frissly'
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+
+                def body = """<html>
+                                <body>
+                                    <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+                                        <h2>${jobName} - Build ${buildNumber}</h2>
+                                        <div style="background-color: ${bannerColor}; padding: 10px;">
+                                            <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
+                                        </div>
+                                        <p>Check the <a href="${BUILD_URL}">console output</a>.</p> 
+                                    </div>
+                                </body>
+                            </html>"""
+
+                emailext(
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'ayeesha5212@gmail.com',
+                    from: 'jenkins@example.com',
+                    replyTo: 'jenkins@example.com',
+                    attachmentsPattern: 'trivy.txt',
+                    mimeType: 'text/html',
+                    attachmentPattern: 'fs-report.html'
+                )
+            }
+        }
+
+        // Clean up workspace to reclaim space
+        cleanup {
+            deleteDir() // This will delete the workspace directory after the pipeline execution
+        }
+    }

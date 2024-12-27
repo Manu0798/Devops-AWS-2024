@@ -62,10 +62,10 @@ mvn --version
 
 
 maven commands
-mvn clean
-mvn test
-mvn compile
-mvn package
+mvn clean  --> It will delete the old files and taget directoty
+mvn test    --> It will run unit test case
+mvn compile  --> It convert source into binary code
+mvn package  --> It package the compalie code as JAR or WAR
 mvn install   -> To convey info to local repo
 mvn deploy
 mvn sonar:sonar

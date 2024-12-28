@@ -1,0 +1,47 @@
+apiVersion: apps/v1                   --> It Represents the version of kuberntes resources  --> kubectl api-resources | grep Deployment
+kind: Deployment                      --> It Indicates the Type resource
+metadata:
+  name: javawebappdeployment          --> It represents the name of the resource
+spec:
+  replicas: 2                         --> It specifices the how many copy of pods
+  strategy:
+    type: Recreate                   --> It represents what type of deployment starategy
+  selector:
+    matchLabels:
+      app: javawebapp               --> Any pod with the label app: javawebapp will be considered part of this Deployment
+  template:
+    metadata:
+      name: javawebapppod           --> It represents the name of this pod
+      labels:
+        app: javawebapp             --> This ensures that the Deployment can identify and manage the pods it created. It is critical because it matches the selector.matchLabels field.
+    spec:
+      containers:
+      - name: my-container            --> It represents name of this container
+        image: ashokit/javawebapp     --> It represents name of this image
+        ports:
+        - containerPort: 8080         --> Defines that the container listens on port 8080
+
+
+
+
+
+apiVersion: v1                    --> It Represents the version of kuberntes resources  --> kubectl api-resources | grep Service
+kind: Service                     --> It Indicates the Type resource
+metadata:
+  name: javawebapp-service        --> It represents the name of the resource
+spec:
+  selector:
+    app: javawebapp              --> These labels are used to identify the Pods that this Service targets. Only Pods with these labels will be part of the Service.
+  type: NodePort                 --> It represents the type of service 
+  ports:
+    - protocol: TCP               -->  Specifies that the Service uses the TCP protocol
+      port: 80
+      targetPort: 8080           --> The port on the Pods to which the traffic is forwarded. This corresponds to the application listening port inside the container
+      nodePort: 32654            --> NodePort port number
+
+
+port: 80: This is the ClusterIP port, the port on which the Service is accessible within the Kubernetes cluster. Other resources (like Pods) inside the cluster that want to access this Service will send requests to javawebapp-service:80.
+Key Points:
+The Service's ClusterIP (an internal virtual IP) listens on port 80 and forwards the traffic to the Pods selected by the selector field.
+The mapping is:
+Traffic received on port 80 of the Service is forwarded to the targetPort 8080 of the Pods.

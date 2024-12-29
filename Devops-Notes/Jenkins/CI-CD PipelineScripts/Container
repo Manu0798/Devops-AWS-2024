@@ -141,7 +141,7 @@ pipeline {
             script {
                 emailext (
                     to: "${EMAIL_RECIPIENT}",
-                    subject: "Build #${BUILD_NUMBER} - Reports",
+                    subject: "Frissly-Admin-UI Build #${BUILD_NUMBER} - Reports",
                     body: """
                         The build #${BUILD_NUMBER} has completed. Attached are the generated reports:
 
@@ -159,7 +159,7 @@ pipeline {
         success {
             emailext (
                 to: "${EMAIL_RECIPIENT}",
-                subject: "Build #${BUILD_NUMBER} - Successful",
+                subject: "Frissly-Admin-UI Build #${BUILD_NUMBER} - Successful",
                 body: """
                     The build #${BUILD_NUMBER} has completed successfully.
 
@@ -171,7 +171,7 @@ pipeline {
         failure {
             emailext (
                 to: "${EMAIL_RECIPIENT}",
-                subject: "Build #${BUILD_NUMBER} - Failed",
+                subject: "Frissly-Admin-UI Build #${BUILD_NUMBER} - Failed",
                 body: """
                     The build #${BUILD_NUMBER} has failed.
 

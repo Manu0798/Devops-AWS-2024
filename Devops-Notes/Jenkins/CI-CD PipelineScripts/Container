@@ -6,12 +6,24 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "frissly-backend:${BUILD_NUMBER}"
-        CONTAINER_NAME = "con-frissly-backend"
+        DOCKER_IMAGE = "frissly-admin-ui:${BUILD_NUMBER}"
+        CONTAINER_NAME = "con-frissly-admin-ui"
         SCANNER_HOME = tool 'sonar-scanner'
+        EMAIL_RECIPIENT = "varmapotthuri4@gmail.com" // Add your email here
+        SONARQUBE_REPORT_PATH = "sonar-report.txt"  // SonarQube report path
+        SONARQUBE_TOKEN = credentials('sonar_token') // Set this as a Jenkins credential (use your SonarQube token)
     }
 
     stages {
+        stage('Cleanup Workspace') {
+            steps {
+                script {
+                    echo "Cleaning up the workspace..."
+                    cleanWs() // Cleans up the entire workspace directory.
+                }
+            }
+        }
+
         stage('Cleanup Old Trivy Reports') {
             steps {
                 script {
@@ -26,7 +38,7 @@ pipeline {
 
         stage('Get Code') {
             steps {
-                git branch: 'cms-dev', credentialsId: 'Bitbucket_user', url: 'https://manojvarma.potthuri@bitbucket.org/frissly999/frissly-backend.git'
+                git branch: 'cms-dev', credentialsId: 'Bitbucket_user', url: 'https://manojvarma.potthuri@bitbucket.org/frissly999/frissly-admin-ui.git'
             }
         }
 
@@ -61,21 +73,21 @@ pipeline {
             }
             steps {
                 dependencyCheck additionalArguments: '', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '/dependency-check-report.xml'  // Updated pattern
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
-
+        
         stage('SonarQube') {
             steps {
                 withSonarQubeEnv('Sonar_Install') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=frissly-backend \
-                    -Dsonar.projectKey=frissly-backend \
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=frissly-admin-ui \
+                    -Dsonar.projectKey=frissly-admin-ui \
                     -Dsonar.host.url=http://15.206.69.243:9000'''
                 }
             }
         }
 
-        stage('Stage V: QualityGates') {
+        stage('Quality Gates') {
             steps {
                 echo "Running Quality Gates to verify the code quality"
                 script {
@@ -84,6 +96,7 @@ pipeline {
                         if (qg.status != 'OK') {
                             error "Pipeline aborted due to quality gate failure: ${qg.status}"
                         }
+                        writeFile file: SONARQUBE_REPORT_PATH, text: qg.status
                     }
                 }
             }
@@ -91,35 +104,14 @@ pipeline {
 
         stage('Remove Previous Docker Images and Containers') {
             steps {
-                // Stop and remove any running container associated with the image
                 sh '''
                     docker ps -aq --filter "name=${CONTAINER_NAME}" | xargs -I {} docker stop {} || true
                     docker ps -aq --filter "name=${CONTAINER_NAME}" | xargs -I {} docker rm {} || true
+                    docker images --filter "reference=frissly-admin-ui*" -q | xargs -I {} docker rmi -f {} || true
+                    docker builder prune -f || true
+                    docker container prune -f || true
+                    docker network prune -f || true
                 '''
-
-                // Remove all containers (even stopped ones) to ensure images can be removed
-                sh '''
-                    docker ps -aq --filter "ancestor=frissly-backend" | xargs -I {} docker rm {} || true
-                '''
-
-                // Remove all images tagged with frissly-backend
-                sh '''
-                    docker images --filter "reference=frissly-backend*" -q | xargs -I {} docker rmi -f {} || true
-                '''
-
-                // Optionally, clean up Docker volumes related to the removed containers
-                sh '''
-                    docker volume ls -q --filter "dangling=true" | xargs -I {} docker volume rm {} || true
-                '''
-
-                // Clean up Docker build cache
-                sh 'docker builder prune -f || true'
-
-                // Clean up stopped containers
-                sh 'docker container prune -f || true'
-
-                // Clean up unused networks
-                sh 'docker network prune -f || true'
             }
         }
 
@@ -139,7 +131,7 @@ pipeline {
 
         stage('Build Docker run') {
             steps {                                 
-                sh 'docker run -itd --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE}'
+                sh 'docker run -itd --name ${CONTAINER_NAME} -p 8000:80 ${DOCKER_IMAGE}'
             }
         }
     }
@@ -147,36 +139,46 @@ pipeline {
     post {
         always {
             script {
-                def jobName = 'Frissly'
-                def buildNumber = env.BUILD_NUMBER
-                def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
-                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+                emailext (
+                    to: "${EMAIL_RECIPIENT}",
+                    subject: "Build #${BUILD_NUMBER} - Reports",
+                    body: """
+                        The build #${BUILD_NUMBER} has completed. Attached are the generated reports:
 
-                def body = """<html>
-                                <body>
-                                    <div style="border: 4px solid ${bannerColor}; padding: 10px;">
-                                        <h2>${jobName} - Build ${buildNumber}</h2>
-                                        <div style="background-color: ${bannerColor}; padding: 10px;">
-                                            <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
-                                        </div>
-                                        <p>Check the <a href="${BUILD_URL}">console output</a>.</p> 
-                                    </div>
-                                </body>
-                            </html>"""
+                        - Trivy scan report
+                        - OWASP Dependency Check report
+                        - SonarQube Quality Gate report
 
-                emailext(
-                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
-                    body: body,
-                    to: 'varmapotthuri4@gmail.com',
-                    from: 'jenkins@example.com',
-                    replyTo: 'jenkins@example.com',
-                    attachmentsPattern: 'trivy.txt',
-                    mimeType: 'text/html',
-                    attachmentPattern: 'fs-report.html'
+                        Please review the attachments for further details.
+                    """,
+                    attachmentsPattern: "trivy.txt, fs-report.html, dependency-check-report.xml, ${SONARQUBE_REPORT_PATH}"
                 )
             }
         }
 
+        success {
+            emailext (
+                to: "${EMAIL_RECIPIENT}",
+                subject: "Build #${BUILD_NUMBER} - Successful",
+                body: """
+                    The build #${BUILD_NUMBER} has completed successfully.
+
+                    All tests passed, and security scans are clean.
+                """
+            )
+        }
+
+        failure {
+            emailext (
+                to: "${EMAIL_RECIPIENT}",
+                subject: "Build #${BUILD_NUMBER} - Failed",
+                body: """
+                    The build #${BUILD_NUMBER} has failed.
+
+                    Please check the build logs for more details.
+                """
+            )
+        }
         cleanup {
             deleteDir() // This will delete the workspace directory after the pipeline execution
         }

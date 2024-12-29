@@ -44,3 +44,31 @@ Stage(SAST:- Static Application Security Test)
 
 Stage(Quality Gate)
     -> Chekc if the application meets the quality Standards based on Company standards
+
+
+
+
+
+
+
+
+
+
+
+        stage('SonarQube') {
+            steps {
+                withSonarQubeEnv('Sonar_Install') {
+                    sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=frissly-admin-ui \
+                        -Dsonar.projectKey=frissly-admin-ui \
+                        -Dsonar.host.url=http://15.206.69.243:9000 \
+                        -Dsonar.sources=. \
+                        -Dsonar.inclusions=**/* \
+                        -Dsonar.exclusions=/node_modules/,/test/** \
+                        -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                        -Dsonar.login=${SONARQUBE_TOKEN}
+                    '''
+                }
+            }
+        }

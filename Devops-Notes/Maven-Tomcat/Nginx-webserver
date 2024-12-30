@@ -1,0 +1,31 @@
+# How to access container with IP without port number by using nginx webserver
+-> First you will install nginx in your terminal using belwo commnads
+   sudo apt update
+   sudo apt install nginx 
+-> you will create one file in below location 
+   sudo vi /etc/nginx/sites-available/container-proxy
+
+server {
+    listen 80;
+    server_name 54.158.115.179; # Replace with your server's public IP.
+
+    location / {
+        proxy_pass http://localhost:3002; # Redirect traffic to your container.
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+-> After create the file. You will execute the below commands
+-> sudo ln -s /etc/nginx/sites-available/container-proxy /etc/nginx/sites-enabled/          --> Enable this configuration by creating a symbolic link to sites-enabled
+-> sudo nginx -t
+-> sudo systemctl reload nginx
+-> sudo systemctl start nginx
+-> sudo systemctl status nginx
+
+-> Final you will try access this application by using IP.
+
+# If you want to attach the SSL certificates and domain you will watch below video
+https://youtu.be/qgLlJXBvqR0?si=w9WNUgo4mPxrx9fQ

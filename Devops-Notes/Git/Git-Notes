@@ -82,6 +82,7 @@ https://youtu.be/fIMySI_gZJU?si=4T8ZmDa9rsBELi11  [28:25]
 
 # To get more details about git revert and git resert. you will watch below link
   https://youtu.be/mTNWyyMbxmU?si=6uudwsD2FowavO2M
+
 # What is the difference between git fetch and git pull
 git fetch: Downloads updates from the remote repository without merging them into your local branch.
 git pull: Downloads updates from the remote repository and directly merges them into your local branch.

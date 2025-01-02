@@ -29,3 +29,26 @@ server {
 
 # If you want to attach the SSL certificates and domain you will watch below video
 https://youtu.be/qgLlJXBvqR0?si=w9WNUgo4mPxrx9fQ
+
+
+# For Creating the free SSL certificates you have to use below commands
+-> sudo apt install certbot python3-certbot-nginx
+-> make sure file looks like this 
+
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    root /var/www/yourdomain.com;
+    index index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+
+-> sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+-> After the above first you will give your mail-id (any mail)
+-> yes
+-> yes

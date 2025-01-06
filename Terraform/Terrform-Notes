@@ -80,7 +80,7 @@ terraform import aws_instance.example_instance i-0a039441365591418
 
 
 # Backup and Restore the terraform.tfstate
--> Multiple people work on same terraform code using terraform.tfstate but another persons wont work when one person working on code
+-> Multiple people work on same terraform code using terraform.tfstate but another persons wont work when one person working on code because it have lock
 Ex:-
 terraform {
   backend "s3" {

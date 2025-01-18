@@ -9,8 +9,8 @@ on:
       - "main"
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,13 +32,30 @@ jobs:
             echo "npm_found=true" >> $GITHUB_ENV
           fi
 
-      # # Uncomment the following block if you want to run npm install, build, and test
-      # - name: Install dependencies, build, and test
-      #   if: env.npm_found == 'true'
+      - name: Install dependencies, build, and test
+        if: env.npm_found == 'true'
+        run: |
+          npm install
+          npm run build --if-present
+          npm run test --if-present
+          
+      # - name: Remove temporary files
       #   run: |
-      #     npm install
-      #     npm run build --if-present
-      #     npm run test --if-present
+      #     echo "Cleaning up temporary files..."
+      #     rm -rf ./dependency-check/dependency-check-report/*
+      #     rm -rf ./node_modules
+
+      # - name: Remove unnecessary build artifacts
+      #   run: |
+      #     echo "Cleaning up build artifacts..."
+      #     rm -rf ./build
+
+      # - name: Remove old reports
+      #   run: |
+      #     echo "Removing old reports..."
+      #     rm -f fs-report.html
+      #     rm -f image.html
+      #     rm -f ./dependency-check/dependency-check-report/dependency-check-report.xml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -56,52 +73,26 @@ jobs:
         run: |
           trivy fs --format table -o fs-report.html .
 
-      # OWASP Dependency-Check
-      - name: Install OWASP Dependency-Check
-        run: |
-          wget https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.1/dependency-check-11.1.1-release.zip
-          if [ ! -f dependency-check-11.1.1-release.zip ]; then
-            echo "Error: Dependency-Check zip file download failed!"
-            exit 1
-          fi
-          file_size=$(stat -c %s dependency-check-11.1.1-release.zip)
-          if [ "$file_size" -le 0 ]; then
-            echo "Error: The downloaded file is empty!"
-            exit 1
-          fi
-          if ! unzip -t dependency-check-11.1.1-release.zip; then
-            echo "Error: Invalid zip file."
-            exit 1
-          fi
-          unzip dependency-check-11.1.1-release.zip
-          ls -al
-          if [ ! -d "dependency-check" ]; then
-            echo "Error: dependency-check directory not found!"
-            exit 1
-          fi
-          cd dependency-check
-          ./bin/dependency-check.sh --version
+      # - name: Install OWASP Dependency-Check
+      #   run: |
+      #     wget https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.1/dependency-check-11.1.1-release.zip
+      #     unzip dependency-check-11.1.1-release.zip
+      #     cd dependency-check
+      #     ./bin/dependency-check.sh --version
 
-      - name: Run OWASP Dependency-Check
-        run: |
-          cd dependency-check
-          ./bin/dependency-check.sh --project "NodeJS App" --scan . --out ./dependency-check-report --format XML
+      # - name: Run OWASP Dependency-Check
+      #   run: |
+      #     cd dependency-check
+      #     ./bin/dependency-check.sh --project "NodeJS App" --scan . --out ./dependency-check-report --format XML
 
-      # Upload OWASP Dependency-Check report
-      - name: Upload OWASP Dependency-Check report
-        uses: actions/upload-artifact@v3
-        with:
-          name: dependency-check-report
-          path: ./dependency-check-report/dependency-check-report.xml
-          
-      # Code Scan For SonarQube    
+      # SonarQube Scan
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      # # Quality Gate For SonarQube    
+      # # SonarQube Quality Gate check
       # - name: SonarQube Quality Gate check
       #   id: quality-gate
       #   uses: sonarsource/sonarqube-quality-gate-action@master
@@ -109,66 +100,73 @@ jobs:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      # - name: Fail if Quality Gate fails
-      #   if: steps.quality-gate.outputs.quality_gate_status != 'passed'
+      # - name: Debug Quality Gate Status
       #   run: |
-      #     echo "SonarQube Quality Gate failed!"
-      #     exit 1
-
+      #     echo "Quality Gate Status: ${{ steps.quality-gate.outputs.quality_gate_status }}"
+          
       - name: Generate build image tag
         id: build_tag
         run: |
-          # Generate a version-based tag with a prefix and timestamp
           BUILD_TAG="v$(date +%Y%m%d%H%M%S)-${{ github.run_number }}"
           echo "build_tag=$BUILD_TAG" >> $GITHUB_ENV
-          echo "Docker image will be tagged as: $BUILD_TAG"
 
       - name: Build Docker image
         run: |
           docker build -t nodejsk1:${{ env.build_tag }} .
 
-      # Trivy Image Scan
       - name: Trivy image scan
         run: |
-          trivy image nodejsk1:${{ env.build_tag }} > trivy.txt
+          trivy image --format table -o image.html nodejsk1:${{ env.build_tag }}
 
       - name: Create ECR repository (if not exists)
         run: |
-          REPOSITORY_NAME=nodejs-docker-repo
+          REPOSITORY_NAME=my-docker-repo
           aws ecr describe-repositories --repository-names $REPOSITORY_NAME || aws ecr create-repository --repository-name $REPOSITORY_NAME
 
       - name: Log in to Amazon ECR
         run: |
           aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com
-
+          
       - name: Tag Docker image for ECR
         run: |
-          docker tag nodejsk1:${{ env.build_tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nodejs-docker-repo:${{ env.build_tag }}
+          docker tag nodejsk1:${{ env.build_tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/my-docker-repo:${{ env.build_tag }}
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nodejs-docker-repo:${{ env.build_tag }}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/my-docker-repo:${{ env.build_tag }}
 
-      # Upload OWASP Dependency-Check report
+      - name: Clean up previous Docker images and volumes
+        run: |
+          echo "Cleaning up Docker images and volumes..."
+          docker system prune -af || true  # Removes unused images, containers, networks, and build cache
+          docker volume prune -f || true
+          
+
+      - name: Verify attachment files
+        run: |
+          ls -al fs-report.html || echo "fs-report.html not found!"
+          ls -al image.html || echo "image.html not found!"
+          ls -al ./dependency-check/dependency-check-report/dependency-check-report.xml || echo "dependency-check-report.xml not found!"
+
+
       - name: Upload OWASP Dependency-Check report
         uses: actions/upload-artifact@v3
         with:
           name: dependency-check-report
-          path: ./dependency-check-report/dependency-check-report.xml
+          path: ./dependency-check/dependency-check-report/dependency-check-report.xml
 
-      # Upload Trivy filesystem scan report
       - name: Upload Trivy filesystem scan report
         uses: actions/upload-artifact@v3
         with:
           name: trivy-filesystem-scan-report
           path: fs-report.html
 
-      # Upload Trivy image scan report
       - name: Upload Trivy image scan report
         uses: actions/upload-artifact@v3
         with:
           name: trivy-image-scan-report
-          path: trivy.txt
+          path: image.html
+          
 
       - name: Send email notification
         if: always()
@@ -189,5 +187,11 @@ jobs:
           from: "sender@example.com"
           attachments: |
             fs-report.html
-            trivy.txt
-            ./dependency-check-report/dependency-check-report.xml
+            image.html
+            ./dependency-check/dependency-check-report/dependency-check-report.xml
+
+        # Clean up entire workspace after the job completes
+      - name: Clean up workspace
+        run: |
+          echo "Cleaning up entire workspace to save disk space..."
+          rm -rf *

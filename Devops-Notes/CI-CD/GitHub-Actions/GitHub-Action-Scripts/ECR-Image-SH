@@ -7,8 +7,21 @@
 -> ./config.sh --url https://github.com/manoj7894/Swigy-Project --token BAVRXUK3YJASNJKEF2DN6PLHQH26W
 -> ./run.sh
 
--> After running the above commands you will execute the below script
+-> You have to pass the some scecret in github actions
+-> Go to settings and click secret and actions, click secret pass the below secrets
+    
 
+-> After running the above commands you will execute the below script
+      AWS_ACCOUNT_ID
+      AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY
+      SONAR_TOKEN
+      SONAR_HOST_URL
+      SMTP_USER   --> Email-ID
+      SMTP_PASS  --> Password you have to pass the password without gaps between letters
+
+-> You have to create one file on this name 
+ 
 
 name: Node.js Docker Image Deploy into ECR
 

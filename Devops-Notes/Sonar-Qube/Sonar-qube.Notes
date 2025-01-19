@@ -1,0 +1,55 @@
+# What is Sonar-Qube
+-> Sonar qube is continuous code quality checking tool
+-> We can do code review using sonar-qube tool
+
+# What is SAST
+-> SAST means Static Application Security Testing
+-> Test the source code before run the application that's we called SAST.
+-> We will use sonar-qube tool for SAST
+
+# What is DAST
+-> DAST means Dynamic Application Security Testing
+-> Test the code after runing the application that's we called DAST.
+-> This test we called panetration test. In panetration test it detect the Vulnerability means is there is issues in deployment way
+-> We will use OWASP-ZAP tool for DAST
+
+# Sonar-qube will use to check the below things
+-> Code Quality Check
+-> Code Coverage   --> How much Source code is tested by Unit test cases
+-> Code Quality Gate
+
+# What is Code Quality Check
+-> Code Quality Check means Checking the quality of code to find out these kind of issues
+    -> Bugs  --> It's Going to make the application in wrong way that's we called bug
+    -> Code Smell  --> Code is working but It is not written proper way it could cause issued in feature that section we called code smell
+    -> Duplicate  --> Same has written mulitples times that section we called Duplicate
+    -> Security Vulnerability  --> Security Vulnerability that refer to that section of code where having the security risk for sure
+    -> Security Hotpots  --> Security Hotpots that refers to that section code right now which is not having any kind of issues but we have some indication we have some security issues. we have manually review the code to find out the issues.
+
+
+# What is Code Coverage
+-> How much Source code is tested by Unit test cases
+Ex:- If you get 60% of code coverage it means when your Unit test case has tested only 600 lines of code out of 1000 lines.
+        Then Code Coverage let us know you have to run some more test cases to cover the remaining lines. As well as it will let us know The code which we tested really it is needed or unless or junk code
+
+# What is Code Quality Gate
+-> We have to setup the parameters based on our company requirments. It should be pass that certain criteria that's we called code quality gate
+-> parametes are Code coverage 80%, Security 5%, Deplicates 0% 
+
+
+# What is the difference between Quality Profile and Quality Gate
+-> A Quality Profile in SonarQube defines the set of rules for analyzing code quality, 
+-> while a Quality Gate defines the criteria that a project must meet to pass a quality check.
+
+
+# Types of Sonar version
+-> Community Edition   --> We can perform analysis on main branch
+-> Developer Edition   --> We can perform analysis on multiple branches
+-> Enterprice Edition  --> We can perform analysis on multiple branches
+
+
+-> If you want to setup the quality gate to watch below video
+https://youtu.be/RnTnuSbCyIY?si=IVVppv0pgriqRZHj        --> (1.10)
+
+
+

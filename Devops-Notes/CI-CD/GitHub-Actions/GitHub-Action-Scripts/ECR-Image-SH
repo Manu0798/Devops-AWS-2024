@@ -20,7 +20,10 @@
       SMTP_USER   --> Email-ID
       SMTP_PASS  --> Password you have to pass the password without gaps between letters
 
--> You have to create one file on this name 
+-> You have to create one file on this name sonar-project.properties for pass the sonar-qube details
+  sonar.projectKey=TaskMaster
+  sonar.projectName=TaskMaster
+  sonar.sources=.
  
 
 name: Node.js Docker Image Deploy into ECR

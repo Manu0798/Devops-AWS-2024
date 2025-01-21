@@ -343,3 +343,23 @@ db.couredetails.updateOne(
 
 -> To delete the row
 db.couredetails.remove({ name: 'VARMA' })
+
+
+# How to migrate the data from one mongodb String to another mongodb string
+-> First you have install mongo compass and mongo shell using below link
+-> https://www.mongodb.com/try/download/community
+-> https://www.mongodb.com/try/download/shell
+-> Setup to watch below video
+-> https://youtu.be/jvaBaxlTqU8?si=Ckct1LqW7O-fYOjU
+-> you have to install mongodump by using below 
+-> https://www.mongodb.com/try/download/database-tools
+-> Set the mongodump in system env variables
+-> mongodump --version
+-> You will execute below commands. first you should import the data to your local using below command
+-> you have create folder in your local and keep that like this below ""D:\mongodb_backup""
+-> mongodump --uri="mongodb+srv://<username1>:<password1>@<sourcecluster>.mongodb.net/<dbname>" --out="D:\mongodb_backup" 
+-> After import the data to your local then you have export the data to another mongodb from local
+-> mongorestore --uri="mongodb+srv://username2:password2@targetcluster.vxamp.mongodb.net/targetDB" "D:\mongodb_backup\frissly_dev"
+-> Example:-          mongorestore --uri="mongodb+srv://varmapotthuri4:Varma_3003@backup-cluster.vxamp.mongodb.net/mongobackup" "D:\mongodb_backup\frissly_dev"
+
+

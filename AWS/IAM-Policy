@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowSpecificIAMUser",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::<account-id>:user/<username>"                          --> Give permission to particular user
+      },
+      "Action": [
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:BatchCheckLayerAvailability"
+      ],
+      "Resource": "arn:aws:ecr:<region>:<account-id>:repository/<repository-name>"      --> Give permission to particular repo
+    },
+    {
+      "Sid": "AllowAuthorization",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::<account-id>:user/<username>"
+      },
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    }
+  ]
+}
+
+
+-> If you want to get more idea you will read the below link
+-> https://chatgpt.com/share/67908ba9-4198-800d-898c-85efff4ce934

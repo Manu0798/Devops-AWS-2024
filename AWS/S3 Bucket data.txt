@@ -85,3 +85,13 @@ AWS-CLI Commands
 -> aws s3 rm s3://buckname/filename  -> To delete the files in bucket
 -> aws s3 rb s3://bukcname  -> To delete the bucketname
 -> aws s3api put-object --bucket buckname --key foldername/  -> To copy the folder from terminal to bucket
+
+
+# How to upload the one free template in s3 bucket
+-> First you will download one free template using below link
+-> https://www.free-css.com/free-css-templates
+-> You will extract the file after you download
+-> you create one s3 bucket, after uncheck the bucket public access, give ACL full permission,
+-> Select the files and folders, go to actions and click make as public,
+-> click index.html copy URL and access in web browser
+-> You can access enable static website in properties

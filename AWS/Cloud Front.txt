@@ -23,7 +23,27 @@ Data Copy means To copy the data in all data centers.
 -> cloudfront will support those origins S3, EC2, ELB, Mediacore package service
 -> you can use cloudfront not only in AWS you can use outside of the AWS
 -> You need to provide IP and DNS to use outside servers in cloudfront
- 
+
+
+# How to connect static templates website to cloudfront from s3 bucket
+-> First you will download free stastic website by using below link
+-> https://www.free-css.com/free-css-templates
+-> Create one s3 bucket and upload some static website content
+-> Enable static website option to bucket in properties
+-> After go to clould front and click create distribution
+-> select s3 bucket in origin domain
+-> select Legacy access identities in origin access and create new OAI to give anyname
+-> Click Yes, update the bucket policy in Bucket policy
+-> click Redirect HTTP to HTTPS in Viewer protocol policy
+-> Click Do not enable security protections
+-> write index.html in Default root object - optional
+-> click create distribution
+
+# Do you want to get know more details you will go through below video
+https://youtu.be/yhieOhvHz6Q?si=J0l3ztEjiKc5yPHr
+
+
+# This is aslo same as like above 
 # How to connect static templates website to cloudfront
 -> You will create one s3 bucket and upload one free html template
 -> Go to properties and enable the static website

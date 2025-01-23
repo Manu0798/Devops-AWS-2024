@@ -78,3 +78,8 @@ https://youtu.be/yhieOhvHz6Q?si=J0l3ztEjiKc5yPHr
 
 -> If you want to see the partical vidoe you checkout below link
     https://youtu.be/hM1KOq5hD30?si=XnXaxw_WUC9tiBRX
+
+
+How CDN Works
+Caching Content: CDNs cache copies of your web application's assets, such as images, videos, stylesheets, JavaScript, and HTML pages, at various edge servers.
+Serving Content Locally: When a user accesses your application, the CDN serves the cached content from the server closest to their geographic location. This reduces latency and speeds up loading time.

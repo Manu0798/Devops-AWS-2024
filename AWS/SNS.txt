@@ -40,3 +40,13 @@
 -> Next
 -> Click create the role
 -> After complete the above steps once you will stop your instance and check you mail would you get mail when you stop the instance 
+
+
+-> For app runner you will use below and choose Custom pattern (JSON editor) in creation method
+{
+  "source": ["aws.apprunner"],
+  "detail-type": ["App Runner Service Event"],
+  "detail": {
+    "state": ["DEPLOYMENT_SUCCEEDED", "DEPLOYMENT_FAILED"]
+  }
+}

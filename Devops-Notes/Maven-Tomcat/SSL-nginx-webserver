@@ -27,13 +27,16 @@ server {
 
 -> Final you will try access this application by using IP.
 
+-> After that You will attach your IP to your domain name
+
 # If you want to attach the SSL certificates and domain you will watch below video
 https://youtu.be/qgLlJXBvqR0?si=w9WNUgo4mPxrx9fQ
 
 
 # For Creating the free SSL certificates you have to use below commands
 -> sudo apt install certbot python3-certbot-nginx
--> make sure file looks like this 
+-> keep the below data to remove exiting in this file
+-> sudo vi /etc/nginx/sites-available/container-proxy
 
 server {
     listen 80;
@@ -47,7 +50,9 @@ server {
     }
 }
 
-
+-> sudo systemctl reload nginx
+-> sudo systemctl start nginx
+-> sudo systemctl status nginx
 -> sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 -> After the above first you will give your mail-id (any mail)
 -> yes

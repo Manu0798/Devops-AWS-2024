@@ -1,0 +1,41 @@
+To attach the domain name frissly.com to your AWS Amplify app during the creation process, follow these steps:
+
+Steps to Attach frissly.com During AWS Amplify App Creation
+Step 1: Deploy Your Application to AWS Amplify
+Go to the AWS Amplify Console.
+Click on Get Started under "Host your web app."
+Connect your repository (e.g., GitHub, Bitbucket, GitLab, or AWS CodeCommit) to Amplify and configure the build settings.
+Deploy your application.
+Step 2: Add Your Domain Name (frissly.com)
+Once your app is deployed, you can attach your custom domain during the configuration process:
+
+Navigate to Domain Management in the left menu of your Amplify app.
+Click Add domain.
+Step 3: Specify Your Domain Name
+Enter your domain name as frissly.com.
+Step 4: Set Up DNS Records
+Depending on where your domain is registered, follow one of the methods below:
+
+Option 1: If frissly.com Is Registered in Amazon Route 53
+Amplify automatically detects the domain if it’s in Route 53.
+Select the domain and confirm.
+AWS automatically updates the DNS settings in Route 53.
+Option 2: If frissly.com Is Registered Elsewhere
+AWS provides DNS records (such as CNAME or A records) that you need to configure with your domain registrar.
+Log in to the management console of your domain registrar (e.g., GoDaddy, Namecheap).
+Go to DNS Management and add the provided records:
+CNAME Record: Point subdomains like www.frissly.com to the Amplify-provided domain.
+A Record: If needed, point the root domain (frissly.com) to the Amplify-provided IP or domain name.
+Step 5: Enable HTTPS (SSL Certificate)
+AWS Amplify automatically provisions and manages an SSL certificate for your domain via AWS Certificate Manager (ACM):
+
+SSL setup is initiated once you save the domain configuration.
+The domain will automatically be served over HTTPS after verification.
+Step 6: Test Your Domain
+Access your app using both frissly.com and www.frissly.com to ensure proper configuration.
+If you want to redirect frissly.com to www.frissly.com, you can set up redirects in the Amplify Domain Management section.
+Common Issues and Troubleshooting
+DNS Propagation Delay: DNS updates can take up to 48 hours to propagate globally.
+SSL Errors: Ensure that the domain name is properly verified and DNS settings are correct.
+Caching Issues: Clear browser cache if you’re not seeing updates.
+With these steps, your domain frissly.com will be properly attached to AWS Amplify, and your application will be live under your custom domain! 🎉

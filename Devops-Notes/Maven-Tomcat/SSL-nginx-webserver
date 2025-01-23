@@ -24,14 +24,8 @@ server {
 -> sudo systemctl reload nginx
 -> sudo systemctl start nginx
 -> sudo systemctl status nginx
-
 -> Final you will try access this application by using IP.
-
 -> After that You will attach your IP to your domain name
-
-# If you want to attach the SSL certificates and domain you will watch below video
-https://youtu.be/qgLlJXBvqR0?si=w9WNUgo4mPxrx9fQ
-
 
 # For Creating the free SSL certificates you have to use below commands
 -> sudo apt install certbot python3-certbot-nginx
@@ -42,11 +36,12 @@ server {
     listen 80;
     server_name yourdomain.com www.yourdomain.com;
 
-    root /var/www/yourdomain.com;
-    index index.html index.htm;
-
     location / {
-        try_files $uri $uri/ =404;
+        proxy_pass http://localhost:3002; # Redirect traffic to your container.
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 
@@ -57,3 +52,38 @@ server {
 -> After the above first you will give your mail-id (any mail)
 -> yes
 -> yes
+
+# If you want to attach the SSL certificates and domain you will watch below video
+https://youtu.be/qgLlJXBvqR0?si=w9WNUgo4mPxrx9fQ
+
+
+# Another way to attach the SSL certifictes[real time]
+-> First we will map our IP address to our domain
+-> nslookup <domain name>   --> To check wheather IP is map to our domain or not
+-> After map the IP to our domain. you will follow below steps
+-> First you will install nginx in your terminal using belwo commnads
+   sudo apt update
+   sudo apt install nginx 
+-> you will create one file in below location with tha below data
+   sudo vi /etc/nginx/sites-available/leave.greenenco.in.conf
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name demo-backend.greenencopvapm.com;
+
+    location / {
+        proxy_pass http://13.51.76.222:8001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+       }
+}
+
+-> you will execute the below command after create the above file
+
+ln -s /etc/nginx/sites-available/leave.greenenco.in.conf /etc/nginx/sites-enabled
+sudo certbot --nginx -d www.yourdomain
+sudo certbot certonly --dry-run -d example.com      --> It won't expair our SSL Certificates
+

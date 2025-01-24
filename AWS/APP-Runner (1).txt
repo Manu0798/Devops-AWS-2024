@@ -35,5 +35,25 @@
 -> https://youtu.be/TKirecwhJ2c?si=8PT9BE7-yV3e045V
 -> https://youtu.be/Muq3m0tzbQI?si=cE6LKCMB0SLUjGSt
 
+
+# What Concurrnet requests
+Concurrent requests refer to the number of requests a server or application can handle simultaneously at any given moment. When multiple users or systems interact with a service simultaneously, each interaction generates a request.
+
+
+
+
+Concurrent Request Capacity by Configuration
+vCPU	Memory	Simple Workloads (Concurrent Requests)	Moderate Workloads (Concurrent Requests)	Heavy Workloads (Concurrent Requests)
+0.25 vCPU	0.5 GB	25–50	10–25	5–10
+0.25 vCPU	1 GB	50–75	20–35	10–15
+0.5 vCPU	1 GB	75–100	35–50	15–25
+0.5 vCPU	2 GB	100–150	50–75	25–40
+1 vCPU	2 GB	150–200	75–100	40–60
+1 vCPU	3 GB	200–300	100–150	60–80
+2 vCPU	4 GB	300–500	150–250	80–120
+2 vCPU	8 GB	500–750	250–400	120–200
+4 vCPU	8 GB	750–1,000	400–600	200–300
+4 vCPU	16 GB	1,000–1,500	600–900	300–500
+
  
 

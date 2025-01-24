@@ -118,5 +118,8 @@ Note: If you send to request from one VPC to another to do vpc peering. That req
 # Why we need VPC
 -> In data center (date center nothing but a availablity zone) we have so many servers if create any thing without vpc all will be combined so that to overcome that problem we will use VPC.
 -> When we are using VPC that space will isolated no-one access without having permission.  
+
+# You will follow the below link to work 3 tier application
+->  https://youtu.be/lh5f69t7L9A?si=se72MTCtaG1Iw1UI
  
 

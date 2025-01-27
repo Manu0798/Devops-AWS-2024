@@ -126,3 +126,7 @@ I have resolved these challenges by:
 # What is the difference between Quality Profile and Quality Gate
 -> A Quality Profile in SonarQube defines the set of rules for analyzing code quality, 
 -> while a Quality Gate defines the criteria that a project must meet to pass a quality check.
+
+
+# 3 tier project link
+https://youtu.be/lh5f69t7L9A?si=se72MTCtaG1Iw1UI

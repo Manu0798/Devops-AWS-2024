@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-app
+  labels:
+    app: backend-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-app
+  template:
+    metadata:
+      labels:
+        app: backend-app
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: backend-app
+          image: manoj3003/frissly:1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+          resources: 
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+            - name: volume1
+              mountPath: /opt/backend
+      imagePullSecrets:
+        - name: regcred
+      volumes:
+        - name: volume1
+          persistentVolumeClaim:
+            claimName: backend-pvc

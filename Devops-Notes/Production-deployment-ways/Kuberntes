@@ -1,0 +1,551 @@
+# I have deploy the application to EKS cluster to follow the instructions
+-> I have setup ec2, vpc, kubentes and efs in aws by using terraform  (https://github.com/manoj7894/CI-CD-EKS-EFS.git)
+-> I have installed all the tools in server which is required to run our application while i setup infrastructure 
+-> You will create the service account and role in EKS
+
+# create service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: webapps
+
+
+# create role 
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jenkins-role
+  namespace: webapps
+rules:
+  # Permission for core API resources
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/exec  # Allow exec on pods
+      - secrets
+      - configmaps
+      - persistentvolumeclaims
+      - services
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for apps API group
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for networking API group
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for networking API group
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+
+# Bine the role and service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-rolebinding
+  namespace: webapps 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jenkins-role 
+subjects:
+- namespace: webapps 
+  kind: ServiceAccount
+  name: jenkins
+
+
+-> For persistence volume you have to create cluster role. Because persistence volume not in role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: persistence-volume-access
+rules:
+  # Permission for persistence volumes
+  - apiGroups: [""]
+    resources:
+      - persistentvolumes 
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for Storage class 
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for ClusterIssuser 
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+
+# Bind the role to service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jenkins-persistence-volume-access
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: persistence-volume-access
+subjects:
+- namespace: webapps
+  kind: ServiceAccount
+  name: jenkins
+
+--> After complete to create role and cluster role. you have to one for your service account
+
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: mysecretname
+  annotations:
+    kubernetes.io/service-account.name: jenkins
+
+-> kubectl get secret -n webapps
+-> kubectl describe secret mysecretname -n webapps
+-> Copy the that token and keep it in one place
+
+
+Note:- jenkins, docker, Trivy, awscli, kubectl and sonarqube
+-> I want to configure the jenkins to execute the pipeline to follow the below instructions
+
+-> You have to install the below plugins
+    -> EclipseTemurin
+    -> Docker
+    -> Docker pipeline
+    -> SonarQube scanner
+    -> SonarQube Quality gate
+    -> Quality gate
+    -> Nodejs
+    -> OWASP Dependency-Check
+    -> Email-extension plugin
+    -> Kubernetes
+    -> Kuberntes Client API
+    -> Kubernetes Credentials plugin
+    -> Kubernetes CLI
+    -> Kubernetes Credentials Provider
+    -> Kubernetes plugin
+    -> Bitbucket
+
+-> You will restart the Jenkins after install the plugins
+-> Go to manage Jenkins, click credentials and cofigure below credentials
+    docker -> Click username and password, Give username and password and give id name
+    Sonarube -> Click secret, Give token which you created in sonarqube and give id name
+    Git -> Click username and password, give username and token which you created in github, give id name
+    Email -> Click username and password, Give mail-id and email token [To get this email-token you have to go gmail, click manage google account
+                  click security and search App password in search bar and click app password and give one name and create
+    kuubernets-> Click secret text in kind and paste token which you copied eariler and id name and create
+
+-> Go to manage Jenkins, click configuration tools and install below tools
+   JDK-17, Click automatically install, Click Install from adoptium.net and choose latest version
+   JDK-11, Click automatically install, Click Install from adoptium.net and choose latest version
+   Git, Keep it default
+   Sonar-scanner, Click install automatically, Choose latest version
+   Nodejs, Give name, Click install automatically
+   Dependency check click install automatically and click Install from github.com and choose latest version
+   Maven, Give name, Click install automatically and choose latest version 
+   Docker, Give name Click install automatically and choose latest version
+
+-> After complete to configure the tools later click the system configuration
+   SonarQube-Installition, Give name, Give the Sonar-qube URL and choose the soanr-token credentials id which you have created in credentials
+   Extended Email Notification -> Give smtp.gmail.com, Give 465 port, Click Advanced choose mail-id which you created in credentals, Click use SSL
+   Email Notification -> Give smtp.gmail.com, click advanced, Give mail and email token which you created before in gmail.
+
+-> To set up the sonar-quality gate. Go to sonarqube, click administation, click configuration, click webhook and give jenkins URL 
+       http://54.198.209.63:8080/sonarqube-webhook
+
+
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'node22'
+    }
+
+    environment {
+        DOCKER_IMAGE = "manoj3003/frissly:${BUILD_NUMBER}"
+        BIT_REPO_NAME = "frissly-repo1"
+        BIT_USERNAME = "manoj7894"
+        DEPLOYMENT_FILE_PATH = "Kubernetes/deployment.yml" // Adjust the path if necessary
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+
+    stages {
+        stage('Remove All Previous Docker Images') {
+            steps {
+                // Remove all Docker images
+                sh 'docker rmi -f $(docker images -a -q) || true'
+            }
+        }
+
+        stage('Cleanup Old Trivy Reports') {
+            steps {
+                script {
+                    echo "Cleaning up old Trivy reports..."
+                    sh '''
+                        rm -f trivy.txt
+                        rm -f fs-report.html
+                    '''
+                }
+            }
+        }
+
+        stage('Get Code') {
+            steps {
+                git branch: 'frontend', credentialsId: 'Bitbucket_user', url: 'https://manoj7894@bitbucket.org/manojvarmapotthuri/frissly-repo1.git'
+            }
+        }
+
+        stage('Install Package Dependencies') {
+            steps {
+                sh "npm install"
+            }
+        }
+
+        stage('Check for Tests') {
+            steps {
+                script {
+                    def testScriptExists = sh(script: "grep -q '\"test\":' package.json", returnStatus: true) == 0
+                    env.TEST_SCRIPT_EXISTS = testScriptExists ? 'true' : 'false'
+                }
+            }
+        }
+
+        stage('Trivy Filesystem Scan') {
+            steps {
+                script {
+                    sh "trivy fs --format table -o fs-report.html ."
+                }
+            }
+        }
+
+        stage('OWASP Scan') {
+            when {
+                expression {
+                    fileExists('package.json')
+                }
+            }
+            steps {
+                dependencyCheck additionalArguments: '', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+
+        stage('SonarQube') {
+            steps {
+                withSonarQubeEnv('Sonar_Install') {
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Validate \
+                    -Dsonar.projectKey=Validate \
+                    -Dsonar.host.url=http://54.173.242.65:9000'''
+                }
+            }
+        }
+
+        stage('Stage V: QualityGates') {
+            steps {
+                echo "Running Quality Gates to verify the code quality"
+                script {
+                    timeout(time: 2, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'Docker_id', toolName: 'Docker') {
+                        sh "docker build -t ${DOCKER_IMAGE} ."
+                    }
+                }
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                script {
+                    sh "trivy image ${DOCKER_IMAGE} > trivy.txt"
+                }
+            }
+        }
+
+        stage('Push') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'Docker_id', toolName: 'Docker') {
+                        sh "docker push ${DOCKER_IMAGE}"
+                    }
+                }
+            }
+        }
+
+        stage('Update Deployment File') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'Bitbucket_user', usernameVariable: 'BIT_USERNAME', passwordVariable: 'BIT_PASSWORD')]) {
+                    script {
+                        sh '''
+                            git config user.email "jenkins@example.com"
+                            git config user.name "Jenkins"
+                        '''
+                        
+                        sh 'git checkout frontend'
+                        sh 'cat ${DEPLOYMENT_FILE_PATH}'
+                        
+                        sh '''
+                            sed -i "s|image: manoj3003/frissly:[^[:space:]]*|image: ${DOCKER_IMAGE}|g" ${DEPLOYMENT_FILE_PATH}
+                        '''
+                        
+                        sh '''
+                            if git diff --quiet; then
+                                echo "No changes detected in ${DEPLOYMENT_FILE_PATH}"
+                            else
+                                git add ${DEPLOYMENT_FILE_PATH}  # Only add the deployment file
+                                git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                                git push -f https://$BIT_USERNAME:$BIT_PASSWORD@bitbucket.org/manojvarmapotthuri/frissly-repo1.git frontend
+                            fi
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Install Ingress Controller') {
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Credetilas_id']]) {
+                        sh '''
+                            # Update kubeconfig to use EKS
+                            aws eks --region us-east-1 update-kubeconfig --name eks-1
+
+                            # Check and create the ingress-nginx namespace if it doesn't exist
+                            if ! kubectl get namespace ingress-nginx; then
+                                kubectl create namespace ingress-nginx
+                            else
+                                echo "Namespace 'ingress-nginx' already exists."
+                            fi
+
+                            # Apply Ingress Nginx Controller in ingress-nginx namespace
+                            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml --namespace ingress-nginx
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Install Calico Network Plugin') {
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Credetilas_id']]) {
+                        sh '''
+                            # Update kubeconfig to use EKS
+                            aws eks --region us-east-1 update-kubeconfig --name eks-1
+        
+                            # Install Calico network plugin
+                            kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to EKS') {
+            steps {
+                script {
+                    withKubeConfig(caCertificate: '', clusterName: 'eks-1', contextName: '', credentialsId: 'k8s_token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://8BE4030C8B4DAB2208A9AA58827505E7.gr7.ap-south-1.eks.amazonaws.com') {
+                        // Now apply the deployment and service in the webapps namespace
+                        sh 'kubectl apply -f Kubernetes/pv.yml -n webapps'
+                        sh 'kubectl apply -f Kubernetes/pvc.yml -n webapps'
+                        sh 'kubectl apply -f ${DEPLOYMENT_FILE_PATH} -n webapps'
+                        sh 'kubectl apply -f Kubernetes/service.yml -n webapps'
+                        sleep 20
+                    }
+                }
+            }
+        }
+
+        stage('Verify the Deployment') {
+            steps {
+                script {
+                    withKubeConfig(caCertificate: '', clusterName: 'eks-1', contextName: '', credentialsId: 'k8s_token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://8BE4030C8B4DAB2208A9AA58827505E7.gr7.ap-south-1.eks.amazonaws.com') {
+                        sh '''
+                            kubectl get pods -n webapps
+                            kubectl get svc -n webapps
+                            kubectl get pv -n webapps
+                            kubectl get pvc -n webapps
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                def jobName = 'Frissly'
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+
+                def body = """<html>
+                                <body>
+                                    <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+                                        <h2>${jobName} - Build ${buildNumber}</h2>
+                                        <div style="background-color: ${bannerColor}; padding: 10px;">
+                                            <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
+                                        </div>
+                                        <p>Check the <a href="${BUILD_URL}">console output</a>.</p> 
+                                    </div>
+                                </body>
+                            </html>"""
+
+                emailext(
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'manojvarmapotthutri@gmail.com',
+                    from: 'jenkins@example.com',
+                    replyTo: 'jenkins@example.com',
+                    attachmentsPattern: 'trivy.txt',
+                    mimeType: 'text/html',
+                    attachmentPattern: 'fs-report.html'
+                )
+            }
+        }
+    }
+}
+
+
+# If you want to delete the workspace data after build the job you have to use pipeline script as like below
+ post {
+        always {
+            script {
+                def jobName = 'Frissly'
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+
+                def body = """<html>
+                                <body>
+                                    <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+                                        <h2>${jobName} - Build ${buildNumber}</h2>
+                                        <div style="background-color: ${bannerColor}; padding: 10px;">
+                                            <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
+                                        </div>
+                                        <p>Check the <a href="${BUILD_URL}">console output</a>.</p> 
+                                    </div>
+                                </body>
+                            </html>"""
+
+                emailext(
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'ayeesha5212@gmail.com',
+                    from: 'jenkins@example.com',
+                    replyTo: 'jenkins@example.com',
+                    attachmentsPattern: 'trivy.txt',
+                    mimeType: 'text/html',
+                    attachmentPattern: 'fs-report.html'
+                )
+            }
+        }
+
+        // Clean up workspace to reclaim space
+        cleanup {
+            deleteDir() // This will delete the workspace directory after the pipeline execution
+        }
+    }
+
+
+# I have worked with EFS for persistence volume. If i want to use EBS for persistence volume. we have to execute the some below commands
+-> eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster <give clustername> --approve
+-> eksctl create iamserviceaccount --region ap-south-1 --name ebs-csi-controller-sa --namespace kube-system --cluster <give clustername> --attach-policy-arn arn:aws:iam:aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve --override-existing-serviceaccounts
+-> After execute above it will in cloud formation
+-> kubectl applu -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
+
+# For EBS you will follow below manifeast files
+-> vi storage.yml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3          # Specify the volume type (gp2, gp3, io1, etc.)
+  fsType: ext4       # File system type
+  encrypted: "true"  # Enable encryption for the volume
+  iopsPerGB: "50"    # Applicable only for io1 and gp3 volume types
+  throughput: "125"  # Throughput for gp3 (in MiB/s), optional
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+
+-> vi pv.yml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ebs-pv
+spec:
+  capacity:
+    storage: 10Gi  # Adjust the size as per your needs
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce  # Specify the access mode
+  persistentVolumeReclaimPolicy: Retain
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: <volume-id>  # Replace with the EBS volume ID
+  storageClassName: ebs-sc
+
+
+-> pvc.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ebs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Specify the size needed
+  storageClassName: ebs-sc
+
+
+# If you want to assign SSL Certificates you have to install below command
+-> kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml"
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: your-email@example.com # Replace with your email
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx # Replace with your Ingress class if different
+
+
+--> Finally to understand about EBS and SSL you will follow the below video link
+-> https://www.youtube.com/live/KvH7TLKmymE?si=FSnfrUt1ysFeoQw7
+

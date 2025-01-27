@@ -72,3 +72,15 @@ Stage(Quality Gate)
                 }
             }
         }
+
+
+# For java code
+stage('SonarQube') {
+            steps {
+                withSonarQubeEnv('Sonar_Install') {
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Validate \
+                    -Dsonar.projectKey=Validate \
+                    -Dsonar.java.binaries=target'''
+                }
+            }
+        }

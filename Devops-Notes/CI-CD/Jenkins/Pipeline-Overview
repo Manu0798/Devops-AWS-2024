@@ -84,3 +84,13 @@ stage('SonarQube') {
                 }
             }
         }
+
+
+# for sonar-quality gate
+stage('Stage V: QualityGates') {
+            steps {
+               timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar_token'
+                    }
+                }
+            }

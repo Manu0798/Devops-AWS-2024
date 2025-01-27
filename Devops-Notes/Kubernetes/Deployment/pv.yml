@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backend-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany  # Allows multiple pods to access the volume
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: backend-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-07a8f5d5e1fb7bdc4  # Replace with your EFS file system ID

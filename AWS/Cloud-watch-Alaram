@@ -11,3 +11,10 @@
 -> htop
 -> nproc   --> To see how many cpu
 -> stress --cpu 1 --timeout 300  --> In increase the load on server.
+
+https://youtu.be/PcmmvsFieYA?si=iw_s3oQ3pMjzUwSc
+https://youtu.be/PcmmvsFieYA?si=mDEEYMi4WEycJv8F
+
+
+# How to setup the alaram for disk management and memory. You will follow the below video
+-> https://youtu.be/hqGnDzCIMBg?si=AE1HVlcwNI_bLJfG

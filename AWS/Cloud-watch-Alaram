@@ -1,0 +1,13 @@
+# How to create alaram for CPU untilization
+-> First go to the cloud watch, click alaram, click in alaram, click cretae alarm
+-> Setup metrics, click multi source query, chosee ec2, click pre-instances,
+-> Select the instanceid, and click graph quary, create the setup the metrics,
+-> choose the percentage,
+-> click create new SNS, click setup topic, give some name, click mailid, after that go to your mail, clikc subscription
+-> next, create.
+
+# To see cpu utilization in linux we have some commands
+-> top
+-> htop
+-> nproc   --> To see how many cpu
+-> stress --cpu 1 --timeout 300  --> In increase the load on server.

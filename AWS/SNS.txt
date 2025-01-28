@@ -42,11 +42,52 @@
 -> After complete the above steps once you will stop your instance and check you mail would you get mail when you stop the instance 
 
 
--> For app runner you will use below and choose Custom pattern (JSON editor) in creation method
+Here's how you can set up email notifications for your App Runner deployments:
+
+Create an Amazon SNS Topic:
+
+Navigate to the Amazon SNS Console.
+Click on "Create topic."
+Choose "Standard" as the topic type.
+Provide a name for your topic, e.g., AppRunnerDeploymentNotifications.
+Click "Create topic."
+Subscribe to the SNS Topic:
+
+After creating the topic, click on "Create subscription."
+Set the protocol to "Email."
+Enter your email address as the endpoint.
+Confirm the subscription by clicking the link sent to your email.
+Create an EventBridge Rule:
+
+Navigate to the Amazon EventBridge Console.
+
+Click on "Create rule."
+
+Provide a name for the rule, e.g., AppRunnerDeploymentRule.
+
+In the "Define pattern" section, select "Event pattern."
+
+Choose "Custom patterns (JSON editor)."
+
+Enter the following JSON to capture deployment success and failure events:
+
+json
+Copy
+Edit
 {
   "source": ["aws.apprunner"],
-  "detail-type": ["App Runner Service Event"],
+  "detail-type": ["AppRunner Service Operation Status Change"],
   "detail": {
-    "state": ["DEPLOYMENT_SUCCEEDED", "DEPLOYMENT_FAILED"]
+    "operationStatus": [
+      "DeploymentCompletedSuccessfully",
+      "DeploymentFailed"
+    ]
   }
 }
+In the "Select targets" section, click "Add target."
+
+Choose "SNS topic" as the target type.
+
+Select the SNS topic you created earlier (AppRunnerDeploymentNotifications).
+
+Click "Create" to finalize the rule.

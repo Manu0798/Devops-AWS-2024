@@ -55,5 +55,13 @@ vCPU	Memory	Simple Workloads (Concurrent Requests)	Moderate Workloads (Concurren
 4 vCPU	8 GB	750–1,000	400–600	200–300
 4 vCPU	16 GB	1,000–1,500	600–900	300–500
 
+
+
+Estimated Concurrent Requests for 1 vCPU + 4 GB RAM
+Request Type	Average Latency	Estimated Concurrent Requests
+Fast API calls (light processing, cache hits)	100ms	10-20
+Database queries (moderate complexity)	250-500ms	5-10
+CPU-intensive processing (image processing, AI inference)	1s	2-5
+
  
 

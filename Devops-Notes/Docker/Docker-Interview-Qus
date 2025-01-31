@@ -59,3 +59,7 @@ Registry
 # What stpes would you take to secure your container
 -> Ensure that the networking configured properly. This is the one of the most comman reasons for security issues. If required configure custom network and assign them to isolated containers.
 
+# What is the difference between CMD and ENTRYPOINT
+Use CMD when you want a default command that can be easily overridden.
+Use ENTRYPOINT when you want a mandatory command that should always execute.
+Use both when you want a fixed command (ENTRYPOINT) with a default argument (CMD) that users can modify.

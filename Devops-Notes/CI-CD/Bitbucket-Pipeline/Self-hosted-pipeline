@@ -1,0 +1,113 @@
+image: node:20
+
+pipelines:
+  branches:
+    cms-dev:
+      - step:
+          name: Build, Test, Scan, and Push Docker Image to ECR
+          runs-on:
+            - self.hosted
+          services:
+            - docker
+          caches:
+            - node
+          script:
+            # Print environment variables for debugging
+            - |
+              echo "SonarQube Host: ${SONAR_HOST_URL}"
+              echo "Project Key: ${SONAR_PROJECT_KEY}"
+              echo "Token Length: ${#SONARQUBE_TOKEN}"
+
+            # Free up disk space before running scans
+            - docker system prune -af || true
+            - docker volume prune -f || true
+            - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
+
+            # Install required dependencies
+            - apt-get update && apt-get install -y curl unzip awscli msmtp mpack jq
+
+            # Install Node.js dependencies, build, and run tests
+            - npm install
+            - npm run build --if-present
+            - npm test --if-present
+
+            # Configure AWS CLI with provided credentials
+            - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+            - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+            - aws configure set region "$AWS_REGION"
+
+            # Install Trivy for security scanning
+            - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.39.0/trivy_0.39.0_Linux-64bit.deb -o trivy.deb
+            - dpkg -i trivy.deb
+
+            # Set custom Trivy cache directory to prevent "no space left on device" error
+            - export TRIVY_CACHE_DIR=/tmp/trivy-cache
+            - mkdir -p $TRIVY_CACHE_DIR
+
+            # Run Trivy filesystem scan for vulnerabilities in the project files
+            - trivy fs --cache-dir $TRIVY_CACHE_DIR --format table -o fs-report.html .
+
+            # Install SonarScanner
+            - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+            - unzip sonar-scanner.zip
+            - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
+
+            # Verify SonarScanner installation
+            - sonar-scanner -v
+
+            # Run SonarQube analysis with the correct command
+            - sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONARQUBE_TOKEN}"
+
+            # Build Docker image for the project
+            - docker build -t "$DOCKER_IMAGE_NAME" .
+
+            # Run Trivy image scan on the Docker image
+            - trivy image --cache-dir $TRIVY_CACHE_DIR --format table -o image.html "$DOCKER_IMAGE_NAME"
+
+            # Create ECR repository if it doesn't already exist
+            - aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" || aws ecr create-repository --repository-name "$ECR_REPO_NAME"
+
+            # Log in to AWS ECR with Docker credentials
+            - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+            # Tag and push the Docker image to AWS ECR
+            - docker tag "$DOCKER_IMAGE_NAME:latest" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest"
+            - docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest"
+
+            # Clean up Docker images and unused volumes to free up space
+            - docker system prune -af || true
+            - docker volume prune -f || true
+
+            # Collect artifacts for later inspection (e.g., security scans)
+            - mkdir -p artifacts
+            - cp fs-report.html artifacts/
+            - cp image.html artifacts/
+            - tar -cvf artifacts.tar artifacts/
+
+            # Configure msmtp for sending emails via Outlook
+            - |
+              echo "defaults
+              auth           on
+              tls            on
+              tls_trust_file /etc/ssl/certs/ca-certificates.crt
+              logfile        ~/.msmtp.log
+
+              account        outlook
+              host           smtp.office365.com
+              port           587
+              from           ${OUTLOOK_EMAIL}
+              user           ${OUTLOOK_EMAIL}
+              password       ${OUTLOOK_PASSWORD}
+
+              account default : outlook" > ~/.msmtprc
+
+            # Set permissions for msmtp configuration file
+            - chmod 600 ~/.msmtprc
+
+            # Send email notification with artifacts attached
+            - |
+              echo "Build succeeded! Attached are the artifacts." | \
+              mpack -s "Build Success Notification" -d /dev/stdin -a artifacts.tar ${OUTLOOK_EMAIL}
+
+          artifacts:
+            - artifacts/*

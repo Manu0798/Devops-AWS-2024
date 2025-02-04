@@ -101,6 +101,7 @@ pipelines:
               - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
               - unzip sonar-scanner.zip
               - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
+              - ./dependency-check/bin/dependency-check.sh --project "NodeJS App" --scan . --out ./dependency-check-report --format XML --nvdApiKey="$NVD_API_KEY"
 
 
 

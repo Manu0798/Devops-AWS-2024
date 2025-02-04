@@ -130,6 +130,39 @@ pipelines:
             # Run SonarQube analysis
             - sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONARQUBE_TOKEN}"
 
+            # Check SonarQube Quality Gate
+            - |
+              echo "⏳ Checking SonarQube Quality Gate result..."
+              RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
+              SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+
+              echo "SonarQube Quality Gate Status: $SONAR_STATUS"
+
+              if [ "$SONAR_STATUS" == "ERROR" ]; then
+                echo "❌ Quality Gate Failed! Skipping waiting stage and continuing pipeline."
+              else
+                MAX_ATTEMPTS=10
+                ATTEMPTS=0
+                while [ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]; do
+                  RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
+                  SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+
+                  echo "Attempt $((ATTEMPTS + 1)) - SonarQube Quality Gate Status: $SONAR_STATUS"
+
+                  if [ "$SONAR_STATUS" == "OK" ]; then
+                    echo "✅ Quality Gate Passed!"
+                    break
+                  elif [ "$SONAR_STATUS" == "ERROR" ]; then
+                    echo "❌ Quality Gate Failed! Skipping wait and proceeding."
+                    break
+                  fi
+
+                  ATTEMPTS=$((ATTEMPTS + 1))
+                  sleep 10
+                done
+              fi
+
+
             # Install OWASP Dependency-Check
             - wget https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.1/dependency-check-11.1.1-release.zip
             - unzip dependency-check-11.1.1-release.zip
@@ -199,8 +232,8 @@ pipelines:
             - mpack -s "Bitbucket Pipeline - Dependency Check Report" -d email.txt artifacts/dependency-check-report.xml "${OUTLOOK_EMAIL}"
 
             # Clean up workspace to save disk space (Do this last)
-            - echo "Cleaning up entire workspace..."
-            - rm -rf *
+            #- echo "Cleaning up entire workspace..."
+            #- rm -rf *
 
           artifacts:
             - artifacts/*

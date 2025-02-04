@@ -1,3 +1,4 @@
+# Push Image To ECR
 -> Go to the Bitbucket, click on repositories, clike setting right side, click workspace settings, click workspace runner at left side bottom
 -> Click the linux docker, clikc next, copy the command and execute in server, click next, ok
 

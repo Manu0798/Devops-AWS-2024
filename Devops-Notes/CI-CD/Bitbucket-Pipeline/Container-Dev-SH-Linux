@@ -1,4 +1,9 @@
 -> Install the tools from scipt which required. Later you will execute the below script
+-> To push to Image to ECR 
+
+-> Go to the Bitbucket, click on repositories, clike setting right side, click workspace settings, click workspace runner at left side bottom
+-> Click the linux shell, clikc next, it will give some commands you will execute that commands in your server.
+
 
 image: node:20  # Use Node.js 20 image
 

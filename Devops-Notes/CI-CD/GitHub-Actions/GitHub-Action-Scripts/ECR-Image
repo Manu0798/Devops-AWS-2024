@@ -1,3 +1,6 @@
+-> Install the tools from script and later you will execute the below script
+
+
 name: Node.js Docker Image Deploy into ECR
 
 on:

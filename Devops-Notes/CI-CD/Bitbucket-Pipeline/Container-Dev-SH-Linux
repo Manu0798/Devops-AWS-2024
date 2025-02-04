@@ -162,8 +162,8 @@ pipelines:
 
 
           # Clean up workspace to save disk space (Do this last)
-          - echo "Cleaning up entire workspace..."
-          - rm -rf *
+          #- echo "Cleaning up entire workspace..."
+          #- rm -rf *
 
         artifacts:
           - artifacts/*

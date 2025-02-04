@@ -53,3 +53,85 @@ https://youtu.be/RnTnuSbCyIY?si=IVVppv0pgriqRZHj        --> (1.10)
 
 
 
+# Developer version install
+# Install SonarQube
+echo "Installing SonarQube..."
+sudo apt-get install -y unzip
+
+# Install Java 11 for SonarQube
+echo "Installing OpenJDK 11 for SonarQube..."
+sudo apt-get install -y openjdk-11-jre
+
+# Create a dedicated user for SonarQube
+if id "sonarqube" &>/dev/null; then
+    echo "User sonarqube already exists, skipping creation."
+else
+    sudo useradd -r -m -d /opt/sonarqube -s /bin/bash sonarqube
+fi
+
+# Create a dedicated user for SonarQube
+# if id "sonarqube" &>/dev/null; then
+#     echo "User sonarqube already exists, skipping creation."
+# else
+#     sudo useradd -r -m -d /opt/sonarqube -s /bin/bash sonarqube
+# fi
+
+# Ensure SonarQube directory exists
+sudo mkdir -p /opt/sonarqube
+
+# Download and extract SonarQube
+SONARQUBE_VERSION="2025.1.0.102418"
+wget -qO sonarqube.zip "https://binaries.sonarsource.com/CommercialDistribution/sonarqube-developer/sonarqube-developer-${SONARQUBE_VERSION}.zip"
+sudo unzip -q sonarqube.zip -d /opt/sonarqube
+sudo mv /opt/sonarqube/sonarqube-${SONARQUBE_VERSION} /opt/sonarqube/latest
+rm -f sonarqube.zip
+
+# Set permissions
+sudo chown -R sonarqube:sonarqube /opt/sonarqube
+sudo chmod -R 755 /opt/sonarqube
+
+
+# Configure SonarQube settings
+sudo tee /opt/sonarqube/latest/conf/sonar.properties > /dev/null <<EOL
+sonar.telemetry.enable=true
+sonar.jdbc.username=sonarqube
+sonar.jdbc.password=sonarqube
+sonar.web.javaAdditionalOpts=-server
+sonar.search.javaAdditionalOpts=-Dnode.store.allow_mmap=false
+sonar.web.host=0.0.0.0
+sonar.web.port=9000
+EOL
+
+# Create SonarQube service
+cat <<EOF | sudo tee /etc/systemd/system/sonarqube.service
+[Unit]
+Description=SonarQube service
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/sonarqube/latest/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonarqube/latest/bin/linux-x86-64/sonar.sh stop
+User=sonarqube
+Group=sonarqube
+Restart=always
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start SonarQube
+sudo systemctl daemon-reload
+sudo systemctl enable --now sonarqube
+echo "SonarQube installation complete."
+
+# Display Jenkins initial password
+echo "Fetching Jenkins initial admin password..."
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+echo "All installations complete!"
+
+
+

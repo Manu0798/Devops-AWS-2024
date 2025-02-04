@@ -1,3 +1,5 @@
+-> Install the tools from script and later you will execute the below script
+
 -> If you want to use github self-hosted runner for CI/CD
 -> You have to go Settings in Github, click on actions and Click on runners
 -> Choose linux and execute the below commands

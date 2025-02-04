@@ -29,6 +29,16 @@ pipelines:
             # Install required dependencies
             - apt-get update && apt-get install -y curl unzip awscli msmtp mpack jq
 
+            # Install OpenJDK 17
+            - apt-get install -y openjdk-17-jdk-headless
+
+            # Set JAVA_HOME environment variable
+            - export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+            - export PATH=$JAVA_HOME/bin:$PATH
+
+            # Verify Java installation
+            - java -version
+
             # Install Node.js dependencies, build, and run tests
             - npm install
             - npm run build --if-present
@@ -58,8 +68,15 @@ pipelines:
             # Verify SonarScanner installation
             - sonar-scanner -v
 
-            # Run SonarQube analysis with the correct command
+            # Run SonarQube analysis
             - sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONARQUBE_TOKEN}"
+
+            # Install OWASP Dependency-Check
+            - wget https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.1/dependency-check-11.1.1-release.zip
+            - unzip dependency-check-11.1.1-release.zip
+
+            # Run Dependency-Check with NVD API Key
+            - ./dependency-check/bin/dependency-check.sh --project "NodeJS App" --scan . --out ./dependency-check-report --format XML --nvdApiKey="$NVD_API_KEY"
 
             # Build Docker image for the project
             - docker build -t "$DOCKER_IMAGE_NAME" .
@@ -85,32 +102,51 @@ pipelines:
             - mkdir -p artifacts
             - cp fs-report.html artifacts/
             - cp image.html artifacts/
+            - cp ./dependency-check-report/dependency-check-report.xml artifacts/
             - tar -cvf artifacts.tar artifacts/
 
-            # Configure msmtp for sending emails via Outlook
+            # Configure msmtp for sending emails via Outlook (using environment variables)
             - |
-              echo "defaults
-              auth           on
-              tls            on
-              tls_trust_file /etc/ssl/certs/ca-certificates.crt
-              logfile        ~/.msmtp.log
-
-              account        outlook
-              host           smtp.office365.com
-              port           587
-              from           ${OUTLOOK_EMAIL}
-              user           ${OUTLOOK_EMAIL}
-              password       ${OUTLOOK_PASSWORD}
-
+              echo "account outlook
+              host smtp.office365.com
+              port 587
+              auth on
+              tls on
+              tls_starttls on
+              user \"${OUTLOOK_EMAIL}\"
+              password \"${OUTLOOK_PASSWORD}\"
+              from \"${OUTLOOK_EMAIL}\"
+              logfile ~/.msmtp.log
               account default : outlook" > ~/.msmtprc
 
-            # Set permissions for msmtp configuration file
-            - chmod 600 ~/.msmtprc
+              chmod 600 ~/.msmtprc  # Set correct permissions for security
 
-            # Send email notification with artifacts attached
+            # Compose email body
             - |
-              echo "Build succeeded! Attached are the artifacts." | \
-              mpack -s "Build Success Notification" -d /dev/stdin -a artifacts.tar ${OUTLOOK_EMAIL}
+              echo "Subject: Bitbucket Pipeline - Scan & Build Report
+              To: ${OUTLOOK_EMAIL}
+              From: ${OUTLOOK_EMAIL}
+
+              Hello,
+
+              The Bitbucket pipeline has completed successfully. Please find the security scan reports attached.
+
+              Best Regards,
+              Bitbucket Pipeline" > email.txt
+
+            # Attach reports and send email
+            - mpack -s "Bitbucket Pipeline - Scan & Build Report" -d email.txt artifacts/fs-report.html "${OUTLOOK_EMAIL}"
+            - mpack -s "Bitbucket Pipeline - Scan & Build Report" -d email.txt artifacts/image.html "${OUTLOOK_EMAIL}"
+            - mpack -s "Bitbucket Pipeline - Dependency Check Report" -d email.txt artifacts/dependency-check-report.xml "${OUTLOOK_EMAIL}"
 
           artifacts:
             - artifacts/*
+
+
+
+
+# without NVD API Key
+# Install OWASP Dependency-Check
+            - wget https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.1/dependency-check-11.1.1-release.zip
+            - unzip dependency-check-11.1.1-release.zip
+            - ./dependency-check/bin/dependency-check.sh --project "NodeJS App" --scan . --out ./dependency-check-report --format XML

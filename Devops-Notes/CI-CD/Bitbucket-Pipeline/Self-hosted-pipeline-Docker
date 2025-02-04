@@ -139,6 +139,10 @@ pipelines:
             - mpack -s "Bitbucket Pipeline - Scan & Build Report" -d email.txt artifacts/image.html "${OUTLOOK_EMAIL}"
             - mpack -s "Bitbucket Pipeline - Dependency Check Report" -d email.txt artifacts/dependency-check-report.xml "${OUTLOOK_EMAIL}"
 
+            # Clean up workspace to save disk space (Do this last)
+            - echo "Cleaning up entire workspace..."
+            - rm -rf *
+
           artifacts:
             - artifacts/*
 

@@ -91,3 +91,15 @@ Choose "SNS topic" as the target type.
 Select the SNS topic you created earlier (AppRunnerDeploymentNotifications).
 
 Click "Create" to finalize the rule.
+
+
+# For Amplify
+Step 4: Configure the Event Pattern
+Choose Event source → AWS services.
+Select AWS Service → Amplify.
+Select Event Type → Amplify Deployment Status Change.
+
+{
+  "source": ["aws.amplify"],
+  "detail-type": ["Amplify Deployment Status Change"]
+}

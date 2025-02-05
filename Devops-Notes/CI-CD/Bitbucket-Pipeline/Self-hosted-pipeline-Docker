@@ -86,7 +86,7 @@ pipelines:
             - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
 
             # Install required dependencies
-            - apt-get update && apt-get install -y curl unzip awscli msmtp mpack jq
+            - apt-get update && apt-get install -y curl unzip awscli msmtp mutt jq
 
             # Install OpenJDK 17
             - apt-get install -y openjdk-17-jdk-headless
@@ -197,39 +197,35 @@ pipelines:
             - cp ./dependency-check-report/dependency-check-report.xml artifacts/
             - tar -cvf artifacts.tar artifacts/
 
-            # Configure msmtp for sending emails via Outlook (using environment variables)
+            # ------------------------------
+            # Send Email Notification Using mutt
+            # ------------------------------
             - |
-              echo "account outlook
-              host smtp.office365.com
-              port 587
-              auth on
-              tls on
-              tls_starttls on
-              user \"${OUTLOOK_EMAIL}\"
-              password \"${OUTLOOK_PASSWORD}\"
-              from \"${OUTLOOK_EMAIL}\"
-              logfile ~/.msmtp.log
-              account default : outlook" > ~/.msmtprc
+              # Set email variables
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="$SMTP_PORT"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="Bitbucket Pipeline Build Status"
+              BODY="The pipeline for branch 'cms-dev' has completed.\n\n"
 
-              chmod 600 ~/.msmtprc  # Set correct permissions for security
+              # Determine build status
+              if [ "$BITBUCKET_EXIT_CODE" -eq 0 ]; then
+                  BODY+="Build Status: ✅ SUCCESS\n"
+              else
+                  BODY+="Build Status: ❌ FAILURE\n"
+              fi
 
-            # Compose email body
-            - |
-              echo "Subject: Bitbucket Pipeline - Scan & Build Report
-              To: ${OUTLOOK_EMAIL}
-              From: ${OUTLOOK_EMAIL}
+              # Email content
+              BODY+="SonarQube Quality Gate: $SONAR_STATUS\n\n"
+              BODY+="Attached: fs-report.html & image.html"
 
-              Hello,
+              # Send email with attachments using mutt
+              echo -e "$BODY" | mutt -s "$SUBJECT" -e "set from=$FROM_EMAIL" -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" -a "artifacts/fs-report.html" -a "artifacts/image.html" -a "artifacts/dependency-check-report.xml" -- $TO_EMAIL
 
-              The Bitbucket pipeline has completed successfully. Please find the security scan reports attached.
-
-              Best Regards,
-              Bitbucket Pipeline" > email.txt
-
-            # Attach reports and send email
-            - mpack -s "Bitbucket Pipeline - Scan & Build Report" -d email.txt artifacts/fs-report.html "${OUTLOOK_EMAIL}"
-            - mpack -s "Bitbucket Pipeline - Scan & Build Report" -d email.txt artifacts/image.html "${OUTLOOK_EMAIL}"
-            - mpack -s "Bitbucket Pipeline - Dependency Check Report" -d email.txt artifacts/dependency-check-report.xml "${OUTLOOK_EMAIL}"
+              echo "Email notification with attachments sent!"
 
             # Clean up workspace to save disk space (Do this last)
             #- echo "Cleaning up entire workspace..."

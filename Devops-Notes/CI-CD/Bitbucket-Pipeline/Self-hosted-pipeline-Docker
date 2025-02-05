@@ -391,7 +391,7 @@ pipelines:
 
               echo "Email notification with attachments sent!"
 
-            # Clean up workspace to save disk space (Do this last) If you uncommented this you wont't get artifacts
+            # Clean up workspace to save disk space (Do this last) # If you uncomment this you wont't get artifacts
             #- echo "Cleaning up entire workspace..."
             #- rm -rf *
 

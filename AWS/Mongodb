@@ -363,3 +363,17 @@ db.couredetails.remove({ name: 'VARMA' })
 -> Example:-          mongorestore --uri="mongodb+srv://varmapotthuri4:Varma_3003@backup-cluster.vxamp.mongodb.net/mongobackup" "D:\mongodb_backup\frissly_dev"
 
 
+# How to set up the VPC Peering for MongoDB
+-> After setup your backend server in private subnet within VPC
+-> You go to the mongoDB, create the cluster and the database in cluster
+-> After create the cluster and database in mongoDB. Click the network access at left side, click the VPC peering,
+-> Provide the details which appearing there, like accountid, VPC id, VPC CICD, enable Ip whitlist, Choose region, 
+-> After set up the above steps, go to VPC and clikc peering connecton and accept the request, later it will take some time to get approval
+-> There after go to the click route table of private subnets, click edit, add the peering connection to that route table, give peering like ip, choose peering, save
+
+# You will watch below video to get more info
+-> https://youtu.be/b78Pz0gWqX4?si=8KIJjA7-Bw0zufn_
+-> https://youtu.be/8NITVf0L5X0?si=GbgL9ourI4j97hCD
+-> https://youtu.be/kWhIwlNkZm4?si=gOlZRxJf29PTVFr3
+
+

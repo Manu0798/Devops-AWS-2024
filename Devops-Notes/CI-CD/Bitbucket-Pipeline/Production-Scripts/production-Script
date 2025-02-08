@@ -8,7 +8,7 @@ pipelines:
       # 1️⃣ Build, Test, and Scan (Test)
       # ------------------------------
       - step:
-          name: Build, Test, Scan, and Docker Image
+          name: Build, Test, and Scan Source-Code
           runs-on:
             - self.hosted
           deployment: test
@@ -27,7 +27,7 @@ pipelines:
             - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
 
             # Install required dependencies
-            - apt-get update && apt-get install -y unzip jq
+            - apt-get update && apt-get install -y unzip jq mutt
 
             # Install Node.js dependencies, build, and run tests
             - npm install
@@ -76,6 +76,28 @@ pipelines:
                   sleep 10
                 done
               fi
+              
+            # ------------------------------
+          # Send Email Notification with Attachments
+          # ------------------------------
+            - |
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="$SMTP_PORT"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="🚀 Approval Required: Deploy to Production"
+              BODY="Hello Team,\n\nThe staging deployment for branch 'cms-dev' is complete.\n\n⚠️ Please approve the production deployment:\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your prompt approval."
+              
+              # Send the email with attachments using mutt
+            - |
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=$FROM_EMAIL" \
+                -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" \
+                -- "$TO_EMAIL"
+
+            - echo "📧 Approval request for production deployment sent to ${TO_EMAIL}"
 
             
             
@@ -171,14 +193,7 @@ pipelines:
             - cp fs-report.html artifacts/
             - cp image.html artifacts/
             - tar -cvf artifacts.tar artifacts/
-
-          artifacts:
-            - artifacts/*  
-
-            - echo "🚀 Deploying to Staging..."
-
-            # ✅ Install Mutt for Email Sending
-            - apt-get update && apt-get install -y mutt
+            
             
             # ------------------------------
             # Send Email Notification with Attachments
@@ -202,4 +217,11 @@ pipelines:
                 -a "artifacts/image.html" \
                 -- "$TO_EMAIL"
 
-            - echo "📧 Production deployment notification email with attachments sent to ${TO_EMAIL}
+            - echo "📧 Production deployment notification email with attachments sent to ${TO_EMAIL}"
+            
+
+          artifacts:
+            - artifacts/*  
+            
+            
+            

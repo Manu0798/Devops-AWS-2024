@@ -1,3 +1,5 @@
+-> You will pass variables in repository variables, you will find option when you clikc repository settings.
+
 image: node:20
  
 definitions:

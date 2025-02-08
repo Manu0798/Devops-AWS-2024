@@ -207,6 +207,7 @@ pipelines:
             - mkdir -p artifacts
             - cp fs-report.html artifacts/
             - cp image.html artifacts/
+            - cp ./dependency-check-report/dependency-check-report.xml artifacts/
             - tar -cvf artifacts.tar artifacts/
             
             # ------------------------------
@@ -229,6 +230,7 @@ pipelines:
                 -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" \
                 -a "artifacts/fs-report.html" \
                 -a "artifacts/image.html" \
+                -a "artifacts/dependency-check-report.xml" \
                 -- "$TO_EMAIL"
 
             - echo "📧 uat deployment notification email with attachments sent to ${TO_EMAIL}"

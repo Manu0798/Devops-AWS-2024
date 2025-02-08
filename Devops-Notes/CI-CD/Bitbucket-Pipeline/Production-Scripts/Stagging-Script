@@ -1,3 +1,12 @@
+# Stagging Script without OWSAP Dependency Check. If you want you can add 
+-> You have to pass below varibles based on deploymet stage in Deployment, you will find deployment in pipeline when you click repository settings
+-> make sure same in pipeline at deployment place and here
+
+
+
+
+
+
 image: node:20
 
 

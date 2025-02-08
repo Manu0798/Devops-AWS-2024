@@ -3,7 +3,7 @@
 -> Click the linux docker, clikc next, copy the command and execute in server, click next, ok
 -> You will pass variables in repository variables, you will find option when you clikc repository settings.
 
--> You will install below tools in your server to run the below script like docker,sonar
+-> You will install below tools in your server to run the below script like docker,sonar and java
 -> vi docker.sh
 
 # Install Docker
@@ -89,7 +89,7 @@ FROM_EMAIL: varmapotthuri4@gmail.com
 
 
 
-With OWSAP Dependency-Check
+# Exexute below script with OWSAP Dependency check 
 
 
 image: node:20
@@ -341,7 +341,7 @@ pipelines:
 
 
 
-Without OWSAP Dependency-Check
+# Exexute below script without OWSAP Dependency check 
 
 
 image: node:20

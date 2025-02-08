@@ -6,12 +6,7 @@ test
 SONAR_HOST_URL
 SONAR_PROJECT_KEY
 SONARQUBE_TOKEN
-SMTP_SERVER:  smtp.gmail.com, smtp.office365.com  --> take based on requirment
-SMTP_PORT: 587
-SMTP_USER: varmapotthuri4@gmail.com
-SMTP_PASS: Give App password from mail
-TO_EMAIL: Give to what do you want to send
-FROM_EMAIL: varmapotthuri4@gmail.com
+
 
 stagging
 AWS_ACCOUNT_ID
@@ -21,6 +16,8 @@ AWS_REGION
 DOCKER_IMAGE_NAME: uat-backend-image
 ECR_REPO_NAME: uat-backend-repo
 IMAGE_TAG: stagging
+
+-> You have to pass below varibles in repository varibles, you will find repo varibles when you click repository settings
 SMTP_SERVER:  smtp.gmail.com, smtp.office365.com  --> take based on requirment
 SMTP_PORT: 587
 SMTP_USER: varmapotthuri4@gmail.com

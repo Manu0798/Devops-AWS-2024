@@ -1,5 +1,5 @@
 -> Install the tools from script and later you will execute the below script
-
+-> You will pass variables in secreats variables, you will find option when you clikc settings. If you scroll down then you will find, click on actions pass in secrets.
 
 name: Node.js Docker Image Deploy into ECR
 

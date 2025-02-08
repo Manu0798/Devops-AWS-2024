@@ -42,6 +42,10 @@ echo "Trivy installation complete."
 vi node.sh
 sudo apt install npm -y
 
+vi mutt.sh
+# For mail
+sudo apt-get update && sudo apt-get install -y mutt
+
 vi awscli.sh
 # Install AWS_CLI
 sudo apt-get update -y

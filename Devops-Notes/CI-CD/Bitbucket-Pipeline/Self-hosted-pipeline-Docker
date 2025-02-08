@@ -60,7 +60,7 @@ echo "Installation complete. Jenkins, Docker, Maven, Git, and SonarQube are set 
 echo "Sonarqube installation complete."
 
 
-# Exexute below script with OWSAP Dependency check 
+# Exexute below script without OWSAP Dependency check 
 
 image: node:20
 

@@ -87,7 +87,7 @@ SMTP_PASS: Give App password from mail
 TO_EMAIL: Give to what do you want to send
 FROM_EMAIL: varmapotthuri4@gmail.com
 
-# With OWSAP Dependency-Check
+# Exexute below script with OWSAP Dependency check 
 
 
 
@@ -341,7 +341,7 @@ pipelines:
 
 
 
-# Without OWSAP Dependency-Check
+# Exexute below script without OWSAP Dependency check 
 
 
 image: node:20

@@ -1,4 +1,65 @@
-# Stagging Script without OWSAP Dependency Check. If you want you can add 
+# Production Script
+-> Go to the Bitbucket, click on repositories, clike setting right side, click workspace settings, click workspace runner at left side bottom
+-> Click the linux docker, clikc next, copy the command and execute in server, click next, ok
+-> You will pass variables in repository variables, you will find option when you clikc repository settings.
+
+-> You will install below tools in your server to run the below script like docker,sonar and java
+-> vi docker.sh
+
+# Install Docker
+# Add Docker's official GPG key
+sudo apt-get update -y
+sudo apt-get install ca-certificates curl -y
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo chmod 666 /var/run/docker.sock
+sudo usermod -aG docker jenkins
+sudo usermod -aG docker ubuntu
+sudo systemctl enable docker
+sudo systemctl start docker
+echo "Docker installation complete."
+
+vi sonar.sh
+
+sudo apt-get install fontconfig openjdk-17-jre -y
+# Install SonarQube
+# Install unzip if not already installed
+sudo apt-get install unzip -y
+
+# Create a user for SonarQube
+sudo adduser --disabled-password --gecos 'SonarQube' sonarqube
+
+# Switch to SonarQube user and install SonarQube
+sudo su - sonarqube <<EOF
+# Fetch the latest SonarQube version from the official source
+SONARQUBE_VERSION=$(curl -s https://api.github.com/repos/SonarSource/sonarqube/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+SONARQUBE_URL="https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip"
+
+# Download and extract SonarQube
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.4.0.54424.zip
+unzip sonarqube-9.4.0.54424.zip
+chmod -R 755 /home/sonarqube/sonarqube-9.4.0.54424
+# Change ownership
+chown -R sonarqube:sonarqube /home/sonarqube/sonarqube-9.4.0.54424
+# Start SonarQube
+cd sonarqube-9.4.0.54424/bin/linux-x86-64/
+./sonar.sh start
+EOF
+
+echo "Installation complete. Jenkins, Docker, Maven, Git, and SonarQube are set up."
+echo "Sonarqube installation complete."
+
+
 -> You have to pass below varibles based on deploymet stage in Deployment, you will find deployment in pipeline when you click repository settings
 -> make sure same name in pipeline at deployment place and here
 
@@ -26,6 +87,8 @@ SMTP_PASS: Give App password from mail
 TO_EMAIL: Give to what do you want to send
 FROM_EMAIL: varmapotthuri4@gmail.com
 
+# With OWSAP Dependency-Check
+
 
 
 image: node:20
@@ -38,236 +101,7 @@ pipelines:
       # 1️⃣ Build, Test, and Scan (Test)
       # ------------------------------
       - step:
-          name: Build, Test, and Scan Source-Code
-          runs-on:
-            - self.hosted
-          deployment: test
-          caches:
-            - node
-          script:
-            # Print environment variables for debugging
-            - |
-              echo "SonarQube Host: ${SONAR_HOST_URL}"
-              echo "Project Key: ${SONAR_PROJECT_KEY}"
-              echo "Token Length: ${#SONARQUBE_TOKEN}"
-
-            # Free up disk space before running scans
-            - docker system prune -af || true
-            - docker volume prune -f || true
-            - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
-
-            # Install required dependencies
-            - apt-get update && apt-get install -y unzip jq mutt
-
-            # Install Node.js dependencies, build, and run tests
-            - npm install
-            - npm run build --if-present
-            - npm test --if-present
-
-            # Install SonarScanner
-            - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
-            - unzip sonar-scanner.zip
-            - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
-
-            # Verify SonarScanner installation
-            - sonar-scanner -v
-
-            # Run SonarQube analysis
-            - sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONARQUBE_TOKEN}"
-
-            # Check SonarQube Quality Gate
-            - |
-              echo "⏳ Checking SonarQube Quality Gate result..."
-              RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
-              SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
-
-              echo "SonarQube Quality Gate Status: $SONAR_STATUS"
-
-              if [ "$SONAR_STATUS" == "ERROR" ]; then
-                echo "❌ Quality Gate Failed! Skipping waiting stage and continuing pipeline."
-              else
-                MAX_ATTEMPTS=10
-                ATTEMPTS=0
-                while [ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]; do
-                  RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
-                  SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
-
-                  echo "Attempt $((ATTEMPTS + 1)) - SonarQube Quality Gate Status: $SONAR_STATUS"
-
-                  if [ "$SONAR_STATUS" == "OK" ]; then
-                    echo "✅ Quality Gate Passed!"
-                    break
-                  elif [ "$SONAR_STATUS" == "ERROR" ]; then
-                    echo "❌ Quality Gate Failed! Skipping wait and proceeding."
-                    break
-                  fi
-
-                  ATTEMPTS=$((ATTEMPTS + 1))
-                  sleep 10
-                done
-              fi
-              
-            # ------------------------------
-          # Send Email Notification with Attachments
-          # ------------------------------
-            - |
-              SMTP_SERVER="$SMTP_SERVER"
-              SMTP_PORT="$SMTP_PORT"
-              SMTP_USER="$SMTP_USER"
-              SMTP_PASS="$SMTP_PASS"
-              TO_EMAIL="$TO_EMAIL"
-              FROM_EMAIL="$FROM_EMAIL"
-              SUBJECT="🚀 Approval Required: Deploy to Production"
-              BODY="Hello Team,\n\nThe staging deployment for branch 'cms-dev' is complete.\n\n⚠️ Please approve the production deployment:\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your prompt approval."
-              
-              # Send the email with attachments using mutt
-            - |
-              echo -e "$BODY" | mutt -s "$SUBJECT" \
-                -e "set from=$FROM_EMAIL" \
-                -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" \
-                -- "$TO_EMAIL"
-
-            - echo "📧 Approval request for production deployment sent to ${TO_EMAIL}"
-
-            
-            
-            
-      
-      # ------------------------------
-      # 2️⃣ Approval for Production Deployment
-      # ------------------------------
-      - step:
-          name: Approval for Production Deployment
-          deployment: staging  # ✅ Must match staging step
-          trigger: manual
-          script:
-            - echo "⏳ Waiting for approval before deploying to production..."
-            - echo "✅ Please approve the deployment manually in Bitbucket Pipelines UI."
-        
-        
-      # ------------------------------
-      # 3️⃣ Deploy for Production Deployment
-      # ------------------------------
- 
-      - step:
-          name: Deploy to Production
-          runs-on:
-            - self.hosted
-          deployment: production
-          services:
-            - docker
-          script:
-            
-            # Free up disk space before running scans
-            - docker system prune -af || true
-            - docker volume prune -f || true
-            - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
-
-            # Install required dependencies
-            - apt-get update && apt-get install -y curl mutt awscli
-          
-          
-            # Configure AWS CLI with provided credentials
-            - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-            - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-            - aws configure set region "$AWS_REGION"
-            
-            # Install Trivy for security scanning
-            - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.39.0/trivy_0.39.0_Linux-64bit.deb -o trivy.deb
-            - dpkg -i trivy.deb
-
-            # Set custom Trivy cache directory to prevent "no space left on device" error
-            - export TRIVY_CACHE_DIR=/tmp/trivy-cache
-            - mkdir -p $TRIVY_CACHE_DIR
-
-            # Run Trivy filesystem scan for vulnerabilities in the project files
-            - trivy fs --cache-dir $TRIVY_CACHE_DIR --format table -o fs-report.html . 
-            
-            # Build Docker image for the project
-            - docker build -t "$DOCKER_IMAGE_NAME" .
-
-            # Run Trivy image scan on the Docker image
-            - trivy image --cache-dir $TRIVY_CACHE_DIR --format table -o image.html "$DOCKER_IMAGE_NAME"
-            
-            
-            
-            # ------------------------------
-            # ECR Repository Management
-            # ------------------------------
-            # Check if ECR repository exists, if not, create it
-            - |
-              aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" || \
-              aws ecr create-repository --repository-name "$ECR_REPO_NAME" --region "$AWS_REGION"
-
-            # Log in to AWS ECR with Docker credentials
-            - |
-              aws ecr get-login-password --region "$AWS_REGION" | \
-              docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
-              
-
-            # Tag the Docker image with the repository name
-            - |
-              docker tag "$DOCKER_IMAGE_NAME:latest" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
-
-            # Push the Docker image to ECR
-            - |
-              docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
-
-            # Clean up unused Docker images and volumes
-            - |
-              docker system prune -af || true
-              docker volume prune -f || true
-              
-            # Collect artifacts for later inspection (e.g., security scans)
-            - mkdir -p artifacts
-            - cp fs-report.html artifacts/
-            - cp image.html artifacts/
-            - tar -cvf artifacts.tar artifacts/
-            
-            
-            # ------------------------------
-            # Send Email Notification with Attachments
-            # ------------------------------
-            - |
-              SMTP_SERVER="$SMTP_SERVER"
-              SMTP_PORT="$SMTP_PORT"
-              SMTP_USER="$SMTP_USER"
-              SMTP_PASS="$SMTP_PASS"
-              TO_EMAIL="$TO_EMAIL"
-              FROM_EMAIL="$FROM_EMAIL"
-              SUBJECT="🚀 Production Deployment Complete"
-              BODY="Hello Team,\n\nThe Production deployment for branch 'cms-dev' has been successfully completed and the production deployment is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
-              
-              # Send the email with attachments using mutt
-            - |
-              echo -e "$BODY" | mutt -s "$SUBJECT" \
-                -e "set from=$FROM_EMAIL" \
-                -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" \
-                -a "artifacts/fs-report.html" \
-                -a "artifacts/image.html" \
-                -- "$TO_EMAIL"
-
-            - echo "📧 Production deployment notification email with attachments sent to ${TO_EMAIL}"
-            
-
-          artifacts:
-            - artifacts/*  
-
-
-
-
-With OWSAP Dependency-Check
-image: node:20
-
-
-pipelines:
-  branches:
-    cms-dev:
-      # ------------------------------
-      # 1️⃣ Build, Test, and Scan (Test)
-      # ------------------------------
-      - step:
-          name: Build, Test, and Scan Source-Code
+          name: Build, Test, and Scan Source-Code (Production)
           runs-on:
             - self.hosted
           deployment: test
@@ -500,6 +334,237 @@ pipelines:
 
           artifacts:
             - artifacts/*  
+
+
+
+
+
+
+
+# Without OWSAP Dependency-Check
+
+
+image: node:20
+
+
+pipelines:
+  branches:
+    cms-dev:
+      # ------------------------------
+      # 1️⃣ Build, Test, and Scan (Test)
+      # ------------------------------
+      - step:
+          name: Build, Test, and Scan Source-Code (Production)
+          runs-on:
+            - self.hosted
+          deployment: test
+          caches:
+            - node
+          script:
+            # Print environment variables for debugging
+            - |
+              echo "SonarQube Host: ${SONAR_HOST_URL}"
+              echo "Project Key: ${SONAR_PROJECT_KEY}"
+              echo "Token Length: ${#SONARQUBE_TOKEN}"
+
+            # Free up disk space before running scans
+            - docker system prune -af || true
+            - docker volume prune -f || true
+            - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
+
+            # Install required dependencies
+            - apt-get update && apt-get install -y unzip jq mutt
+
+            # Install Node.js dependencies, build, and run tests
+            - npm install
+            - npm run build --if-present
+            - npm test --if-present
+
+            # Install SonarScanner
+            - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+            - unzip sonar-scanner.zip
+            - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
+
+            # Verify SonarScanner installation
+            - sonar-scanner -v
+
+            # Run SonarQube analysis
+            - sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONARQUBE_TOKEN}"
+
+            # Check SonarQube Quality Gate
+            - |
+              echo "⏳ Checking SonarQube Quality Gate result..."
+              RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
+              SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+
+              echo "SonarQube Quality Gate Status: $SONAR_STATUS"
+
+              if [ "$SONAR_STATUS" == "ERROR" ]; then
+                echo "❌ Quality Gate Failed! Skipping waiting stage and continuing pipeline."
+              else
+                MAX_ATTEMPTS=10
+                ATTEMPTS=0
+                while [ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]; do
+                  RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
+                  SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+
+                  echo "Attempt $((ATTEMPTS + 1)) - SonarQube Quality Gate Status: $SONAR_STATUS"
+
+                  if [ "$SONAR_STATUS" == "OK" ]; then
+                    echo "✅ Quality Gate Passed!"
+                    break
+                  elif [ "$SONAR_STATUS" == "ERROR" ]; then
+                    echo "❌ Quality Gate Failed! Skipping wait and proceeding."
+                    break
+                  fi
+
+                  ATTEMPTS=$((ATTEMPTS + 1))
+                  sleep 10
+                done
+              fi
+              
+            # ------------------------------
+          # Send Email Notification with Attachments
+          # ------------------------------
+            - |
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="$SMTP_PORT"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="🚀 Approval Required: Deploy to Production"
+              BODY="Hello Team,\n\nThe staging deployment for branch 'cms-dev' is complete.\n\n⚠️ Please approve the production deployment:\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your prompt approval."
+              
+              # Send the email with attachments using mutt
+            - |
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=$FROM_EMAIL" \
+                -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" \
+                -- "$TO_EMAIL"
+
+            - echo "📧 Approval request for production deployment sent to ${TO_EMAIL}"
+
             
             
             
+      
+      # ------------------------------
+      # 2️⃣ Approval for Production Deployment
+      # ------------------------------
+      - step:
+          name: Approval for Production Deployment
+          deployment: staging  # ✅ Must match staging step
+          trigger: manual
+          script:
+            - echo "⏳ Waiting for approval before deploying to production..."
+            - echo "✅ Please approve the deployment manually in Bitbucket Pipelines UI."
+        
+        
+      # ------------------------------
+      # 3️⃣ Deploy for Production Deployment
+      # ------------------------------
+ 
+      - step:
+          name: Deploy to Production
+          runs-on:
+            - self.hosted
+          deployment: production
+          services:
+            - docker
+          script:
+            
+            # Free up disk space before running scans
+            - docker system prune -af || true
+            - docker volume prune -f || true
+            - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
+
+            # Install required dependencies
+            - apt-get update && apt-get install -y curl mutt awscli
+          
+          
+            # Configure AWS CLI with provided credentials
+            - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+            - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+            - aws configure set region "$AWS_REGION"
+            
+            # Install Trivy for security scanning
+            - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.39.0/trivy_0.39.0_Linux-64bit.deb -o trivy.deb
+            - dpkg -i trivy.deb
+
+            # Set custom Trivy cache directory to prevent "no space left on device" error
+            - export TRIVY_CACHE_DIR=/tmp/trivy-cache
+            - mkdir -p $TRIVY_CACHE_DIR
+
+            # Run Trivy filesystem scan for vulnerabilities in the project files
+            - trivy fs --cache-dir $TRIVY_CACHE_DIR --format table -o fs-report.html . 
+            
+            # Build Docker image for the project
+            - docker build -t "$DOCKER_IMAGE_NAME" .
+
+            # Run Trivy image scan on the Docker image
+            - trivy image --cache-dir $TRIVY_CACHE_DIR --format table -o image.html "$DOCKER_IMAGE_NAME"
+            
+            
+            
+            # ------------------------------
+            # ECR Repository Management
+            # ------------------------------
+            # Check if ECR repository exists, if not, create it
+            - |
+              aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" || \
+              aws ecr create-repository --repository-name "$ECR_REPO_NAME" --region "$AWS_REGION"
+
+            # Log in to AWS ECR with Docker credentials
+            - |
+              aws ecr get-login-password --region "$AWS_REGION" | \
+              docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+              
+
+            # Tag the Docker image with the repository name
+            - |
+              docker tag "$DOCKER_IMAGE_NAME:latest" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
+
+            # Push the Docker image to ECR
+            - |
+              docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
+
+            # Clean up unused Docker images and volumes
+            - |
+              docker system prune -af || true
+              docker volume prune -f || true
+              
+            # Collect artifacts for later inspection (e.g., security scans)
+            - mkdir -p artifacts
+            - cp fs-report.html artifacts/
+            - cp image.html artifacts/
+            - tar -cvf artifacts.tar artifacts/
+            
+            
+            # ------------------------------
+            # Send Email Notification with Attachments
+            # ------------------------------
+            - |
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="$SMTP_PORT"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="🚀 Production Deployment Complete"
+              BODY="Hello Team,\n\nThe Production deployment for branch 'cms-dev' has been successfully completed and the production deployment is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
+              
+              # Send the email with attachments using mutt
+            - |
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=$FROM_EMAIL" \
+                -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" \
+                -a "artifacts/fs-report.html" \
+                -a "artifacts/image.html" \
+                -- "$TO_EMAIL"
+
+            - echo "📧 Production deployment notification email with attachments sent to ${TO_EMAIL}"
+            
+
+          artifacts:
+            - artifacts/*  

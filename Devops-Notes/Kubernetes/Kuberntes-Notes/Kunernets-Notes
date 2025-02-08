@@ -26,6 +26,10 @@
 # What is Docker-swaram
 -> Docker Swarm is a container orchestration tool for clustering and scheduling Docker containers.
 
+Note:Docker swarm initialise all the components like apiserver, etcd  in the OS 
+But kubernetes initialize all components as a container
+So whenever a component goes down then in docker swarm the whole Master node goes down but in k8s if any components goes down a new container recreated with all components
+
 # What is the difference between Docker-swaram and kubernets
  # Docker swarm
 	-> Easy to start the cluster
@@ -289,6 +293,16 @@ Note: If you delete the namespace all components or resource or objects also del
 -> Containers will grouped as a pod in order to increase the intelligence of resources
 -> Pod will run single container and multi container
 -> Pod will execute the nodes, one node will execute the multiple pods
+
+
+Note:Whenever we go give a command like kubectl run then fst reqst goes to API server 
+Api server --> talk to all components of k8s talk to Scheduler to schedule a pod
+scheduler sees which worker node has resources to schedule that pod and give that info to API server 
+Api server again talk to kubelet to create a pod
+Kubelet cretes pod and ask container runtime to create container after everything done kubeproxy take care of ipadress
+
+Kubelet gives all this info to API server,
+Api server stores this info in etcd
 
 # Pod Lifecycle
 -> We will create the pod using manifest file(yml) 

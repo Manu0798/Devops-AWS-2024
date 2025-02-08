@@ -1,0 +1,233 @@
+# Dev Script without OWSAP Dependency Check. If you want you can add 
+-> Go to the Bitbucket, click on repositories, clike setting right side, click workspace settings, click workspace runner at left side bottom
+-> Click the linux shell, clikc next, it will give some commands you will execute that commands in your server.
+-> You will pass variables in repository variables, you will find option when you clikc repository settings.
+
+-> Install the below tools to run the script like java, docker, npm, trivy, awscli
+
+vi docker.sh
+
+# Install Docker
+# Add Docker's official GPG key
+sudo apt-get update -y
+sudo apt-get install ca-certificates curl -y
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo chmod 666 /var/run/docker.sock
+sudo usermod -aG docker jenkins
+sudo usermod -aG docker ubuntu
+sudo systemctl enable docker
+sudo systemctl start docker
+echo "Docker installation complete."
+
+
+vi trivy.sh
+# Install Trivy-Scanner
+sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update
+sudo apt-get install trivy
+echo "Trivy installation complete."
+
+vi node.sh
+sudo apt install npm -y
+
+vi mutt.sh
+# For mail
+sudo apt-get update && sudo apt-get install -y mutt
+
+vi awscli.sh
+# Install AWS_CLI
+sudo apt-get update -y
+sudo apt-get install -y curl unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+
+vi sonar.sh
+sudo apt-get install fontconfig openjdk-17-jre -y
+# Install SonarQube
+# Install unzip if not already installed
+sudo apt-get install unzip -y
+
+# Create a user for SonarQube
+sudo adduser --disabled-password --gecos 'SonarQube' sonarqube
+
+# Switch to SonarQube user and install SonarQube
+sudo su - sonarqube <<EOF
+# Fetch the latest SonarQube version from the official source
+SONARQUBE_VERSION=$(curl -s https://api.github.com/repos/SonarSource/sonarqube/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+SONARQUBE_URL="https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip"
+
+# Download and extract SonarQube
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.4.0.54424.zip
+unzip sonarqube-9.4.0.54424.zip
+chmod -R 755 /home/sonarqube/sonarqube-9.4.0.54424
+# Change ownership
+chown -R sonarqube:sonarqube /home/sonarqube/sonarqube-9.4.0.54424
+# Start SonarQube
+cd sonarqube-9.4.0.54424/bin/linux-x86-64/
+./sonar.sh start
+EOF
+
+echo "Installation complete. Jenkins, Docker, Maven, Git, and SonarQube are set up."
+echo "Sonarqube installation complete."
+
+-> You have to pass below varibles in repository varibles, you will find repo varibles when you click repository settings
+
+SONAR_HOST_URL
+SONAR_PROJECT_KEY
+SONARQUBE_TOKEN
+DOCKER_IMAGE_NAME: dev-backend-image
+CONTAINER_NAME:
+SMTP_SERVER:  smtp.gmail.com, smtp.office365.com  --> take based on requirment
+SMTP_PORT: 587
+SMTP_USER: varmapotthuri4@gmail.com
+SMTP_PASS: Give App password from mail
+TO_EMAIL: Give to what do you want to send
+FROM_EMAIL: varmapotthuri4@gmail.com
+
+
+
+pipelines:
+  default:
+    - step:
+        runs-on:
+          - self.hosted
+          - linux.shell
+        script:
+            # Print environment variables for debugging
+            - |
+              echo "SonarQube Host: ${SONAR_HOST_URL}"
+              echo "Project Key: ${SONAR_PROJECT_KEY}"
+              echo "Token Length: ${#SONARQUBE_TOKEN}"
+
+            # Free up disk space before running scans
+            - docker system prune -af || true
+            - docker volume prune -f || true
+            - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
+
+            # Install required dependencies
+            - export DOCKER_HOST="unix:///var/run/docker.sock"  # Ensure correct Docker socket
+            - apt-get update && apt-get install -y unzip jq mutt
+
+            # Install Node.js dependencies, build, and run tests
+            - npm install
+            - npm run build --if-present
+            - npm test --if-present
+
+            # Run Trivy filesystem scan for vulnerabilities in the project files
+            - trivy fs --debug --format table -o fs-report.html .
+
+            # Install SonarScanner
+            - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+            - unzip sonar-scanner.zip
+            - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
+
+            # Verify SonarScanner installation
+            - sonar-scanner -v
+
+            # Run SonarQube analysis
+            - sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONARQUBE_TOKEN}"
+
+            # Check SonarQube Quality Gate
+            - |
+              echo "⏳ Checking SonarQube Quality Gate result..."
+              RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
+              SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+
+              echo "SonarQube Quality Gate Status: $SONAR_STATUS"
+
+              if [ "$SONAR_STATUS" == "ERROR" ]; then
+                echo "❌ Quality Gate Failed! Skipping waiting stage and continuing pipeline."
+              else
+                MAX_ATTEMPTS=10
+                ATTEMPTS=0
+                while [ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]; do
+                  RESPONSE=$(curl -s -u "${SONARQUBE_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
+                  SONAR_STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+
+                  echo "Attempt $((ATTEMPTS + 1)) - SonarQube Quality Gate Status: $SONAR_STATUS"
+
+                  if [ "$SONAR_STATUS" == "OK" ]; then
+                    echo "✅ Quality Gate Passed!"
+                    break
+                  elif [ "$SONAR_STATUS" == "ERROR" ]; then
+                    echo "❌ Quality Gate Failed! Skipping wait and proceeding."
+                    break
+                  fi
+
+                  ATTEMPTS=$((ATTEMPTS + 1))
+                  sleep 10
+                done
+              fi
+              
+            # Clean up previous Docker images and volumes
+            - |
+              docker ps -aq --filter "name=${CONTAINER_NAME}" | xargs -r docker stop || true
+              docker ps -aq --filter "name=${CONTAINER_NAME}" | xargs -r docker rm || true
+              docker images --filter "reference=$DOCKER_IMAGE_NAME*" -q | xargs -r docker rmi -f || true
+              docker builder prune -f || true
+              docker container prune -f || true
+              docker network prune -f || true
+
+            # Build Docker image for the project
+            - docker build -t "$DOCKER_IMAGE_NAME" .
+
+            # Run Trivy image scan on the Docker image
+            - trivy image --cache-dir "$TRIVY_CACHE_DIR" --format table -o image.html "$DOCKER_IMAGE_NAME"
+            
+            # Create the container for testing
+            - docker run -itd --name "$CONTAINER_NAME" -p 8089:8081 "$DOCKER_IMAGE_NAME"
+            
+
+            # Clean up unused Docker images and volumes
+            - |
+              docker system prune -af || true
+              docker volume prune -f || true
+
+            # Collect artifacts for later inspection (e.g., security scans)
+            - mkdir -p artifacts
+            - cp fs-report.html artifacts/
+            - cp image.html artifacts/
+            - tar -cvf artifacts.tar artifacts/
+            
+            
+            # ------------------------------
+            # Send Email Notification with Attachments
+            # ------------------------------
+            - |
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="$SMTP_PORT"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="🚀 Dev Deployment Complete"
+              BODY="Hello Team,\n\nThe Dev deployment for branch 'cms-dev' has been successfully completed and the Dev deployment is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
+              
+              # Send the email with attachments using mutt
+            - |
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=$FROM_EMAIL" \
+                -e "set smtp_url=smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT" \
+                -a "artifacts/fs-report.html" \
+                -a "artifacts/image.html" \
+                -- "$TO_EMAIL"
+
+            - echo "📧 Dev deployment notification email with attachments sent to ${TO_EMAIL}"
+            
+        artifacts:
+          - artifacts/*  

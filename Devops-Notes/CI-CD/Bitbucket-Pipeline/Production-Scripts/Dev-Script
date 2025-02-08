@@ -1,4 +1,4 @@
-# Dev Script without OWSAP Dependency Check. If you want you can add 
+# Dev Script 
 -> Go to the Bitbucket, click on repositories, clike setting right side, click workspace settings, click workspace runner at left side bottom
 -> Click the linux shell, clikc next, it will give some commands you will execute that commands in your server.
 -> You will pass variables in repository variables, you will find option when you clikc repository settings.
@@ -100,6 +100,7 @@ TO_EMAIL: Give to what do you want to send
 FROM_EMAIL: varmapotthuri4@gmail.com
 
 
+# Exexute below script without OWSAP Dependency check 
 
 pipelines:
   default:

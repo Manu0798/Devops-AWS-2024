@@ -102,7 +102,7 @@ pipelines:
       # 1️⃣ Build, Test, and Scan (Test)
       # ------------------------------
       - step:
-          name: Build, Test, and Scan Source-Code
+          name: Build, Test, and Scan Source-Code (Stagging)
           runs-on:
             - self.hosted
           deployment: test
@@ -354,7 +354,7 @@ pipelines:
       # 1️⃣ Build, Test, and Scan (Test)
       # ------------------------------
       - step:
-          name: Build, Test, and Scan Source-Code
+          name: Build, Test, and Scan Source-Code (Stagging)
           runs-on:
             - self.hosted
           deployment: test

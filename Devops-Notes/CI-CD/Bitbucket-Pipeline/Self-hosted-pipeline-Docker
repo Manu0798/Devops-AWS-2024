@@ -584,3 +584,4 @@ pipelines:
                 -- "$TO_EMAIL"
 
             - echo "📧 uat deployment notification email with attachments sent to ${TO_EMAIL}"
+

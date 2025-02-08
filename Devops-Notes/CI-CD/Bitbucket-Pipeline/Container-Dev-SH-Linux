@@ -1,5 +1,6 @@
 -> Go to the Bitbucket, click on repositories, clike setting right side, click workspace settings, click workspace runner at left side bottom
 -> Click the linux shell, clikc next, it will give some commands you will execute that commands in your server.
+-> You will pass variables in repository variables, you will find option when you clikc repository settings.
 
 -> Install the below tools to run the script like java, docker, npm, trivy, awscli
 

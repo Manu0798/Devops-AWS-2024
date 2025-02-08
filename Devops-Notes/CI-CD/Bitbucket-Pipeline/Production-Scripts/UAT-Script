@@ -177,8 +177,8 @@ pipelines:
               SMTP_PASS="$SMTP_PASS"
               TO_EMAIL="$TO_EMAIL"
               FROM_EMAIL="$FROM_EMAIL"
-              SUBJECT="🚀 Approval Required: Deploy to Stagging"
-              BODY="Hello Team,\n\nThe uat deployment for branch 'cms-dev' is complete.\n\n⚠️ Please approve the Stagging deployment:\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your prompt approval."
+              SUBJECT="🚀 Stagging Deployment Complete"
+              BODY="Hello Team,\n\nThe uat deployment for branch 'cms-dev' has been successfully completed and the uat deployment is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
               
               # Send the email with attachments using mutt
             - |

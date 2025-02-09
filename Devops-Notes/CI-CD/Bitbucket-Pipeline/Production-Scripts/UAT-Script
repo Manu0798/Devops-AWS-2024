@@ -142,6 +142,14 @@ pipelines:
             # Run Trivy filesystem scan for vulnerabilities in the project files
             - trivy fs --cache-dir $TRIVY_CACHE_DIR --format table -o fs-report.html .
 
+            # Install OWASP Dependency-Check
+            - wget https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.1/dependency-check-11.1.1-release.zip
+            - unzip dependency-check-11.1.1-release.zip
+
+            # Run Dependency-Check with NVD API Key
+            - ./dependency-check/bin/dependency-check.sh --project "NodeJS App" --scan . --out ./dependency-check-report --format XML --nvdApiKey="$NVD_API_KEY"
+
+
             # Install SonarScanner
             - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
             - unzip sonar-scanner.zip
@@ -185,12 +193,7 @@ pipelines:
                 done
               fi
 
-            # Install OWASP Dependency-Check
-            - wget https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.1/dependency-check-11.1.1-release.zip
-            - unzip dependency-check-11.1.1-release.zip
-
-            # Run Dependency-Check with NVD API Key
-            - ./dependency-check/bin/dependency-check.sh --project "NodeJS App" --scan . --out ./dependency-check-report --format XML --nvdApiKey="$NVD_API_KEY"
+            
 
             # Build Docker image for the project
             - docker build -t "$DOCKER_IMAGE_NAME" .

@@ -39,6 +39,13 @@
 # What Concurrnet requests
 Concurrent requests refer to the number of requests a server or application can handle simultaneously at any given moment. When multiple users or systems interact with a service simultaneously, each interaction generates a request.
 
+A Concurrent Request is a request that is being processed at the same time as other requests by a server or application.
+
+In simple terms:
+
+If 10 users send requests to a server at the same time, and the server starts processing all of them simultaneously, then there are 10 concurrent requests.
+If the server processes one request at a time (sequentially), then there are zero concurrent requests (only one active request at a time).
+
 
 
 

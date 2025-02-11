@@ -61,3 +61,8 @@ you will enter into containter even below below
 45) docker-compose images --> To see the images
 46) docker-compose -f <filename> up --> To run the specify file
 47) docker-compose -f <filename> down --> To down the specify file
+
+
+
+docker stats
+docker ps -s

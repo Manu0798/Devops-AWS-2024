@@ -178,3 +178,18 @@ If you want to assign any repositories project to particular person and daily ge
 
 
 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
+
+
+Solution 1: Clear Cached Credentials
+Since you're on Windows using Git Bash, you can clear the cached GitHub credentials as follows:
+
+Open Credential Manager:
+
+Go to Control Panel → Credential Manager → Windows Credentials.
+Look for any entries related to github.com.
+Remove GitHub Credentials:
+
+Delete any stored credentials related to github.com. This will force Git to ask for new credentials the next time you push.
+Retry Pushing:
+
+git push -u origin main

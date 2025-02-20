@@ -377,3 +377,10 @@ db.couredetails.remove({ name: 'VARMA' })
 -> https://youtu.be/kWhIwlNkZm4?si=gOlZRxJf29PTVFr3
 
 
+# How to import data from local to mongodb
+-> We can able to import by using above commands, This is the another method
+-> you have to install mongodump tools by using below 
+-> https://www.mongodb.com/try/download/database-tools
+-> Set the mongodump in system env variables
+-> mongodump --version
+-> mongoimport --db <database name> --collection <give the collection name> --file D:\mongodb_backup\sampledata.json

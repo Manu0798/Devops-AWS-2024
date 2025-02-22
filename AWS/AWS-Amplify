@@ -39,3 +39,64 @@ DNS Propagation Delay: DNS updates can take up to 48 hours to propagate globally
 SSL Errors: Ensure that the domain name is properly verified and DNS settings are correct.
 Caching Issues: Clear browser cache if you’re not seeing updates.
 With these steps, your domain frissly.com will be properly attached to AWS Amplify, and your application will be live under your custom domain! 🎉
+
+
+
+
+
+
+
+To set up a GoDaddy domain name for an AWS Amplify application, follow these steps:
+
+Step 1: Add a Custom Domain in AWS Amplify
+Open AWS Amplify Console
+
+Go to the AWS Amplify Console.
+Select your Amplify App.
+Add a Custom Domain
+
+Navigate to App settings > Domain management.
+Click Add domain.
+Enter your GoDaddy domain name (e.g., example.com).
+Click Configure domain.
+Select Subdomains (Optional)
+
+Choose the subdomains you want to use (e.g., www.example.com, api.example.com).
+Click Save.
+Step 2: Update DNS Records in GoDaddy
+Log in to GoDaddy
+
+Go to GoDaddy Domain Manager.
+Find Your Domain
+
+Click on your domain name.
+Go to DNS Management.
+Add Required DNS Records
+AWS Amplify provides CNAME and A record details for domain verification. You need to add them in GoDaddy.
+
+CNAME Record for Subdomains (www, etc.):
+
+Type: CNAME
+Host: www (or your subdomain)
+Value: The CNAME value provided by AWS Amplify.
+A Record for Root Domain (example.com):
+
+Type: A
+Host: @
+Value: The IP addresses provided by AWS Amplify.
+Alternate (if AWS provides an ALIAS Record):
+
+In GoDaddy, you might need to use Forwarding instead of an A record for root domains.
+Go to Forwarding and redirect example.com to www.example.com.
+Step 3: Verify the Domain in AWS Amplify
+Return to AWS Amplify Console.
+Click Verify or Save and Deploy.
+Wait for AWS to detect the new DNS settings (this may take a few minutes to a few hours).
+Step 4: Enable HTTPS (SSL)
+AWS Amplify automatically provisions an SSL certificate.
+Once the domain is verified, it will be secured with HTTPS.
+Troubleshooting Tips
+Propagation Delay: DNS changes can take up to 24-48 hours.
+Clear Cache: Try clearing your browser cache if the changes don’t reflect.
+Check GoDaddy DNS Settings: Ensure that no conflicting records exist.
+Let me know if you need more help! 🚀

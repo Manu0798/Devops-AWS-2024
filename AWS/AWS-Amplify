@@ -100,3 +100,28 @@ Propagation Delay: DNS changes can take up to 24-48 hours.
 Clear Cache: Try clearing your browser cache if the changes don’t reflect.
 Check GoDaddy DNS Settings: Ensure that no conflicting records exist.
 Let me know if you need more help! 🚀
+
+
+
+
+
+
+
+
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm install
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*

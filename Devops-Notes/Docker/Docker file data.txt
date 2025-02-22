@@ -174,3 +174,27 @@ EXPOSE 80
 
 # Start Nginx when the container is run
 CMD ["nginx", "-g", "daemon off;"]
+
+
+# Delivery App
+FROM node:18
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files and install dependencies first for better caching
+COPY package.json package-lock.json ./
+RUN npm install --legacy-peer-deps  # Ensures compatibility with all dependencies
+
+# Ensure Jest is installed globally to avoid missing dependency issues
+RUN npm install -g jest
+
+# Copy the rest of the application files
+COPY . .
+
+# Expose the necessary port (adjust if needed)
+EXPOSE 3000
+
+# Start the application (adjust the start command if necessary)
+CMD ["npm", "start"]
+

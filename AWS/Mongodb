@@ -369,7 +369,7 @@ db.couredetails.remove({ name: 'VARMA' })
 -> After create the cluster and database in mongoDB. Click the network access at left side, click the VPC peering,
 -> Provide the details which appearing there, like accountid, VPC id, VPC CICD, enable Ip whitlist, Choose region, 
 -> After set up the above steps, go to VPC and clikc peering connecton and accept the request, later it will take some time to get approval
--> There after go to the click route table of private subnets, click edit, add the peering connection to that route table, give peering like ip, choose peering, save
+-> There after go to the click route table of private subnets, click edit, add the peering connection to that route table, give Atlas CIDR (VPC Region) ip at place, choose peering, save
 
 # You will watch below video to get more info
 -> https://youtu.be/b78Pz0gWqX4?si=8KIJjA7-Bw0zufn_

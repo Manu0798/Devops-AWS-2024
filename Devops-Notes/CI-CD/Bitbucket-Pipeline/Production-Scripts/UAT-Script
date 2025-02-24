@@ -589,3 +589,24 @@ pipelines:
 
           artifacts:
             - artifacts/*
+
+
+# ECR you will use below if above is not work
+
+            # ------------------------------
+            # 🛢️ ECR Repository Management (Fixes Invalid Name Issue)
+            # ------------------------------
+            - |
+              # Fix ECR repo name issue (trim spaces, remove newlines, ensure valid name)
+              export ECR_REPO_NAME=$(echo "$ECR_REPO_NAME" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]//g')
+
+              echo "✅ Final ECR Repository Name: '${ECR_REPO_NAME}'"
+
+              # Check if ECR repository exists, if not, create it
+              echo "🔍 Checking if ECR repository exists..."
+              if ! aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" --region "$AWS_REGION" > /dev/null 2>&1; then
+                echo "🚀 Creating ECR repository: $ECR_REPO_NAME"
+                aws ecr create-repository --repository-name "$ECR_REPO_NAME" --region "$AWS_REGION"
+              else
+                echo "✅ ECR repository already exists."
+              fi

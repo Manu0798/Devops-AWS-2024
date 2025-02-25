@@ -102,6 +102,15 @@ Check GoDaddy DNS Settings: Ensure that no conflicting records exist.
 Let me know if you need more help! 🚀
 
 
+# How to attach the aws amplify URL to domain name in route53
+-> After you deploy the application, go to the custom domains, click add domain, enter the domain name, Click manual configuration
+-> Enable this "Setup redirect from https://origina.ni to https://www.origina.ni"
+-> Click "Amplify managed certificate"
+-> It will give some hostnames, and URL, you will add those three hostnames in route 53
+-> Go to route53, clikc hostname, click the domain name, create the record, give hostname at record name place, choose type, and give URL
+-> After add three hostnames come to Amplify it will take some time create SSL and Active the domain name.
+
+
 
 
 

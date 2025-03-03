@@ -819,3 +819,17 @@ pipelines:
           artifacts:
             - artifacts/*
 
+
+
+
+# without encrypted password of mail
+ # Send email using Mutt
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=\"$FROM_EMAIL\"" \
+                -e "set smtp_url=\"smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT/\"" \
+                -e "set smtp_pass=\"$SMTP_PASS\"" \
+                -e "set ssl_starttls=yes" \
+                -e "set ssl_force_tls=yes" \
+                -a "artifacts/fs-report.html" \
+                -a "artifacts/image.html" \
+                -- "$TO_EMAIL"

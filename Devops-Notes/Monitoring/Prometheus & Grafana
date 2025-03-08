@@ -1,0 +1,119 @@
+# What is Prometheus [ It is a monitoring tool]
+-> Prometheus is an open-source system monitoring and alerting toolkit.
+-> Prometheus collect and store its metrics as time series data
+-> Prometheus out-of-the box monitoring capabilities for the K8S container orchestration platform
+ 
+Note:Prometheus will collect the data and Prometheus will give the data to grafana and grafana analysis the data and
+   generate the charts and graphs for users
+
+# What is Grafana [It is a visulation tool]
+-> Grafana is database analysis and monitoring tool
+-> Grafana is multiplatform open source analytics and interactive visualiization web application
+-> Grafana will connect with prometheus with data source 
+
+# In prometheus we have two exporters 
+-> Node Exporter  --> It is used for collect the metrics from server
+-> Blackbox Exporter  --> It is used for collect the metrics from application
+
+
+# How to install Prometheus 
+-> Go to this https://prometheus.io/download/
+-> After we have to install node exporter for monitoring the server
+-> you will find node export link if you scroll down 
+-> wget https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz
+-> tar -xvf node_exporter-1.9.0.linux-amd64.tar.gz
+-> rm node_exporter-1.9.0.linux-amd64.tar.gz
+-> cd node_exporter-1.9.0.linux-amd64/
+-> ./node_exporter
+-> After start the node exporter, you will copy in web browser along with ip and port number, default port is 9100
+-> If you want to run in backgroung  
+-> ./node_exporter &
+
+-> You will install blackbox for monitoring the application
+-> wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.26.0/blackbox_exporter-0.26.0.linux-amd64.tar.gz
+-> tar -xvf blackbox_exporter-0.26.0.linux-amd64.tar.gz
+-> rm blackbox_exporter-0.26.0.linux-amd64.tar.gz
+-> cd blackbox_exporter-0.26.0.linux-amd64/
+-> ./blackbox_exporter
+-> -> After start the blackbox_exporter, you will copy in web browser along with ip and port number, default port is 9115
+
+-> you will install prometheus
+-> you will find below prometheus link in prometheus offical website
+-> wget https://github.com/prometheus/prometheus/releases/download/v3.2.1/prometheus-3.2.1.linux-amd64.tar.gz
+-> tar -xvf prometheus-3.2.1.linux-amd64.tar.gz
+-> rm prometheus-3.2.1.linux-amd64.tar.gz
+-> cd prometheus-3.2.1.linux-amd64/
+-> vi prometheus.yml
+-> Delete the existing data and copy below data to modify the node_exporter and black box exporter ips and portnumber
+-> If you not understand to setup this you will watch video in below link
+
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: null
+rule_files: null
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+  - job_name: node_exporter
+    static_configs:
+      - targets:
+          - 13.234.110.96:9100
+  - job_name: blackbox
+    metrics_path: /probe
+    params:
+      module:
+        - http_2xx
+    static_configs:
+      - targets:
+          - https://azqhtuemps.ap-south-1.awsapprunner.com
+          - https://main.d36lvdsr3jc805.amplifyapp.com
+          - http://13.234.110.96:3002
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: __param_target
+      - source_labels:
+          - __param_target
+        target_label: instance
+      - target_label: __address__
+        replacement: 13.234.110.96:9115
+
+-> ./prometheus
+-> After start the prometheus, you will copy in web browser along with ip and port number, default port is 9090
+-> Click on status and select target
+
+-> After setup prometheus you will grafana for visulation to create charts, graphs
+-> Install grafana 
+-> https://grafana.com/grafana/download
+-> sudo apt-get install -y adduser libfontconfig1 musl
+-> wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.5.2_amd64.deb
+-> sudo dpkg -i grafana-enterprise_11.5.2_amd64.deb
+-> sudo /bin/systemctl daemon-reload
+-> sudo /bin/systemctl enable grafana-server
+-> sudo /bin/systemctl start grafana-server
+-> After that copy the ip paste it in web browser along with port number 3000 
+-> Later click on connection, search the prometheus, click add new database, copy the prometheus URL and click save and test
+-> Later you will import the dash board for that use below links for node exporter dash board
+-> search node exporter grafana dashboard, click first one
+-> https://grafana.com/grafana/dashboards/1860-node-exporter-full/
+-> Copy the id
+-> Go to the grafana, click dashboard, clikc new, choose import, paste id, click load, choose prometheus database, click import
+-> Later you will add the blackbox dashboard, go to browser search blackbox exporter grafana dashboard
+-> https://grafana.com/grafana/dashboards/7587-prometheus-blackbox-exporter/
+-> Copy the id
+-> Go to the grafana, click dashboard, clikc new, choose import, paste id, click load, choose prometheus database, click import
+
+
+-> https://youtu.be/n7WWme--U2I?si=AFc2M6MrJpGk95V1   --> video link
+-> https://github.com/prometheus/blackbox_exporter    --> TO get blackbox exporter data
+
+
+
+

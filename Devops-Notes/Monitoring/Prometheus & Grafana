@@ -115,5 +115,10 @@ scrape_configs:
 -> https://github.com/prometheus/blackbox_exporter    --> TO get blackbox exporter data
 
 
+ps aux | grep prometheus
+sudo kill -9 <PID>
+nohup ./prometheus &
+
+
 
 

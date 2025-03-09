@@ -1,0 +1,39 @@
+1. Overview of ELK Stack 
+The ELK Stack consists of: 
+•	Elasticsearch → Stores and indexes logs. 
+•	Logstash → Processes and transforms logs before storing them in Elasticsearch. 
+•	Kibana → Provides visualization and analysis of logs. 
+•	Filebeat → Forwards logs from the application to Logstash.
+
+
+# Install & Configure Elasticsearch (ELK Server) 
+-> sudo apt update && sudo apt install openjdk-17-jre-headless -y 
+# 1. Download and add the GPG key properly
+-> wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo tee /usr/share/keyrings/elasticsearch-keyring.asc
+
+# 2. Add the Elastic repository using the correct format
+-> echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.asc] https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-7.x.list
+
+# 3. Update package lists
+-> sudo apt update
+
+# 4. Install Elasticsearch
+  -> sudo apt install elasticsearch -y
+
+-> sudo vi /etc/elasticsearch/elasticsearch.yml 
+-> Add the below data in above cluster name in above file
+network.host: 0.0.0.0 
+cluster.name: my-cluster  
+node.name: node-1 
+discovery.type: single-node 
+
+-> sudo systemctl start elasticsearch 
+-> sudo systemctl enable elasticsearch 
+-> sudo systemctl status elasticsearch 
+-> curl -X GET "http://localhost:9200"
+
+# Install Logstash 
+-> sudo apt install logstash -y 
+-> sudo vi /etc/logstash/conf.d/logstash.conf 
+
+

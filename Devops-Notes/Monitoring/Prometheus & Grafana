@@ -51,20 +51,26 @@ Note:Prometheus will collect the data and Prometheus will give the data to grafa
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+
 alerting:
   alertmanagers:
     - static_configs:
         - targets: null
+
 rule_files: null
+
 scrape_configs:
   - job_name: prometheus
     static_configs:
       - targets:
           - localhost:9090
+
   - job_name: node_exporter
     static_configs:
       - targets:
-          - 13.234.110.96:9100
+          - 13.203.139.71:9100
+          - 13.202.62.29:9100  # Merged under the same job name
+
   - job_name: blackbox
     metrics_path: /probe
     params:
@@ -72,9 +78,8 @@ scrape_configs:
         - http_2xx
     static_configs:
       - targets:
-          - https://azqhtuemps.ap-south-1.awsapprunner.com
-          - https://main.d36lvdsr3jc805.amplifyapp.com
-          - http://13.234.110.96:3002
+          - https://bitbucket.org/manojvarmapotthuri/frissly-backend/src/main/
+          - https://main.d277es0wj6psb9.amplifyapp.com
     relabel_configs:
       - source_labels:
           - __address__
@@ -83,7 +88,8 @@ scrape_configs:
           - __param_target
         target_label: instance
       - target_label: __address__
-        replacement: 13.234.110.96:9115
+        replacement: 13.202.62.29:9115
+
 
 -> ./prometheus
 -> After start the prometheus, you will copy in web browser along with ip and port number, default port is 9090

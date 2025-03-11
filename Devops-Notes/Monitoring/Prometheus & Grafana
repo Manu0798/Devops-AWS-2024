@@ -126,5 +126,84 @@ sudo kill -9 <PID>
 nohup ./prometheus &
 
 
+# Install loki
+-> wget https://github.com/grafana/loki/releases/download/v3.4.2/logcli-linux-amd64.zip -O ~/loki.zip
+-> sudo apt update && sudo apt install unzip -y
+-> unzip ~/loki.zip -d ~/loki
+-> sudo mv ~/loki/logcli-linux-amd64 /usr/local/bin/loki
+-> sudo chmod +x /usr/local/bin/loki
+-> loki --version
+-> sudo vi /etc/loki-config.yml
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  chunk_idle_period: 5m
+  chunk_retain_period: 30s
+
+schema_config:
+  configs:
+    - from: 2022-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /tmp/loki/index
+    cache_location: /tmp/loki/cache
+    shared_store: filesystem
+  filesystem:
+    directory: /tmp/loki/chunks
+
+-> sudo nohup loki -config.file=/etc/loki-config.yml > /tmp/loki.log 2>&1 &
+-> ps aux | grep loki
+
+
+# How to install CloudWatch Agent configuration 
+-> sudo apt-get update -y
+-> sudo apt-get install -y curl unzip
+-> curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+-> unzip awscliv2.zip
+-> sudo ./aws/install
+-> aws configure
+-> curl -O https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+-> sudo dpkg -i amazon-cloudwatch-agent.deb
+-> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+-> sudo vi /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> sudo systemctl restart amazon-cloudwatch-agent
+-> sudo systemctl status amazon-cloudwatch-agent
+-> aws logs describe-log-groups --region ap-south-1
+-> aws logs describe-log-streams --log-group-name "/aws/apprunner/UAT-Backend-01/12ddc089d52a40d39b6be47313fd04f9/application" --region ap-south-1
+-> sudo journalctl -u amazon-cloudwatch-agent -f
+-> cat /opt/aws/amazon-cloudwatch-agent/bin/config.json
+
+
+
+
+# Install promtail
+-> wget https://github.com/grafana/loki/releases/latest/download/promtail-linux-amd64.zip -O ~/promtail.zip
+-> sudo apt update && sudo apt install unzip -y
+-> unzip ~/promtail.zip -d ~/promtail
+-> sudo mv ~/promtail/promtail-linux-amd64 /usr/local/bin/promtail
+-> sudo chmod +x /usr/local/bin/promtail
+-> promtail --version
+-> sudo vi /etc/promtail-config.yml
+
+
+-> nohup promtail -config.file=/etc/promtail-config.yml > /tmp/promtail.log 2>&1 &
+-> ps aux | grep promtail
+
 
 

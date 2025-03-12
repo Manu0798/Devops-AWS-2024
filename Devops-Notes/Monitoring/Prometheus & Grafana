@@ -206,6 +206,106 @@ storage_config:
 -> The CloudWatch agent expects the configuration at  /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 -> sudo cp /opt/aws/amazon-cloudwatch-agent/bin/config.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 -> cat /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> sudo systemctl enable amazon-cloudwatch-agent
+-> sudo systemctl start amazon-cloudwatch-agent
+-> sudo systemctl status amazon-cloudwatch-agent
+
+# If you want to get logs of server you should below configuration
+# Create a Log Group
+-> Go to AWS Console → CloudWatch → Logs
+-> Click Log groups
+-> Click Create log group
+-> Enter a name (e.g., /ec2/logs) and click Create
+-> sudo vi /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> Remove existing and paste the below contenent
+
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/syslog",
+            "log_group_name": "/ec2/logs",
+            "log_stream_name": "{instance_id}-syslog",
+            "timestamp_format": "%b %d %H:%M:%S"
+          },
+          {
+            "file_path": "/var/log/messages",
+            "log_group_name": "/ec2/logs",
+            "log_stream_name": "{instance_id}-messages",
+            "timestamp_format": "%b %d %H:%M:%S"
+          }
+        ]
+      }
+    }
+  }
+}
+
+-> sudo systemctl restart amazon-cloudwatch-agent
+-> sudo systemctl status amazon-cloudwatch-agent
+
+-> After complete the above configuration Verify Log Streams in CloudWatch
+-> Go to CloudWatch → Logs → Log Groups
+-> Open /ec2/logs
+-> Check if logs are streaming
+
+# How to create the Dashboards
+# Create a CloudWatch Dashboard for EC2
+-> Go to the AWS Console → CloudWatch
+-> Click Dashboards from the left panel
+-> Click Create Dashboard
+-> Enter a dashboard name (e.g., EC2-Monitoring) and click Create
+-> Click Add widget and choose Line Graph
+-> Select EC2 → Per-Instance Metrics
+-> Copy your instance ID in search bar to keep only for that instance
+-> Choose CPUUtilization, NetworkIn, NetworkOut
+-> remove the content in search bar
+-> Choose CWAgent
+-> Copy your instance ID in search bar to keep only for that instance
+-> Choose Disk Used, Memory Utilization
+-> Click Create widget
+-> Click save the dashboard
+# For logs we have to create another widget
+-> Click Add Widget
+-> Select logs rather than metrics
+-> Scroll down and select Logs Table
+-> Click browser select log name
+-> Click Create widget
+-> Click save the dashboard
+
+# How to create alarms
+# Set Up an Alarm for High CPU Usage
+-> Go to AWS Console → CloudWatch → Alarms
+-> Click Create alarm
+-> Click Select metric
+-> Choose EC2 → Per-Instance Metrics
+-> Select CPUUtilization and click Select metric
+-> Set the condition:
+-> Threshold type: Static
+-> Greater than 80%
+-> Click Next
+-> Select in alarm
+-> Select your SNS topic
+-> Give alaram name
+-> Click create  [it take time state to becoma ok]
+
+# For Checking you will increate load on cpu by using below command
+-> stress --cpu 2 --timeout 500    --> Increase the load
+-> pkill stress   --> Decrease the load
+
+for i in 1 2 4 8 16; do
+    echo "Increasing CPU load with $i workers..."
+    stress --cpu $i --timeout 60
+    sleep 5
+done
+
+-> As like above we have to create the alarm for all the metrics
+
+
+
+
+
 
 
 

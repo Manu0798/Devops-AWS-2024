@@ -19,7 +19,8 @@ Note:Prometheus will collect the data and Prometheus will give the data to grafa
 # How to install Prometheus 
 -> Go to this https://prometheus.io/download/
 -> After we have to install node exporter for monitoring the server
--> you will find node export link if you scroll down 
+-> you will find node export link if you scroll down
+# install blackbox for monitoring the server
 -> wget https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz
 -> tar -xvf node_exporter-1.9.0.linux-amd64.tar.gz
 -> rm node_exporter-1.9.0.linux-amd64.tar.gz
@@ -27,17 +28,124 @@ Note:Prometheus will collect the data and Prometheus will give the data to grafa
 -> ./node_exporter
 -> After start the node exporter, you will copy in web browser along with ip and port number, default port is 9100
 -> If you want to run in backgroung  
--> ./node_exporter &
+-> nohup ./node_exporter &
+-> ps aux | grep node_exporter
 
--> You will install blackbox for monitoring the application
+# install blackbox for monitoring the application
 -> wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.26.0/blackbox_exporter-0.26.0.linux-amd64.tar.gz
 -> tar -xvf blackbox_exporter-0.26.0.linux-amd64.tar.gz
 -> rm blackbox_exporter-0.26.0.linux-amd64.tar.gz
 -> cd blackbox_exporter-0.26.0.linux-amd64/
--> ./blackbox_exporter
--> -> After start the blackbox_exporter, you will copy in web browser along with ip and port number, default port is 9115
+-> nohup ./blackbox_exporter &
+-> ps aux | grep blackbox_exporter
+-> After start the blackbox_exporter, you will copy in web browser along with ip and port number, default port is 9115
 
--> you will install prometheus
+# Install loki
+-> wget https://github.com/grafana/loki/releases/download/v3.4.2/loki-linux-amd64.zip -O ~/loki-server.zip
+-> unzip ~/loki-server.zip -d ~/loki-server
+-> sudo mv ~/loki-server/loki-linux-amd64 /usr/local/bin/loki
+-> sudo chmod +x /usr/local/bin/loki
+
+-> loki --version
+-> sudo /usr/local/bin/loki --config.file=/etc/loki-config.yml
+
+-> sudo vi /etc/loki-config.yml
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  path_prefix: /var/loki
+
+ingester:
+  lifecycler:
+    address: 127.0.0.1
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  chunk_idle_period: 5m
+  chunk_retain_period: 30s
+
+schema_config:
+  configs:
+    - from: 2022-06-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /var/loki/index
+    cache_location: /var/loki/cache
+  filesystem:
+    directory: /var/loki/chunks  # ✅ Fixed misplaced directory
+
+limits_config:
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  allow_structured_metadata: false  # ✅ Fixes schema issue
+
+compactor:
+  working_directory: /var/loki/compactor  # ✅ Removed invalid `shared_store`
+
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 168h
+
+-> sudo nohup /usr/local/bin/loki --config.file=/etc/loki-config.yml > /tmp/loki.log 2>&1 &
+-> ps aux | grep loki
+-> sudo netstat -tulnp | grep 3100
+-> sudo cat /tmp/loki.log
+
+
+# Install promtail
+-> wget https://github.com/grafana/loki/releases/latest/download/promtail-linux-amd64.zip -O ~/promtail.zip
+-> sudo apt update && sudo apt install unzip -y
+-> unzip ~/promtail.zip -d ~/promtail
+-> sudo mv ~/promtail/promtail-linux-amd64 /usr/local/bin/promtail
+-> sudo chmod +x /usr/local/bin/promtail
+-> promtail --version
+-> sudo vi /etc/promtail-config.yml
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/log/positions.yaml  # Make sure this file is writable
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push  # Ensure Loki is accessible
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          host: ${HOSTNAME}
+          __path__: /var/log/*.log  # Ensure logs exist in this path
+
+
+-> sudo touch /var/log/positions.yaml
+-> sudo useradd -r -s /sbin/nologin promtail
+-> sudo chown promtail:promtail /var/log/positions.yaml
+-> sudo chmod 664 /var/log/positions.yaml
+-> sudo chown promtail:promtail /var/log
+-> sudo chmod 777 /var/log
+-> nohup promtail -config.file=/etc/promtail-config.yml > /tmp/promtail.log 2>&1 &
+-> ps aux | grep promtail
+-> sudo cat /tmp/promtail.log
+
+
+# install prometheus
 -> you will find below prometheus link in prometheus offical website
 -> wget https://github.com/prometheus/prometheus/releases/download/v3.2.1/prometheus-3.2.1.linux-amd64.tar.gz
 -> tar -xvf prometheus-3.2.1.linux-amd64.tar.gz
@@ -91,7 +199,8 @@ scrape_configs:
         replacement: 13.202.62.29:9115
 
 
--> ./prometheus
+-> nohup ./prometheus &
+-> ps aux | grep prometheus
 -> After start the prometheus, you will copy in web browser along with ip and port number, default port is 9090
 -> Click on status and select target
 
@@ -124,6 +233,10 @@ scrape_configs:
 ps aux | grep prometheus
 sudo kill -9 <PID>
 nohup ./prometheus &
+
+
+
+
 
 
 # Install loki
@@ -171,26 +284,26 @@ storage_config:
 -> ps aux | grep loki
 
 
-# How to install CloudWatch Agent configuration 
--> sudo apt-get update -y
--> sudo apt-get install -y curl unzip
--> curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
--> unzip awscliv2.zip
--> sudo ./aws/install
--> aws configure
--> curl -O https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
--> sudo dpkg -i amazon-cloudwatch-agent.deb
--> ls /opt/aws/amazon-cloudwatch-agent/bin/
--> export PATH=$PATH:/opt/aws/amazon-cloudwatch-agent/bin
--> amazon-cloudwatch-agent --version
--> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
--> sudo vi /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
--> sudo systemctl restart amazon-cloudwatch-agent
--> sudo systemctl status amazon-cloudwatch-agent
--> aws logs describe-log-groups --region ap-south-1
--> aws logs describe-log-streams --log-group-name "/aws/apprunner/UAT-Backend-01/12ddc089d52a40d39b6be47313fd04f9/application" --region ap-south-1
--> sudo journalctl -u amazon-cloudwatch-agent -f
--> cat /opt/aws/amazon-cloudwatch-agent/bin/config.json
+# Install CloudWatch Exporter
+-> wget https://github.com/prometheus/cloudwatch_exporter/releases/download/v0.16.0/cloudwatch_exporter-0.16.0-jar-with-dependencies.jar -O cloudwatch_exporter.jar
+-> ls -lh cloudwatch_exporter.jar
+-> sudo vi /etc/cloudwatch_exporter.yml
+
+region: ap-south-1  # Change this to your AWS region
+metrics:
+  - aws_namespace: AWS/EC2
+    aws_metric_name: CPUUtilization
+    aws_dimensions: [InstanceId]
+    aws_statistics: [Average]
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: RequestCount
+    aws_dimensions: [ServiceName]
+    aws_statistics: [Sum]
+
+
+-> nohup java -jar cloudwatch_exporter.jar 9106 /etc/cloudwatch_exporter.yml > cloudwatch_exporter.log 2>&1 &
+-> ps aux | grep cloudwatch_exporter
+-> netstat -tulnp | grep 9106
 
 
 # How to install CloudWatch Agent configuration
@@ -250,78 +363,9 @@ storage_config:
 -> Open /ec2/logs
 -> Check if logs are streaming
 
-# How to create the Dashboards
-# Create a CloudWatch Dashboard for EC2
--> Go to the AWS Console → CloudWatch
--> Click Dashboards from the left panel
--> Click Create Dashboard
--> Enter a dashboard name (e.g., EC2-Monitoring) and click Create
--> Click Add widget and choose Line Graph
--> Select EC2 → Per-Instance Metrics
--> Copy your instance ID in search bar to keep only for that instance
--> Choose CPUUtilization, NetworkIn, NetworkOut
--> remove the content in search bar
--> Choose CWAgent
--> Copy your instance ID in search bar to keep only for that instance
--> Choose Disk Used, Memory Utilization
--> Click Create widget
--> Click save the dashboard
-# For logs we have to create another widget
--> Click Add Widget
--> Select logs rather than metrics
--> Scroll down and select Logs Table
--> Click browser select log name
--> Click Create widget
--> Click save the dashboard
-
-# How to create alarms
-# Set Up an Alarm for High CPU Usage
--> Go to AWS Console → CloudWatch → Alarms
--> Click Create alarm
--> Click Select metric
--> Choose EC2 → Per-Instance Metrics
--> Select CPUUtilization and click Select metric
--> Set the condition:
--> Threshold type: Static
--> Greater than 80%
--> Click Next
--> Select in alarm
--> Select your SNS topic
--> Give alaram name
--> Click create  [it take time state to becoma ok]
-
-# For Checking you will increate load on cpu by using below command
--> stress --cpu 2 --timeout 500    --> Increase the load
--> pkill stress   --> Decrease the load
-
-for i in 1 2 4 8 16; do
-    echo "Increasing CPU load with $i workers..."
-    stress --cpu $i --timeout 60
-    sleep 5
-done
-
--> As like above we have to create the alarm for all the metrics
 
 
 
-
-
-
-
-
-
-# Install promtail
--> wget https://github.com/grafana/loki/releases/latest/download/promtail-linux-amd64.zip -O ~/promtail.zip
--> sudo apt update && sudo apt install unzip -y
--> unzip ~/promtail.zip -d ~/promtail
--> sudo mv ~/promtail/promtail-linux-amd64 /usr/local/bin/promtail
--> sudo chmod +x /usr/local/bin/promtail
--> promtail --version
--> sudo vi /etc/promtail-config.yml
-
-
--> nohup promtail -config.file=/etc/promtail-config.yml > /tmp/promtail.log 2>&1 &
--> ps aux | grep promtail
 
 
 

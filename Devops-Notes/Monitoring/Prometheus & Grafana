@@ -144,6 +144,27 @@ scrape_configs:
 -> ps aux | grep promtail
 -> sudo cat /tmp/promtail.log
 
+# Install CloudWatch Exporter
+-> wget https://github.com/prometheus/cloudwatch_exporter/releases/download/v0.16.0/cloudwatch_exporter-0.16.0-jar-with-dependencies.jar -O cloudwatch_exporter.jar
+-> ls -lh cloudwatch_exporter.jar
+-> sudo vi /etc/cloudwatch_exporter.yml
+
+region: ap-south-1  # Change this to your AWS region
+metrics:
+  - aws_namespace: AWS/EC2
+    aws_metric_name: CPUUtilization
+    aws_dimensions: [InstanceId]
+    aws_statistics: [Average]
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: RequestCount
+    aws_dimensions: [ServiceName]
+    aws_statistics: [Sum]
+
+
+-> nohup java -jar cloudwatch_exporter.jar 9106 /etc/cloudwatch_exporter.yml > cloudwatch_exporter.log 2>&1 &
+-> ps aux | grep cloudwatch_exporter
+-> netstat -tulnp | grep 9106
+
 
 # install prometheus
 -> you will find below prometheus link in prometheus offical website
@@ -233,77 +254,6 @@ scrape_configs:
 ps aux | grep prometheus
 sudo kill -9 <PID>
 nohup ./prometheus &
-
-
-
-
-
-
-# Install loki
--> wget https://github.com/grafana/loki/releases/download/v3.4.2/logcli-linux-amd64.zip -O ~/loki.zip
--> sudo apt update && sudo apt install unzip -y
--> unzip ~/loki.zip -d ~/loki
--> sudo mv ~/loki/logcli-linux-amd64 /usr/local/bin/loki
--> sudo chmod +x /usr/local/bin/loki
--> loki --version
--> sudo vi /etc/loki-config.yml
-
-auth_enabled: false
-
-server:
-  http_listen_port: 3100
-
-ingester:
-  lifecycler:
-    ring:
-      kvstore:
-        store: inmemory
-      replication_factor: 1
-  chunk_idle_period: 5m
-  chunk_retain_period: 30s
-
-schema_config:
-  configs:
-    - from: 2022-01-01
-      store: boltdb-shipper
-      object_store: filesystem
-      schema: v11
-      index:
-        prefix: index_
-        period: 24h
-
-storage_config:
-  boltdb_shipper:
-    active_index_directory: /tmp/loki/index
-    cache_location: /tmp/loki/cache
-    shared_store: filesystem
-  filesystem:
-    directory: /tmp/loki/chunks
-
--> sudo nohup loki -config.file=/etc/loki-config.yml > /tmp/loki.log 2>&1 &
--> ps aux | grep loki
-
-
-# Install CloudWatch Exporter
--> wget https://github.com/prometheus/cloudwatch_exporter/releases/download/v0.16.0/cloudwatch_exporter-0.16.0-jar-with-dependencies.jar -O cloudwatch_exporter.jar
--> ls -lh cloudwatch_exporter.jar
--> sudo vi /etc/cloudwatch_exporter.yml
-
-region: ap-south-1  # Change this to your AWS region
-metrics:
-  - aws_namespace: AWS/EC2
-    aws_metric_name: CPUUtilization
-    aws_dimensions: [InstanceId]
-    aws_statistics: [Average]
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: RequestCount
-    aws_dimensions: [ServiceName]
-    aws_statistics: [Sum]
-
-
--> nohup java -jar cloudwatch_exporter.jar 9106 /etc/cloudwatch_exporter.yml > cloudwatch_exporter.log 2>&1 &
--> ps aux | grep cloudwatch_exporter
--> netstat -tulnp | grep 9106
 
 
 # How to install CloudWatch Agent configuration

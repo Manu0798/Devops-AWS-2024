@@ -48,7 +48,6 @@ Note:Prometheus will collect the data and Prometheus will give the data to grafa
 -> sudo chmod +x /usr/local/bin/loki
 
 -> loki --version
--> sudo /usr/local/bin/loki --config.file=/etc/loki-config.yml
 
 -> sudo vi /etc/loki-config.yml
 
@@ -101,6 +100,7 @@ table_manager:
 
 -> sudo nohup /usr/local/bin/loki --config.file=/etc/loki-config.yml > /tmp/loki.log 2>&1 &
 -> ps aux | grep loki
+-> sudo apt update && sudo apt install -y net-tools
 -> sudo netstat -tulnp | grep 3100
 -> sudo cat /tmp/loki.log
 

@@ -20,7 +20,8 @@ Note:Prometheus will collect the data and Prometheus will give the data to grafa
 -> Go to this https://prometheus.io/download/
 -> After we have to install node exporter for monitoring the server
 -> you will find node export link if you scroll down
-# install blackbox for monitoring the server
+
+# install Node exporter for monitoring the server
 -> wget https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz
 -> tar -xvf node_exporter-1.9.0.linux-amd64.tar.gz
 -> rm node_exporter-1.9.0.linux-amd64.tar.gz
@@ -35,7 +36,7 @@ Note:Prometheus will collect the data and Prometheus will give the data to grafa
 -> wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.26.0/blackbox_exporter-0.26.0.linux-amd64.tar.gz
 -> tar -xvf blackbox_exporter-0.26.0.linux-amd64.tar.gz
 -> rm blackbox_exporter-0.26.0.linux-amd64.tar.gz
--> cd blackbox_exporter-0.26.0.linux-amd64/
+ -> cd blackbox_exporter-0.26.0.linux-amd64/
 -> nohup ./blackbox_exporter &
 -> ps aux | grep blackbox_exporter
 -> After start the blackbox_exporter, you will copy in web browser along with ip and port number, default port is 9115
@@ -164,6 +165,8 @@ metrics:
 -> nohup java -jar cloudwatch_exporter.jar 9106 /etc/cloudwatch_exporter.yml > cloudwatch_exporter.log 2>&1 &
 -> ps aux | grep cloudwatch_exporter
 -> netstat -tulnp | grep 9106
+-> curl http://localhost:9106/metrics
+-> curl ifconfig.me
 
 
 # install prometheus

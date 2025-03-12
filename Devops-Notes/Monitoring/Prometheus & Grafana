@@ -180,6 +180,9 @@ storage_config:
 -> aws configure
 -> curl -O https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 -> sudo dpkg -i amazon-cloudwatch-agent.deb
+-> ls /opt/aws/amazon-cloudwatch-agent/bin/
+-> export PATH=$PATH:/opt/aws/amazon-cloudwatch-agent/bin
+-> amazon-cloudwatch-agent --version
 -> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
 -> sudo vi /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 -> sudo systemctl restart amazon-cloudwatch-agent
@@ -188,6 +191,21 @@ storage_config:
 -> aws logs describe-log-streams --log-group-name "/aws/apprunner/UAT-Backend-01/12ddc089d52a40d39b6be47313fd04f9/application" --region ap-south-1
 -> sudo journalctl -u amazon-cloudwatch-agent -f
 -> cat /opt/aws/amazon-cloudwatch-agent/bin/config.json
+
+
+# How to install CloudWatch Agent configuration
+-> sudo apt-get update -y
+-> sudo apt install collectd -y
+-> curl -O https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+-> sudo dpkg -i amazon-cloudwatch-agent.deb
+-> ls /opt/aws/amazon-cloudwatch-agent/bin/
+-> export PATH=$PATH:/opt/aws/amazon-cloudwatch-agent/bin
+-> amazon-cloudwatch-agent --version
+-> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+-> After complete the configuration it will defaulty save that configuration file at /opt/aws/amazon-cloudwatch-agent/bin/config.json
+-> The CloudWatch agent expects the configuration at  /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> sudo cp /opt/aws/amazon-cloudwatch-agent/bin/config.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> cat /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 
 
 

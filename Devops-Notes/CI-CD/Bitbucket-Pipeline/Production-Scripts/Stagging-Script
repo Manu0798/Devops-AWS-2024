@@ -67,6 +67,7 @@ test
 SONAR_HOST_URL
 SONAR_PROJECT_KEY
 SONARQUBE_TOKEN
+DOCKER_IMAGE_NAME: uat-backend-image
 
 -> Add one env variable for on below name 
 staging-approval

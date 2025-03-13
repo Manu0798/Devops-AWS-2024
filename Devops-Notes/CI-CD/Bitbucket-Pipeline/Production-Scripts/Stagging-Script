@@ -69,7 +69,7 @@ SONAR_PROJECT_KEY
 SONARQUBE_TOKEN
 
 
-stagging
+Stagging
 AWS_ACCOUNT_ID
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
@@ -253,7 +253,7 @@ pipelines:
       # ------------------------------
       - step:
           name: Approval for Stagging Deployment
-          deployment: staging  # ✅ Must match staging step
+          deployment: staging-approval  # ✅ Must match staging step
           trigger: manual
           script:
             - echo "⏳ Waiting for approval before deploying to Stagging..."
@@ -268,7 +268,7 @@ pipelines:
           name: Deploy to Stagging
           runs-on:
             - self.hosted
-          deployment: production
+          deployment: Stagging
           services:
             - docker
           script:
@@ -489,7 +489,7 @@ pipelines:
       # ------------------------------
       - step:
           name: Approval for Stagging Deployment
-          deployment: staging  # ✅ Must match staging step
+          deployment: staging-approval  # ✅ Must match staging step
           trigger: manual
           script:
             - echo "⏳ Waiting for approval before deploying to Stagging..."
@@ -504,7 +504,7 @@ pipelines:
           name: Deploy to Stagging
           runs-on:
             - self.hosted
-          deployment: stagging
+          deployment: Stagging
           services:
             - docker
           script:
@@ -693,7 +693,7 @@ pipelines:
       # ------------------------------
       - step:
           name: Approval for Stagging Deployment
-          deployment: staging  # ✅ Must match staging step
+          deployment: staging-approval  # ✅ Must match staging step
           trigger: manual
           script:
             - echo "⏳ Waiting for approval before deploying to Stagging..."
@@ -708,7 +708,7 @@ pipelines:
           name: Deploy to Stagging
           runs-on:
             - self.hosted
-          deployment: stagging
+          deployment: Stagging
           services:
             - docker
           script:
@@ -945,7 +945,7 @@ pipelines:
       # ------------------------------
       - step:
           name: Approval for Stagging Deployment
-          deployment: staging  # ✅ Must match staging step
+          deployment: staging-approval  # ✅ Must match staging step
           trigger: manual
           script:
             - echo "⏳ Waiting for approval before deploying to Stagging..."
@@ -960,7 +960,7 @@ pipelines:
           name: Deploy to Stagging
           runs-on:
             - self.hosted
-          deployment: stagging
+          deployment: Stagging
           services:
             - docker
           script:

@@ -68,6 +68,9 @@ SONAR_HOST_URL
 SONAR_PROJECT_KEY
 SONARQUBE_TOKEN
 
+-> Add one env variable for on below name 
+staging-approval
+
 
 Stagging
 AWS_ACCOUNT_ID

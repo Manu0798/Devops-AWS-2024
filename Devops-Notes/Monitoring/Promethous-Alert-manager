@@ -1,0 +1,318 @@
+# Update the packages
+-> sudo apt update && sudo apt upgrade -y
+-> sudo apt update && sudo apt install -y net-tools
+-> sudo apt install -y wget curl unzip apt-transport-https
+
+# Install Node Exporter
+-> wget https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz
+-> tar -xvf node_exporter-1.9.0.linux-amd64.tar.gz
+-> rm node_exporter-1.9.0.linux-amd64.tar.gz
+-> sudo mkdir -p /opt/node_exporter
+-> sudo mv /home/ubuntu/node_exporter-1.9.0.linux-amd64 /opt/node_exporter
+-> sudo useradd --no-create-home --shell /bin/false node_exporter
+-> sudo chown -R node_exporter:node_exporter /opt/node_exporter/
+-> sudo chmod -R 755 /opt/node_exporter/
+-> sudo vi /etc/systemd/system/node_exporter.service
+
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/opt/node_exporter/node_exporter-1.9.0.linux-amd64/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable node_exporter
+-> sudo systemctl start node_exporter
+-> ps aux | grep node_exporter
+-> sudo netstat -tulnp | grep 9100
+
+
+# Install Blackbox Exporter
+-> wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.26.0/blackbox_exporter-0.26.0.linux-amd64.tar.gz
+-> tar -xvf blackbox_exporter-0.26.0.linux-amd64.tar.gz
+-> rm blackbox_exporter-0.26.0.linux-amd64.tar.gz
+-> sudo mkdir -p /opt/blackbox_exporter
+-> sudo mv /home/ubuntu/blackbox_exporter-0.26.0.linux-amd64/ /opt/blackbox_exporter/
+-> sudo useradd --no-create-home --shell /bin/false blackbox_exporter
+-> sudo chown -R blackbox_exporter:blackbox_exporter /opt/blackbox_exporter
+-> sudo chmod -R 755 /opt/blackbox_exporter/
+-> sudo vi /etc/blackbox-config.yml
+
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: [ "HTTP/1.1", "HTTP/2" ]
+      valid_status_codes: []  # Defaults to 2xx
+      method: GET
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+
+  https_cert:
+    prober: http
+    timeout: 5s
+    http:
+      tls_config:
+        insecure_skip_verify: false
+      fail_if_ssl: false
+      fail_if_not_ssl: true
+
+  ping:
+    prober: icmp
+    timeout: 5s
+
+-> sudo vi /etc/systemd/system/blackbox_exporter.service
+
+[Unit]
+Description=Blackbox Exporter
+After=network.target
+
+[Service]
+User=blackbox_exporter
+Group=blackbox_exporter
+Type=simple
+ExecStart=/opt/blackbox_exporter/blackbox_exporter-0.26.0.linux-amd64/blackbox_exporter  --config.file=/etc/blackbox-config.yml
+
+[Install]
+WantedBy=multi-user.target
+
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable blackbox_exporter
+-> sudo systemctl start blackbox_exporter
+-> ps aux | grep blackbox_exporter
+-> sudo netstat -tulnp | grep 9115
+
+
+# Install Alert Manager
+-> wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.27.0.linux-amd64.tar.gz
+-> tar -xvf alertmanager-0.27.0.linux-amd64.tar.gz
+-> rm alertmanager-0.27.0.linux-amd64.tar.gz
+-> sudo mkdir -p /opt/alertmanager
+-> sudo mv alertmanager-0.27.0.linux-amd64 /opt/alertmanager/
+-> sudo useradd --no-create-home --shell /bin/false alertmanager
+-> sudo mkdir /var/lib/alertmanager
+-> sudo chown alertmanager:alertmanager /var/lib/alertmanager
+-> sudo chown -R alertmanager:alertmanager /opt/alertmanager
+-> sudo chmod -R 755 /opt/alertmanager
+-> sudo vi /opt/alertmanager/alertmanager-0.27.0.linux-amd64/alertmanager.yml
+
+route:
+  group_by:
+    - alertname
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: email-notifications
+receivers:
+  - name: email-notifications
+    email_configs:
+      - to: manojvarmapotthutri@gmail.com
+        from: varmapotthuri4@gmail.com
+        smarthost: smtp.gmail.com:587
+        auth_username: varmapotthuri4@gmail.com
+        auth_identity: varmapotthuri4@gmail.com
+        auth_password: dzxbhazwoggfybxx
+        send_resolved: true
+
+
+-> sudo vi /etc/systemd/system/alertmanager.service
+
+[Unit]
+Description=Alertmanager
+After=network.target
+
+[Service]
+User=alertmanager
+Group=alertmanager
+Type=simple
+ExecStart=/opt/alertmanager/alertmanager-0.27.0.linux-amd64/alertmanager --config.file=/opt/alertmanager/alertmanager-0.27.0.linux-amd64/alertmanager.yml --storage.path=/var/lib/alertmanager
+
+[Install]
+WantedBy=multi-user.target
+
+
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable alertmanager
+-> sudo systemctl start alertmanager
+-> sudo systemctl status alertmanager
+-> ps aux | grep alertmanager
+-> sudo netstat -tulnp | grep 9093
+
+
+# Install Promethous
+-> wget https://github.com/prometheus/prometheus/releases/download/v3.2.1/prometheus-3.2.1.linux-amd64.tar.gz
+-> tar -xvf prometheus-3.2.1.linux-amd64.tar.gz
+-> rm prometheus-3.2.1.linux-amd64.tar.gz
+-> sudo mkdir -p /opt/prometheus
+-> sudo mv /home/ubuntu/prometheus-3.2.1.linux-amd64 /opt/prometheus/
+-> sudo useradd --no-create-home --shell /bin/false prometheus
+-> sudo mkdir /var/lib/prometheus
+-> sudo vi /opt/prometheus/prometheus-3.2.1.linux-amd64/alert_rules.yml
+
+groups:
+  - name: alert_rules
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Endpoint {{ $labels.instance }} down
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for
+            more than 1 minute."
+      - alert: WebsiteDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Website down
+          description: The website at {{ $labels.instance }} is down.
+      - alert: HostOutOfMemory
+        expr: (node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of memory (instance {{ $labels.instance }})
+          description: |-
+            Node memory is filling up (< 25% left)
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+      - alert: HostOutOfDiskSpace
+        expr: (node_filesystem_avail{mountpoint="/"} * 100) /
+          node_filesystem_size{mountpoint="/"} < 50
+        for: 1s
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of disk space (instance {{ $labels.instance }})
+          description: |-
+            Disk is almost full (< 50% left)
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+      - alert: HostHighCpuLoad
+        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) *
+          100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host high CPU load (instance {{ $labels.instance }})
+          description: |-
+            CPU load is > 80%
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+      - alert: ServiceUnavailable
+        expr: up{job="node_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Service Unavailable (instance {{ $labels.instance }})
+          description: |-
+            The service {{ $labels.job }} is not available
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+      - alert: HighMemoryUsage
+        expr: (node_memory_Active / node_memory_MemTotal) * 100 > 90
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: High Memory Usage (instance {{ $labels.instance }})
+          description: |-
+            Memory usage is > 90%
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+      - alert: FileSystemFull
+        expr: (node_filesystem_avail / node_filesystem_size) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: File System Almost Full (instance {{ $labels.instance }})
+          description: |-
+            File system has < 10% free space
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+
+-> sudo chown prometheus:prometheus /var/lib/prometheus
+-> sudo chown -R prometheus:prometheus /opt/prometheus
+-> sudo chmod -R 755 /opt/prometheus
+-> sudo vi /opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - localhost:9093
+rule_files:
+  - alert_rules.yml
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+  - job_name: node_exporter
+    static_configs:
+      - targets:
+          - 13.232.189.2:9100
+  - job_name: blackbox
+    metrics_path: /probe
+    params:
+      module:
+        - http_2xx
+    static_configs:
+      - targets:
+          - http://prometheus.io
+          - https://prometheus.io
+          - https://main.d1xomeui3swcux.amplifyapp.com
+          - https://main.dkby8dlvtm58u.amplifyapp.com
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: __param_target
+      - source_labels:
+          - __param_target
+        target_label: instance
+      - target_label: __address__
+        replacement: 13.232.189.2:9115
+
+
+-> sudo vi /etc/systemd/system/prometheus.service
+
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus --config.file=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml --storage.tsdb.path=/var/lib/prometheus
+
+[Install]
+WantedBy=multi-user.target
+
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable prometheus
+-> sudo systemctl start prometheus
+-> sudo systemctl status prometheus
+-> ps aux | grep prometheus
+-> sudo netstat -tulnp | grep 9090
+
+

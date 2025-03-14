@@ -136,7 +136,11 @@ frontend:
       - node_modules/**/*
 
 
+
+
 # Delivery app
+-> For delivery app deployment we should add below thing in package.json under script section
+   "build": "expo export" 
 
 version: 1
 frontend:

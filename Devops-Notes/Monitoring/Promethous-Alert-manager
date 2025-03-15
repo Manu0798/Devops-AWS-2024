@@ -174,6 +174,46 @@ WantedBy=multi-user.target
 -> sudo netstat -tulnp | grep 9093
 
 
+# Monitort Docker containers
+-> We have to install using below commands
+# Add Docker's official GPG key
+
+sudo apt-get update -y
+sudo apt-get install ca-certificates curl -y
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add Docker repository
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo chmod 666 /var/run/docker.sock
+sudo usermod -aG docker jenkins
+sudo usermod -aG docker ubuntu
+sudo systemctl enable docker
+sudo systemctl start docker
+echo "Docker installation complete."
+
+-> sudo vi /etc/docker/daemon.json
+
+{
+  "metrics-addr": "0.0.0.0:9323",
+  "experimental": true
+}
+
+-> sudo systemctl daemon-reload
+-> sudo systemctl restart docker
+-> sudo systemctl status docker
+-> curl http://13.235.242.134:9323/metrics
+-> After complete above you install docker containers
+
+
 # Install Promethous
 -> wget https://github.com/prometheus/prometheus/releases/download/v3.2.1/prometheus-3.2.1.linux-amd64.tar.gz
 -> tar -xvf prometheus-3.2.1.linux-amd64.tar.gz
@@ -187,6 +227,7 @@ WantedBy=multi-user.target
 groups:
   - name: alert_rules
     rules:
+      # 1️⃣ Alert: Instance Down
       - alert: InstanceDown
         expr: up == 0
         for: 1m
@@ -194,8 +235,9 @@ groups:
           severity: critical
         annotations:
           summary: Endpoint {{ $labels.instance }} down
-          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for
-            more than 1 minute."
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+      # 2️⃣ Alert: Website Down
       - alert: WebsiteDown
         expr: probe_success == 0
         for: 1m
@@ -204,6 +246,8 @@ groups:
         annotations:
           summary: Website down
           description: The website at {{ $labels.instance }} is down.
+
+      # 3️⃣ Alert: Host Out of Memory
       - alert: HostOutOfMemory
         expr: (node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
         for: 5m
@@ -215,9 +259,10 @@ groups:
             Node memory is filling up (< 25% left)
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
+
+      # 4️⃣ Alert: Host Out of Disk Space
       - alert: HostOutOfDiskSpace
-        expr: (node_filesystem_avail{mountpoint="/"} * 100) /
-          node_filesystem_size{mountpoint="/"} < 50
+        expr: (node_filesystem_avail{mountpoint="/"} * 100) / node_filesystem_size{mountpoint="/"} < 50
         for: 1s
         labels:
           severity: warning
@@ -227,9 +272,10 @@ groups:
             Disk is almost full (< 50% left)
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
+
+      # 5️⃣ Alert: Host High CPU Load
       - alert: HostHighCpuLoad
-        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) *
-          100 > 80
+        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
         for: 5m
         labels:
           severity: warning
@@ -239,6 +285,8 @@ groups:
             CPU load is > 80%
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
+
+      # 6️⃣ Alert: Service Unavailable (Node Exporter)
       - alert: ServiceUnavailable
         expr: up{job="node_exporter"} == 0
         for: 2m
@@ -250,6 +298,8 @@ groups:
             The service {{ $labels.job }} is not available
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
+
+      # 7️⃣ Alert: High Memory Usage
       - alert: HighMemoryUsage
         expr: (node_memory_Active / node_memory_MemTotal) * 100 > 90
         for: 10m
@@ -261,6 +311,8 @@ groups:
             Memory usage is > 90%
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
+
+      # 8️⃣ Alert: File System Almost Full
       - alert: FileSystemFull
         expr: (node_filesystem_avail / node_filesystem_size) * 100 < 10
         for: 5m
@@ -273,6 +325,72 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
+      # 🐳 **Docker Alerts**
+      # 9️⃣ Alert: Docker Container Restarting Frequently
+      - alert: DockerContainerRestarting
+        expr: increase(docker_container_restart_count[5m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Docker container is restarting frequently (instance {{ $labels.instance }})
+          description: |-
+            A container on {{ $labels.instance }} restarted more than 3 times in the last 5 minutes.
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      # 🔟 Alert: Docker Container High CPU Usage
+      - alert: DockerContainerHighCPU
+        expr: (rate(docker_container_cpu_usage_seconds_total[5m]) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High CPU usage in Docker container (instance {{ $labels.instance }})
+          description: |-
+            A container on {{ $labels.instance }} is consuming more than 80% CPU.
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      # 1️⃣1️⃣ Alert: Docker Container High Memory Usage
+      - alert: DockerContainerHighMemory
+        expr: (docker_container_mem_usage_bytes / docker_container_mem_limit_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High memory usage in Docker container (instance {{ $labels.instance }})
+          description: |-
+            A container on {{ $labels.instance }} is using more than 90% of its allocated memory.
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      # 1️⃣2️⃣ Alert: Docker Disk Usage High
+      - alert: DockerDiskUsageHigh
+        expr: (docker_data_dir_disk_used_bytes / docker_data_dir_disk_total_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Docker disk usage is high (instance {{ $labels.instance }})
+          description: |-
+            The disk usage for Docker is above 85%.
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      # 1️⃣3️⃣ Alert: Docker Container Stopped
+      - alert: DockerContainerStopped
+        expr: count by (instance, name) (docker_container_last_seen{state!="running"}) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Docker Container Stopped (instance {{ $labels.instance }})
+          description: |-
+            The Docker container {{ $labels.name }} on instance {{ $labels.instance }} has stopped.
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
 
 -> sudo chown prometheus:prometheus /var/lib/prometheus
 -> sudo chown -R prometheus:prometheus /opt/prometheus
@@ -282,42 +400,46 @@ groups:
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
-            - localhost:9093
+            - "13.235.242.134:9093"
+
 rule_files:
-  - alert_rules.yml
+  - "alert_rules.yml"
+
 scrape_configs:
-  - job_name: prometheus
+  - job_name: "prometheus"
     static_configs:
       - targets:
-          - localhost:9090
-  - job_name: node_exporter
+          - "localhost:9090"
+
+  - job_name: "node_exporter"
     static_configs:
       - targets:
-          - 13.232.189.2:9100
-  - job_name: blackbox
+          - "13.235.242.134:9100"
+
+  - job_name: "docker"
+    static_configs:
+      - targets:
+          - "13.235.242.134:9323"
+
+  - job_name: "blackbox"
     metrics_path: /probe
     params:
-      module:
-        - http_2xx
+      module: [http_2xx]
     static_configs:
       - targets:
-          - http://prometheus.io
-          - https://prometheus.io
-          - https://main.d1xomeui3swcux.amplifyapp.com
-          - https://main.dkby8dlvtm58u.amplifyapp.com
+          - "https://frissly.com"
     relabel_configs:
-      - source_labels:
-          - __address__
+      - source_labels: [__address__]
         target_label: __param_target
-      - source_labels:
-          - __param_target
+      - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: 13.232.189.2:9115
+        replacement: "13.235.242.134:9115"
 
 
 -> sudo vi /etc/systemd/system/prometheus.service

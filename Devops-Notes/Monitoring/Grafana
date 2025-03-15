@@ -1,0 +1,100 @@
+# Install grafana 
+-> https://grafana.com/grafana/download
+-> sudo apt-get install -y adduser libfontconfig1 musl
+-> wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.5.2_amd64.deb
+-> sudo dpkg -i grafana-enterprise_11.5.2_amd64.deb
+-> sudo /bin/systemctl daemon-reload
+-> sudo /bin/systemctl enable grafana-server
+-> sudo /bin/systemctl start grafana-server
+-> After that copy the ip paste it in web browser along with port number 3000 
+
+
+
+✅ Summary of Monitored Metrics for node exporter
+# Category	Metrics Monitored
+-> CPU	Usage, Load Average, Idle Time
+-> Memory	Used, Free, Available Memory
+-> Disk	Usage, Read/Write IOPS
+-> Network	Bandwidth, Errors, Packets Dropped
+-> System	Uptime, Running Processes, Blocked Processes
+
+-> Queries related CPU
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+node_load1
+node_load5
+node_load15
+100 - (rate(node_cpu_seconds_total{mode="idle"}[5m]) * 100)
+
+-> Queries related memory
+node_memory_MemTotal_bytes
+node_memory_MemFree_bytes
+100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
+100 - ((node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"})
+
+
+-> Queries related Disk
+rate(node_disk_reads_completed_total[5m])
+rate(node_disk_writes_completed_total[5m])
+rate(node_disk_read_bytes_total[5m])
+rate(node_disk_written_bytes_total[5m])
+
+-> Queries related Network
+rate(node_network_receive_bytes_total{device="eth0"}[5m])
+rate(node_network_transmit_bytes_total{device="eth0"}[5m])
+rate(node_network_receive_errs_total[5m])
+rate(node_network_transmit_errs_total[5m])
+rate(node_network_receive_drop_total[5m])
+rate(node_network_transmit_drop_total[5m])
+
+-> Queries related System health
+node_time_seconds - node_boot_time_seconds
+node_procs_running
+node_procs_blocked
+
+
+
+
+# For Blackbox exporter
+1️⃣ HTTP/HTTPS Endpoint Monitoring
+Availability & Response Time (probe_success, probe_duration_seconds)
+HTTP Status Codes (probe_http_status_code)
+SSL Certificate Expiry & Validity (probe_ssl_earliest_cert_expiry)
+Redirects & DNS Resolution Time (probe_http_redirects, probe_http_duration_seconds)
+
+probe_success{module="http_2xx"}
+(probe_ssl_earliest_cert_expiry - time()) / 86400
+avg(probe_icmp_duration_seconds{phase="rtt"})
+probe_success{module="tcp_connect"}
+avg(probe_dns_lookup_time_seconds)
+
+
+📌 How to Monitor These Application Metrics?
+Metric	What It Means?	How to Monitor?
+Latency	Response time of requests	Prometheus (Application metrics)
+Traffic	Request rate (RPS), data transfer	Prometheus (HTTP request counters)
+Errors	HTTP 4xx, 5xx errors	Prometheus + Loki (logs)
+Saturation	Resource limits (CPU, memory, I/O)	Node Exporter + Prometheus
+Logs	Application logs, errors, warnings	Loki + Promtail
+Traces	End-to-end request tracking	Grafana Tempo (Tracing)
+
+
+histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+sum(rate(http_requests_total[5m]))
+rate(node_network_receive_bytes_total[5m])
+sum(rate(http_requests_total{status=~"5.."}[5m]))
+{job="my-app"} |= "ERROR"
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100
+
+# loki
+{job="my-app"} |= "WARN"
+{job="nginx"} |= "500"
+
+
+# Import Dash board numbers 
+-> 1860   --> Node exporter
+-> 7587   --> Balckbox exporter
+-> 13041  --> Website
+-> 13659  
+
+

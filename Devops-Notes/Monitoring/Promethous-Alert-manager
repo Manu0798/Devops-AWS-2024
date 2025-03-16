@@ -227,7 +227,6 @@ echo "Docker installation complete."
 groups:
   - name: alert_rules
     rules:
-      # 1️⃣ Alert: Instance Down
       - alert: InstanceDown
         expr: up == 0
         for: 1m
@@ -237,7 +236,6 @@ groups:
           summary: Endpoint {{ $labels.instance }} down
           description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
 
-      # 2️⃣ Alert: Website Down
       - alert: WebsiteDown
         expr: probe_success == 0
         for: 1m
@@ -247,7 +245,6 @@ groups:
           summary: Website down
           description: The website at {{ $labels.instance }} is down.
 
-      # 3️⃣ Alert: Host Out of Memory
       - alert: HostOutOfMemory
         expr: (node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
         for: 5m
@@ -260,7 +257,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 4️⃣ Alert: Host Out of Disk Space
       - alert: HostOutOfDiskSpace
         expr: (node_filesystem_avail{mountpoint="/"} * 100) / node_filesystem_size{mountpoint="/"} < 50
         for: 1s
@@ -273,7 +269,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 5️⃣ Alert: Host High CPU Load
       - alert: HostHighCpuLoad
         expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
         for: 5m
@@ -286,7 +281,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 6️⃣ Alert: Service Unavailable (Node Exporter)
       - alert: ServiceUnavailable
         expr: up{job="node_exporter"} == 0
         for: 2m
@@ -299,7 +293,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 7️⃣ Alert: High Memory Usage
       - alert: HighMemoryUsage
         expr: (node_memory_Active / node_memory_MemTotal) * 100 > 90
         for: 10m
@@ -312,7 +305,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 8️⃣ Alert: File System Almost Full
       - alert: FileSystemFull
         expr: (node_filesystem_avail / node_filesystem_size) * 100 < 10
         for: 5m
@@ -325,8 +317,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 🐳 **Docker Alerts**
-      # 9️⃣ Alert: Docker Container Restarting Frequently
       - alert: DockerContainerRestarting
         expr: increase(docker_container_restart_count[5m]) > 3
         for: 1m
@@ -339,7 +329,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 🔟 Alert: Docker Container High CPU Usage
       - alert: DockerContainerHighCPU
         expr: (rate(docker_container_cpu_usage_seconds_total[5m]) * 100) > 80
         for: 5m
@@ -352,7 +341,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 1️⃣1️⃣ Alert: Docker Container High Memory Usage
       - alert: DockerContainerHighMemory
         expr: (docker_container_mem_usage_bytes / docker_container_mem_limit_bytes) * 100 > 90
         for: 5m
@@ -365,7 +353,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 1️⃣2️⃣ Alert: Docker Disk Usage High
       - alert: DockerDiskUsageHigh
         expr: (docker_data_dir_disk_used_bytes / docker_data_dir_disk_total_bytes) * 100 > 85
         for: 5m
@@ -378,7 +365,6 @@ groups:
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
 
-      # 1️⃣3️⃣ Alert: Docker Container Stopped
       - alert: DockerContainerStopped
         expr: count by (instance, name) (docker_container_last_seen{state!="running"}) > 0
         for: 1m
@@ -390,6 +376,46 @@ groups:
             The Docker container {{ $labels.name }} on instance {{ $labels.instance }} has stopped.
               VALUE = {{ $value }}
               LABELS: {{ $labels }}
+
+  - name: ssl_alerts
+    rules:
+      - alert: SSLCertificateExpiring
+        expr: ssl_cert_expires_in < 30 * 24 * 60 * 60
+        for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: SSL certificate expiring soon ({{ $labels.instance }})
+          description: "The SSL certificate expires in less than 30 days."
+
+      - alert: SSLCertificateExpired
+        expr: ssl_cert_expires_in <= 0
+        for: 1d
+        labels:
+          severity: critical
+        annotations:
+          summary: SSL certificate expired ({{ $labels.instance }})
+          description: "The SSL certificate has expired."
+
+  - name: latency_alerts
+    rules:
+      - alert: HighApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High application latency ({{ $labels.instance }})
+          description: "The 99th percentile latency is above 500ms."
+
+      - alert: CriticalApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Critical application latency ({{ $labels.instance }})
+          description: "The 99th percentile latency is above 1000ms."
 
 
 -> sudo chown prometheus:prometheus /var/lib/prometheus

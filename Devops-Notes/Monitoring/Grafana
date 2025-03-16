@@ -98,3 +98,176 @@ sum(rate(http_requests_total{status=~"5.."}[5m]))
 -> 13659  
 
 
+1. Instance Down
+Query:
+
+promql
+Copy
+Edit
+up == 0
+Description: Alerts if an instance is down.
+
+2. Website Down (Blackbox Exporter)
+Query:
+
+promql
+Copy
+Edit
+probe_success == 0
+Description: Alerts if the website is not responding to the probe request.
+
+3. High Network Traffic
+Query:
+
+promql
+Copy
+Edit
+rate(node_network_receive_bytes_total[5m]) > 100000000 OR rate(node_network_transmit_bytes_total[5m]) > 100000000
+Description: Triggers an alert if network traffic exceeds 100MB in 5 minutes.
+
+4. Host Out of Memory
+Query:
+
+promql
+Copy
+Edit
+(node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
+Description: Alerts if available memory falls below 25%.
+
+5. Host Out of Disk Space
+Query:
+
+promql
+Copy
+Edit
+(node_filesystem_avail{mountpoint="/"} * 100) / node_filesystem_size{mountpoint="/"} < 50
+Description: Triggers when root (/) disk has less than 50% available space.
+
+6. High CPU Load
+Query:
+
+promql
+Copy
+Edit
+(1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
+Description: Alerts if CPU utilization exceeds 80%.
+
+7. Service Unavailable
+Query:
+
+promql
+Copy
+Edit
+up{job="node_exporter"} == 0
+Description: Triggers when Node Exporter service is unavailable.
+
+8. High Memory Usage
+Query:
+
+promql
+Copy
+Edit
+(node_memory_Active / node_memory_MemTotal) * 100 > 90
+Description: Alerts when memory usage exceeds 90%.
+
+9. File System Almost Full
+Query:
+
+promql
+Copy
+Edit
+(node_filesystem_avail / node_filesystem_size) * 100 < 10
+Description: Alerts if free disk space is below 10%.
+
+10. Docker Container Restarting Frequently
+Query:
+
+promql
+Copy
+Edit
+increase(docker_container_restart_count[5m]) > 3
+Description: Triggers when a Docker container restarts more than 3 times in 5 minutes.
+
+11. Docker Container High CPU Usage
+Query:
+
+promql
+Copy
+Edit
+(rate(docker_container_cpu_usage_seconds_total[5m]) * 100) > 80
+Description: Alerts if Docker container CPU usage exceeds 80%.
+
+12. Docker Container High Memory Usage
+Query:
+
+promql
+Copy
+Edit
+(docker_container_mem_usage_bytes / docker_container_mem_limit_bytes) * 100 > 90
+Description: Triggers when a container uses more than 90% of allocated memory.
+
+13. Docker Disk Usage High
+Query:
+
+promql
+Copy
+Edit
+(docker_data_dir_disk_used_bytes / docker_data_dir_disk_total_bytes) * 100 > 85
+Description: Alerts if Docker disk usage exceeds 85%.
+
+14. Docker Container Stopped
+Query:
+
+promql
+Copy
+Edit
+count by (instance, name) (docker_container_last_seen{state!="running"}) > 0
+Description: Triggers when a Docker container stops running.
+
+15. SSL Certificate Expiring
+Query:
+
+promql
+Copy
+Edit
+ssl_cert_expires_in < 30 * 24 * 60 * 60
+Description: Alerts if an SSL certificate is expiring within 30 days.
+
+16. SSL Certificate Expired
+Query:
+
+promql
+Copy
+Edit
+ssl_cert_expires_in <= 0
+Description: Triggers when an SSL certificate has expired.
+
+17. High Application Latency
+Query:
+
+promql
+Copy
+Edit
+histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 0.5
+Description: Alerts if 99th percentile application latency is above 500ms.
+
+18. Critical Application Latency
+Query:
+
+promql
+Copy
+Edit
+histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 1
+Description: Triggers when 99th percentile latency exceeds 1 second.
+
+19. Saturation Alert
+Query:
+
+promql
+Copy
+Edit
+(avg by (instance) (node_load1) / count by (instance) (node_cpu_seconds_total{mode="idle"})) * 100 > 80
+Description:
+
+Saturation refers to system resource exhaustion, typically CPU load compared to available cores.
+This alert triggers if CPU load is greater than 80% of available cores.

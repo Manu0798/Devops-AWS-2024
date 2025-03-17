@@ -136,8 +136,7 @@ done
   "log-opts": {
     "loki-url": "http://13.235.0.156:3100/loki/api/v1/push",
     "loki-retries": "5",
-    "loki-batch-size": "400",
-    "debug": "true"
+    "loki-batch-size": "400"
   }
 }
 

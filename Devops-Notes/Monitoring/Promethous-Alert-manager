@@ -212,6 +212,7 @@ echo "Docker installation complete."
 -> sudo systemctl status docker
 -> curl http://13.235.242.134:9323/metrics
 -> After complete above you install docker containers
+-> For docker logs we will look at loki-protail file
 
 
 # Install Promethous

@@ -6,7 +6,33 @@
 -> sudo /bin/systemctl daemon-reload
 -> sudo /bin/systemctl enable grafana-server
 -> sudo /bin/systemctl start grafana-server
+-> sudo /bin/systemctl status grafana-server
+
+
+# To get email notification we need to configure below thinsgs in this file sudo vi /etc/grafana/grafana.ini
+
+[smtp]
+enabled = true
+host = smtp.gmail.com:587
+user = varmapotthuri4@gmail.com
+# If the password contains # or ; you have to wrap it with triple quotes. Ex """#password;"""
+password = dzxbhazwoggfybxx
+;cert_file =
+;key_file =
+skip_verify = true
+from_address = varmapotthuri4@gmail.com
+from_name = Grafana
+
+-> sudo /bin/systemctl daemon-reload
+-> sudo /bin/systemctl restart grafana-server
+-> sudo /bin/systemctl status grafana-server
+
 -> After that copy the ip paste it in web browser along with port number 3000 
+-> Add the promethous as a data source in grafana
+-> Set the alert, Click the alerting, contact point, click create contact point, give name, choose Email, give mail id, click test for sample
+-> click save contact point
+-> Click on notification policy, click more on defult, click edit, choose above create contact poin, click update policy
+-> click alert rule, 
 
 
 
@@ -343,3 +369,61 @@ Copy
 Edit
 {job="varlogs"} |= "error" or {job="varlogs"} |= "warning"
 👉 Fetches both errors and warnings from application logs.
+
+
+
+
+1️⃣ HTTP5xxErrors (Critical Severity)
+Purpose:
+Detects a high number of HTTP 5xx errors (server errors) in logs.
+The alert fires when there are more than 5 HTTP 5xx errors in the last 5 minutes.
+Expression Breakdown:
+yaml
+Copy
+Edit
+sum(rate({job="loki"} |~ "HTTP/1.1" |~ "5\\d{2}" [5m])) by (instance) > 5
+job="loki" → Logs are coming from Loki.
+|~ "HTTP/1.1" → Filters logs that contain "HTTP/1.1".
+|~ "5\\d{2}" → Filters logs that contain HTTP status codes 500-599 (server errors).
+rate(...[5m]) → Calculates the rate of these errors over the last 5 minutes.
+sum(...) by (instance) > 5 → If the number of 5xx errors exceeds 5 per instance, the alert triggers.
+Use Case:
+Indicates that the application is experiencing frequent server errors.
+Needs immediate attention, as it affects end-user experience.
+2️⃣ ApplicationLogErrors (Warning Severity)
+Purpose:
+Detects a high number of ERROR messages in application logs.
+The alert fires if there are more than 10 ERROR logs in the last 5 minutes.
+Expression Breakdown:
+yaml
+Copy
+Edit
+count_over_time({job="loki"} |~ "ERROR" [5m]) by (instance) > 10
+job="loki" → Logs are coming from Loki.
+|~ "ERROR" → Filters logs that contain "ERROR".
+count_over_time(...[5m]) → Counts the occurrences of "ERROR" in logs over 5 minutes.
+by (instance) > 10 → If more than 10 errors are logged per instance in the last 5 minutes, the alert fires.
+Use Case:
+Helps detect application errors that may indicate failing services, database issues, or unhandled exceptions.
+Severity is warning (not critical), meaning it needs monitoring but is not an emergency.
+3️⃣ ApplicationLogWarnings (Warning Severity)
+Purpose:
+Detects a high number of WARNING messages in application logs.
+The alert fires if there are more than 20 WARNING logs in the last 5 minutes.
+Expression Breakdown:
+yaml
+Copy
+Edit
+count_over_time({job="loki"} |~ "WARNING" [5m]) by (instance) > 20
+job="loki" → Logs are coming from Loki.
+|~ "WARNING" → Filters logs that contain "WARNING".
+count_over_time(...[5m]) → Counts the occurrences of "WARNING" logs over 5 minutes.
+by (instance) > 20 → If more than 20 warnings are logged per instance in the last 5 minutes, the alert fires.
+Use Case:
+Warnings may indicate potential issues, such as performance degradation, minor failures, or deprecations.
+Needs investigation but isn’t as urgent as errors or 5xx failures.
+Summary Table
+Alert Name	Condition (within 5 min)	Severity	Purpose
+HTTP5xxErrors	More than 5 HTTP 5xx errors	🔴 Critical	Detects server errors (5xx) that affect users
+ApplicationLogErrors	More than 10 ERROR logs	🟠 Warning	Detects high error rates in application logs
+ApplicationLogWarnings	More than 20 WARNING logs	🟠 Warning	Detects high warning counts, indicating potential issues

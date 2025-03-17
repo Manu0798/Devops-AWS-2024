@@ -207,7 +207,10 @@ WantedBy=multi-user.target
 -> ps aux | grep promtail
 -> sudo netstat -tulnp | grep 9080
 
-
+-> After restart
+-> sudo systemctl daemon-reload
+-> sudo systemctl restart loki
+-> sudo systemctl status loki
 
 
 

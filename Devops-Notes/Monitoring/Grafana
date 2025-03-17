@@ -271,3 +271,75 @@ Description:
 
 Saturation refers to system resource exhaustion, typically CPU load compared to available cores.
 This alert triggers if CPU load is greater than 80% of available cores.
+
+
+1. Errors (HTTP 4xx, 5xx) - Prometheus + Loki
+Query: Count of 4xx and 5xx Errors
+logql
+Copy
+Edit
+sum(count_over_time({job="cloudwatch_logs"} |= "HTTP" |~ "4[0-9][0-9]|5[0-9][0-9]" [$__interval]))
+👉 Explanation:
+
+{job="cloudwatch_logs"}: Targets CloudWatch logs being scraped by Promtail.
+|= "HTTP": Filters logs containing "HTTP" (common in access logs).
+|~ "4[0-9][0-9]|5[0-9][0-9]": Matches HTTP status codes in the 400 and 500 ranges.
+count_over_time(... [$__interval]): Counts occurrences in the specified Grafana dashboard interval.
+Query: Rate of 4xx and 5xx Errors
+logql
+Copy
+Edit
+rate({job="cloudwatch_logs"} |= "HTTP" |~ "4[0-9][0-9]|5[0-9][0-9]" [5m])
+👉 Shows how frequently errors occur over a 5-minute window.
+
+Query: Percentage of 4xx and 5xx Errors
+logql
+Copy
+Edit
+sum(rate({job="cloudwatch_logs"} |~ "HTTP/[0-9.]+\" (4[0-9][0-9]|5[0-9][0-9])" [5m]))
+/
+sum(rate({job="cloudwatch_logs"} |~ "HTTP/[0-9.]+" [5m]))
+👉 Calculates error rate as a percentage of total HTTP requests.
+
+2. Application Logs, Errors, and Warnings - Loki + Promtail
+Query: All Logs from the Application
+logql
+Copy
+Edit
+{job="varlogs"}
+👉 Shows all application logs.
+
+Query: Filter Logs for Errors
+logql
+Copy
+Edit
+{job="varlogs"} |= "error"
+👉 Filters logs containing the word "error".
+
+Query: Count of Errors Over Time
+logql
+Copy
+Edit
+count_over_time({job="varlogs"} |= "error" [$__interval])
+👉 Counts occurrences of "error" in logs.
+
+Query: Warnings in Logs
+logql
+Copy
+Edit
+{job="varlogs"} |= "warning"
+👉 Filters logs for "warning" messages.
+
+Query: Count of Warnings Over Time
+logql
+Copy
+Edit
+count_over_time({job="varlogs"} |= "warning" [$__interval])
+👉 Counts occurrences of "warning" messages.
+
+Bonus: Combine Errors and Warnings
+logql
+Copy
+Edit
+{job="varlogs"} |= "error" or {job="varlogs"} |= "warning"
+👉 Fetches both errors and warnings from application logs.

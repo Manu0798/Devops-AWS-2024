@@ -123,6 +123,28 @@ done
 -> crontab -l
 
 
+# Send docker container logs to loki
+-> First you have install one plugin
+-> docker plugin install grafana/loki-docker-driver --alias loki --grant-all-permissions
+-> docker plugin ls
+-> sudo vi /etc/docker/daemon.json
+
+{
+  "metrics-addr": "0.0.0.0:9323",
+  "experimental": true,
+  "log-driver": "loki",
+  "log-opts": {
+    "loki-url": "http://13.235.0.156:3100/loki/api/v1/push",
+    "loki-retries": "5",
+    "loki-batch-size": "400",
+    "debug": "true"
+  }
+}
+
+-> sudo systemctl restart docker     {when you restart the container whichever containers are running those container goes in stop status, you need to start it againg}
+-> sudo systemctl status docker
+-> After complete above you start or create new docker containers again
+
 
 # Install Promtail
 -> wget https://github.com/grafana/loki/releases/latest/download/promtail-linux-amd64.zip -O ~/promtail.zip
@@ -187,25 +209,7 @@ WantedBy=multi-user.target
 -> sudo netstat -tulnp | grep 9080
 
 
-# Send docker container logs to loki
--> First you have install one plugin
--> docker plugin install grafana/loki-docker-driver --alias loki --grant-all-permissions
--> docker plugin ls
--> sudo vi /etc/docker/daemon.json
 
-{
-  "metrics-addr": "0.0.0.0:9323",
-  "experimental": true,
-  "log-driver": "loki",
-  "log-opts": {
-    "loki-url": "http://13.235.0.156:3100/loki/api/v1/push",
-    "loki-retries": "5",
-    "loki-batch-size": "400",
-    "debug": "true"
-  }
-}
-
--> sudo systemctl restart docker     {when you restart the container whichever containers are running those container goes in stop status, you need to start it againg}
 
 
 

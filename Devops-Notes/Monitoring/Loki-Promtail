@@ -180,7 +180,7 @@ scrape_configs:
           - localhost
         labels:
           job: cloudwatch_logs
-          __path__: /var/log/cloudwatch.log
+          __path__: /var/cloudwatch.log
 
 
 

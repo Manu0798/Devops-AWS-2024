@@ -106,7 +106,7 @@ Let me know if you need more help! 🚀
 -> After you deploy the application, go to the custom domains, click add domain, enter the domain name, Click manual configuration
 -> Enable this "Setup redirect from https://origina.ni to https://www.origina.ni"
 -> Click "Amplify managed certificate"
--> It will give some hostnames, and URL, 
+-> It will give some hostnames, and URL,  add three hostnames and URL as like below
 
 Steps to Fix in Route 53
 Open AWS Route 53 → Hosted Zones → frissly.com.
@@ -119,6 +119,8 @@ Record Name: _f3651d5c02cc4db43bf82f8ec2ffa99a.admin
 Type: CNAME
 Value: _9504206d2b921b1c97b5f0f64c37764b.xlfgrmvvlj.acm-validations.aws
 Save.
+
+
 
 
 

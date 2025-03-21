@@ -106,7 +106,23 @@ Let me know if you need more help! 🚀
 -> After you deploy the application, go to the custom domains, click add domain, enter the domain name, Click manual configuration
 -> Enable this "Setup redirect from https://origina.ni to https://www.origina.ni"
 -> Click "Amplify managed certificate"
--> It will give some hostnames, and URL, you will add those three hostnames in route 53
+-> It will give some hostnames, and URL, 
+
+Steps to Fix in Route 53
+Open AWS Route 53 → Hosted Zones → frissly.com.
+
+Click Create Record.
+
+Add the SSL Verification CNAME:
+
+Record Name: _f3651d5c02cc4db43bf82f8ec2ffa99a.admin
+Type: CNAME
+Value: _9504206d2b921b1c97b5f0f64c37764b.xlfgrmvvlj.acm-validations.aws
+Save.
+
+
+
+you will add those three hostnames in route 53
 -> Go to route53, clikc hostname, click the domain name, create the record, give hostname at record name place, choose type, and give URL
 -> After add three hostnames come to Amplify it will take some time create SSL and Active the domain name.
 

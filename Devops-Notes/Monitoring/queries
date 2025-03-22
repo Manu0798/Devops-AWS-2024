@@ -1,0 +1,5 @@
+Queries
+node_time_seconds - node_boot_time_seconds   --> How long server is running
+node_memory_MemTotal_bytes    --> Memory
+100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))    --> Percentage
+sum by (state) (engine_daemon_container_states_containers)    --> For conatiner

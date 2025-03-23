@@ -523,3 +523,120 @@ WantedBy=multi-user.target
 -> sudo netstat -tulnp | grep 9090
 
 
+
+
+# Install only nodeport in uat, stg, prod
+
+#!/bin/bash
+
+# Update package list
+echo "Updating package list..."
+sudo apt-get update -y
+
+# Monitoring Tools
+# Update the packages
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y net-tools wget curl unzip apt-transport-https
+
+# Variables
+NODE_EXPORTER_VERSION="1.9.0"
+# PROMTAIL_VERSION="latest"
+
+# Install Node Exporter
+wget https://github.com/prometheus/node_exporter/releases/download/v$NODE_EXPORTER_VERSION/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+tar -xvf node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+rm node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+sudo mkdir -p /opt/node_exporter
+sudo mv node_exporter-$NODE_EXPORTER_VERSION.linux-amd64 /opt/node_exporter
+sudo useradd --no-create-home --shell /bin/false node_exporter
+sudo chown -R node_exporter:node_exporter /opt/node_exporter/
+sudo chmod -R 755 /opt/node_exporter/
+
+cat <<EOF | sudo tee /etc/systemd/system/node_exporter.service
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/opt/node_exporter/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable node_exporter
+sudo systemctl start node_exporter
+
+
+# Install cAdvisor for monitoring Docker container metrics
+wget https://github.com/google/cadvisor/releases/download/v0.52.1/cadvisor-v0.52.1-linux-amd64 -O cadvisor
+chmod +x cadvisor
+sudo mv cadvisor /usr/local/bin/
+
+cat <<EOF | sudo tee /etc/systemd/system/cadvisor.service
+[Unit]
+Description=cAdvisor
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/cadvisor -port=8080
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable cadvisor
+sudo systemctl start cadvisor
+
+
+
+
+
+
+# Another way to install above tools
+
+# Install Prometheus Node Exporter
+wget https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz
+tar -xvf node_exporter-1.9.0.linux-amd64.tar.gz
+rm node_exporter-1.9.0.linux-amd64.tar.gz
+cd node_exporter-1.9.0.linux-amd64/
+nohup ./node_exporter &
+echo "Node Exporter installation complete."
+
+
+# Install Prometheus Blackbox Exporter
+wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.26.0/blackbox_exporter-0.26.0.linux-amd64.tar.gz
+tar -xvf blackbox_exporter-0.26.0.linux-amd64.tar.gz
+rm blackbox_exporter-0.26.0.linux-amd64.tar.gz
+cd blackbox_exporter-0.26.0.linux-amd64/
+nohup ./blackbox_exporter &
+echo "Blackbox Exporter installation complete."
+
+
+# Install Prometheus
+wget https://github.com/prometheus/prometheus/releases/download/v3.2.1/prometheus-3.2.1.linux-amd64.tar.gz
+tar -xvf prometheus-3.2.1.linux-amd64.tar.gz
+rm prometheus-3.2.1.linux-amd64.tar.gz
+cd prometheus-3.2.1.linux-amd64/
+nohup ./prometheus &
+echo "Prometheus installation complete."
+
+
+# Install Grafana
+sudo apt-get install -y adduser libfontconfig1 musl
+wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.5.2_amd64.deb
+sudo dpkg -i grafana-enterprise_11.5.2_amd64.deb
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl enable grafana-server
+sudo /bin/systemctl start grafana-server
+echo "Grafana installation complete."
+
+
+

@@ -386,3 +386,15 @@ db.couredetails.remove({ name: 'VARMA' })
 -> Set the mongodump in system env variables
 -> mongodump --version
 -> mongoimport --db <database name> --collection <give the collection name> --file D:\mongodb_backup\sampledata.json
+
+
+# To install mongoshell on ubuntu 
+-> https://www.mongodb.com/try/download/shell
+-> Choose Linux x64, copy the link
+-> wget https://downloads.mongodb.com/compass/mongosh-2.4.2-linux-x64.tgz
+-> tar -xvzf mongosh-2.4.2-linux-x64.tgz
+-> sudo mv mongosh-2.4.2-linux-x64 /usr/local/mongosh
+-> sudo ln -s /usr/local/mongosh/bin/mongosh /usr/local/bin/mongosh
+-> mongosh --version
+-> mongosh 'mongodb+srv://organicplaceapp:<password>@uat-stg-cluster.ivpds.mongodb.net/?retryWrites=true&w=majority&appName=uat-stg-cluster'
+

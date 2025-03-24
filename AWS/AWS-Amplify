@@ -196,3 +196,24 @@ frontend:
       - .npm/**/*
       - $(npm root --global)/**/*
 
+
+
+
+# Mobile-web
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "No build needed"
+    build:
+      commands:
+        - echo "Skipping build step"
+  artifacts:
+    baseDirectory: .
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*

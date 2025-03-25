@@ -1,23 +1,333 @@
 # Latency Queries
--> DNS Lookup Time
--> (Time taken to resolve the domain)
+# http_request_duration_seconds
+-> Triggers if the HTTP response time exceeds 100ms.
+-> http_request_duration_seconds{job="https://admin.frisely.com"}
+-> http_request_duration_seconds{job="https://admin.frisely.com"} > 0.1           --> Alert rule
+
+Indicates slow server responses, which could be caused by:
+
+High server load
+
+Database bottlenecks
+
+Network latency
+
+Inefficient code
+
+Impact:
+
+Poor user experience (slow page loads).
+
+Potential timeouts for API consumers.
+
+Example Alert Rules for Your Dashboard:
+Metric	Condition	Purpose
+http_request_duration_seconds	> 0.1 (100ms)	Alert on slow HTTP responses
+
+
+
+# Geographic Latency Variance probe_duration_seconds
+-> Latency differences across geographic regions.
+-> avg by (location) (probe_http_duration_seconds{instance="https://admin.frissly.com"})
+-> max(probe_http_duration_seconds{instance="https://admin.frissly.com"}) 
+- min(probe_http_duration_seconds{instance="https://admin.frissly.com"}) > 0.3       # Alert if latency varies > 300ms between regions
+
+Why It Matters:
+
+Helps identify CDN or regional routing issues.
+
+Impact:
+
+False "down" alerts if probes time out.
+
+Degraded performance even if the service is technically "up."
+
+
+
+# DNS Lookup Time
+-> Time taken to resolve the domain name (admin.frissly.com) to an IP address.
 -> probe_http_duration_seconds{phase="resolve", instance="https://admin.frissly.com"}
+-> probe_http_duration_seconds{phase="resolve", instance="https://admin.frissly.com"} > 0.1     # Alert if DNS lookup exceeds 100ms
+
+Why It Matters:
+
+Slow DNS can delay all subsequent steps (connection, TLS).
+
+Common causes: Misconfigured DNS servers or network issues.
+
 
 -> Processing Time
--> Time taken by the server to process the request
+-> Time the server takes to process the request (after connection/TLS).
 -> probe_http_duration_seconds{phase="processing", instance="https://admin.frissly.com"}
+-> probe_http_duration_seconds{phase="processing", instance="https://admin.frissly.com"} > 0.5   # Alert if processing exceeds 500ms
 
--> Connection Time
--> Time taken to establish a TCP connection
+Why It Matters:
+
+High processing time indicates:
+
+Server overload (CPU/memory).
+
+Inefficient backend code or database queries.
+
+
+# Connection Time
+-> Time to establish a TCP connection to the server.
 -> probe_http_duration_seconds{phase="connect", instance="https://admin.frissly.com"}
+-> probe_http_duration_seconds{phase="connect", instance="https://admin.frissly.com"} > 0.2     # Alert if TCP connection exceeds 200ms
 
--> TLS Handshake Time
+Why It Matters:
+
+Slowness suggests:
+
+Network congestion.
+
+Firewall/routing issues.
+
+Server backlog (e.g., SYN queue full).
+
+
+# TLS Handshake Time
 -> Time taken to complete the TLS handshake
 -> probe_http_duration_seconds{phase="tls", instance="https://admin.frissly.com"}
+-> probe_http_duration_seconds{phase="tls", instance="https://admin.frissly.com"} > 0.3      # # Alert if TLS handshake exceeds 300ms
 
--> Overall latency
--> This query provides the total response time taken by the server
+Why It Matters:
+
+Slow TLS can be caused by:
+
+Weak server CPU (e.g., RSA key exchange).
+
+Misconfigured certificates (e.g., missing OCSP stapling).
+
+
+
+ # End-to-End HTTP Latency
+-> Total time from request initiation to response completion (sum of DNS, TCP, TLS, processing, etc.).
 -> probe_http_duration_seconds{instance="https://admin.frissly.com"}
+-> probe_http_duration_seconds{instance="https://admin.frissly.com"} > 0.5                  # Warning: Latency > 500ms
+-> probe_http_duration_seconds{instance="https://admin.frissly.com"} > 1                    # # Critical: Latency > 1s
+
+Why It Matters:
+
+Directly impacts user experience. High latency suggests:
+
+Network congestion.
+
+Server overload.
+
+Database/backend delays.
+
+
+-> Extra
+#  Percentile Latency (P95/P99)
+-> Tail latency (95th/99th percentile) to catch outliers.
+-> histogram_quantile(0.95, sum by (le) (rate(probe_http_duration_seconds_bucket{instance="https://admin.frissly.com"}[5m])))
+-> histogram_quantile(0.99, sum by (le) (rate(probe_http_duration_seconds_bucket{instance="https://admin.frissly.com"}[5m])))
+-> histogram_quantile(0.95, sum by (le) (rate(probe_http_duration_seconds_bucket{instance="https://admin.frissly.com"}[5m]))) > 0.8         # Alert if P95 > 800ms
+-> histogram_quantile(0.99, sum by (le) (rate(probe_http_duration_seconds_bucket{instance="https://admin.frissly.com"}[5m]))) > 1.5         # Alert if P99 > 1.5s
+
+Why It Matters:
+
+High percentiles indicate sporadic but severe delays.
+
+
+# Threshold Guidance
+Phase	      Warning Threshold	   Critical Threshold
+DNS	             100ms	              300ms
+Connection	     200ms	              500ms
+TLS	             300ms	               1s
+Processing	     500ms	               2s
+Total	            1s	                 3s
+
+
+
+
+
+
+# Network Queries
+# Packet Loss (ICMP)
+-> Percentage of ICMP (ping) packets lost between the probe and the target.
+-> probe_icmp_packet_loss{instance="https://admin.frissly.com"}
+-> probe_icmp_packet_loss{instance="https://admin.frissly.com"} > 0.05        # Alert if packet loss exceeds 5%
+
+Why It Matters:
+
+Indicates network instability, congestion, or firewall drops.
+
+Impact: Timeouts, intermittent connectivity.
+
+
+
+#  Round-Trip Time (RTT)
+-> Latency for ICMP packets (round-trip time).
+-> probe_icmp_duration_seconds{instance="https://admin.frissly.com"}
+-> probe_icmp_duration_seconds{instance="https://admin.frissly.com"} > 0.15        # Alert if RTT exceeds 150ms
+
+Why It Matters:
+
+High RTT suggests network congestion or long-distance routing.
+
+
+
+#  TCP Connection Failures
+-> Whether TCP connections fail (e.g., SYN timeout, refused).
+-> probe_failed_due_to_tcp{instance="https://admin.frissly.com"}
+-> probe_failed_due_to_tcp{instance="https://admin.frissly.com"} == 1            # Alert if TCP connections fail
+
+Why It Matters:
+
+Firewalls, port blocking, or server crashes.
+
+
+
+#  Hop Count (TTL)
+-> Number of network hops (Time-To-Live) to reach the target.
+-> probe_ttl{instance="https://admin.frissly.com"}
+-> delta(probe_ttl{instance="https://admin.frissly.com"}[5m]) > 5           # Alert if hop count suddenly increases
+
+Why It Matters:
+
+Route changes may introduce latency or unreliable paths.
+
+
+# Bandwidth (Throughput)
+-> Network inbound/outbound traffic (bytes/sec).
+-> rate(network_receive_bytes_total{device="eth0"}[1m])
+-> rate(network_transmit_bytes_total{instance="admin.frissly.com"}[5m]) * 8 < 1e6         # Alert if throughput drops below 1Mbps (unexpectedly)
+
+Why It Matters:
+
+Bottlenecks, ISP throttling, or NIC failures.
+
+
+
+#  DNS Propagation Delay
+-> Changes in DNS resolution time over time.
+-> delta(probe_dns_lookup_time_seconds{instance="https://admin.frissly.com"}[1h])
+-> delta(probe_dns_lookup_time_seconds{instance="https://admin.frissly.com"}[10m]) > 0.5        # Alert if DNS resolution time spikes
+
+Why It Matters:
+
+DNS caching issues or misconfigured DNS servers.
+
+
+Alert Severity Guide
+Metric	              Warning Threshold	       Critical Threshold
+Packet Loss	                5%	                      20%
+RTT	                        150ms	                   300ms
+TCP Failures	             1 failure	             3+ failures
+Hop Count Change	          +5 hops	                 +10 hops
+Bandwidth Drop	         50% of baseline	        80% of baseline
+
+
+
+
+# Traffic
+# Request Rate (RPS/QPS)
+-> Requests per second (RPS) to your service.
+-> rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m])
+-> rate(probe_http_requests_total{instance="https://admin.frissly.com"}[10m]) < 10        # Alert if traffic drops below 10 RPS (unexpectedly)
+-> rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]) 
+> 3 * avg_over_time(probe_http_requests_total{instance="https://admin.frissly.com"}[1h])          # Alert if traffic spikes >3x baseline
+
+Why It Matters:
+
+Low traffic: Service unavailability or DNS issues.
+
+High traffic: Potential DDoS or unexpected load.
+
+
+
+# Error Rate (HTTP 4xx/5xx)
+-> Percentage of failed requests (e.g., 500 errors).
+-> (sum(rate(probe_http_failed_total{instance="https://admin.frissly.com"}[5m])) 
+/ sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))) * 100
+-> (sum(rate(probe_http_failed_total{instance="https://admin.frissly.com"}[5m])) 
+/ sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))) * 100 > 5         # Alert if error rate > 5%
+
+Why It Matters:
+
+High error rates indicate bugs, misconfigurations, or outages.
+
+
+
+# Traffic by HTTP Method
+-> Distribution of GET/POST/PUT/DELETE requests.
+-> sum by (method) (rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+-> (sum(rate(probe_http_requests_total{instance="https://admin.frissly.com", method!="GET"}[5m])) 
+/ sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))) * 100 > 20             # Alert if non-GET methods exceed 20% (for read-heavy services)
+
+Why It Matters:
+
+Unexpected write/delete traffic may indicate abuse.
+
+
+# Bandwidth (Bytes Transferred)
+# Ingress traffic (bytes/sec)
+rate(nginx_http_request_bytes_total{host="admin.frissly.com"}[5m])
+
+# Egress traffic
+rate(nginx_http_response_bytes_total{host="admin.frissly.com"}[5m])
+-> rate(nginx_http_request_bytes_total{host="admin.frissly.com"}[1m]) > 10e6            # Alert if bandwidth exceeds 10MB/s (adjust based on capacity)
+
+Why It Matters:
+
+Prevents bandwidth overages or detects data leaks.
+
+
+
+# Concurrent Connections
+-> Active client connections to your server.
+-> nginx_connections_active{host="admin.frissly.com"}
+-> nginx_connections_active{host="admin.frissly.com"} > 100       # Alert if connections > 1000 (adjust for your server capacity)
+
+
+
+Why It Matters:
+
+High concurrency can exhaust server resources.
+
+
+# User Agent Analysis
+-> Traffic sources (browsers, bots, APIs).
+-> sum by (user_agent) (rate(probe_http_requests_total{instance="https://admin.frissly.com"}[1h]))
+-> # Alert if bot traffic exceeds 50%
+(sum(rate(probe_http_requests_total{instance="https://admin.frissly.com", user_agent=~".*bot.*"}[1h])) 
+/ sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[1h]))) * 100 > 50             # Alert if bot traffic exceeds 50%
+
+
+Why It Matters:
+
+Detects scrapers or malicious bots.
+
+
+Alert Severity Guide
+Metric	                 Warning Threshold	        Critical Threshold
+Request Rate (RPS)	       ±50% of baseline	          ±200% of baseline
+Error Rate	                  5%	                         10%
+Bandwidth	                80% of capacity	            95% of capacity
+Concurrent Connections	80% of max_connections	    95% of max_connections
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

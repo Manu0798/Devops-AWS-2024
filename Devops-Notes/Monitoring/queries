@@ -281,8 +281,6 @@ Prevents bandwidth overages or detects data leaks.
 -> nginx_connections_active{host="admin.frissly.com"}
 -> nginx_connections_active{host="admin.frissly.com"} > 100       # Alert if connections > 1000 (adjust for your server capacity)
 
-
-
 Why It Matters:
 
 High concurrency can exhaust server resources.
@@ -294,7 +292,6 @@ High concurrency can exhaust server resources.
 -> # Alert if bot traffic exceeds 50%
 (sum(rate(probe_http_requests_total{instance="https://admin.frissly.com", user_agent=~".*bot.*"}[1h])) 
 / sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[1h]))) * 100 > 50             # Alert if bot traffic exceeds 50%
-
 
 Why It Matters:
 

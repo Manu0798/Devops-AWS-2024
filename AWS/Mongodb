@@ -362,6 +362,7 @@ db.couredetails.remove({ name: 'VARMA' })
 -> mongorestore --uri="mongodb+srv://username2:password2@targetcluster.vxamp.mongodb.net/targetDB" "D:\mongodb_backup\frissly_dev"
 -> Example:-          mongorestore --uri="mongodb+srv://varmapotthuri4:Varma_3003@backup-cluster.vxamp.mongodb.net/mongobackup" "D:\mongodb_backup\frissly_dev"
 
+    mongodump --uri="mongodb+srv://organicplaceapp:<keep it normal password>@uat-stg-cluster.ivpds.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=uat-stg-cluster" --out="D:\mongodb_backup_live"
     mongorestore --uri="mongodb+srv://vsrpvarma:<keep it normal password>@uat-cluster.aoiaw.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=UAT-Cluster" "D:\mongodb_backup_live\frissly_uat"
 
 

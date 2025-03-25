@@ -1,3 +1,119 @@
+# Latency Queries
+-> DNS Lookup Time
+-> (Time taken to resolve the domain)
+-> probe_http_duration_seconds{phase="resolve", instance="https://admin.frissly.com"}
+
+-> Processing Time
+-> Time taken by the server to process the request
+-> probe_http_duration_seconds{phase="processing", instance="https://admin.frissly.com"}
+
+-> Connection Time
+-> Time taken to establish a TCP connection
+-> probe_http_duration_seconds{phase="connect", instance="https://admin.frissly.com"}
+
+-> TLS Handshake Time
+-> Time taken to complete the TLS handshake
+-> probe_http_duration_seconds{phase="tls", instance="https://admin.frissly.com"}
+
+-> Overall latency
+-> This query provides the total response time taken by the server
+-> probe_http_duration_seconds{instance="https://admin.frissly.com"}
+
+
+
+# Network
+-> Network Packets Received
+-> Tracks the number of packets received by the server
+-> sum(rate(node_network_receive_packets_total{instance="https://admin.frissly.com"}[5m]))
+
+
+-> Incoming Traffic 
+-> (Incoming Data)
+-> sum(rate(node_network_transmit_packets_total{instance="https://admin.frissly.com"}[5m]))
+
+
+-> Received Traffic
+-> (Received Data)
+-> sum(rate(node_network_receive_bytes_total{instance="https://admin.frissly.com"}[5m]))
+
+
+-> Outbound Traffic 
+-> (Sent Data)
+-> sum(rate(node_network_transmit_bytes_total{instance="https://admin.frissly.com"}[5m]))
+
+
+
+#  Traffic
+-> Count of Response Codes
+-> To see how many response codes are returned
+-> count(probe_http_status_code{instance="https://admin.frissly.com"})
+
+
+-> HTTP Request Rate
+-> Measures incoming HTTP requests per second over a 5-minute window
+-> rate(http_requests_total{instance="https://admin.frissly.com"}[5m])
+
+
+# SSH
+-> SSL Expiry Time Remaining
+-> SSL Expiry Time Remaining
+-> (probe_ssl_earliest_cert_expiry{instance="https://admin.frissly.com"} - time()) / 86400
+
+
+# Errors (HTTP 4xx & 5xx)
+-> Server Errors (5xx)
+-> Includes 500 Internal Server Error, 502 Bad Gateway, etc.
+-> sum(rate(probe_http_status_code{instance="https://admin.frissly.com"}[5m])) by (status) > 499
+
+
+-> Client Errors (4xx)
+-> Includes errors like 404 Not Found, 403 Forbidden, and 400 Bad Request.
+-> sum(rate(probe_http_status_code{instance="https://admin.frissly.com"}[5m])) by (status) > 399 and status < 500
+
+
+-> All HTTP Response Codes
+-> Displays the count of each HTTP response code over a 5-minute window
+-> sum(rate(probe_http_status_code{instance="https://admin.frissly.com", job="blackbox"}[5m])) by (status)
+
+
+
+# Logs
+-> Percentage of 4xx and 5xx Errors
+-> Calculates error rate as a percentage of total HTTP requests
+-> sum(rate({job="cloudwatch_logs"} |~ "HTTP/[0-9.]+\" (4[0-9][0-9]|5[0-9][0-9])" [5m]))
+/
+sum(rate({job="cloudwatch_logs"} |~ "HTTP/[0-9.]+" [5m]))
+
+
+-> Count of Warnings Over Time
+-> Counts occurrences of "warning" messages.
+-> count_over_time({job="cloudwatch_logs"} |= "warning" [$__interval])
+
+-> Warnings in Logs
+-> Filters logs for "warning" messages.
+-> {job="cloudwatch_logs"} |= "warning"
+
+-> Count of Errors Over Time
+-> Counts occurrences of "error" in logs.
+-> count_over_time({job="cloudwatch_logs"} |= "error" [$__interval])
+
+# Extra
+
+->  Application Logs, Errors, and Warnings - Loki + Promtail
+-> Shows all application logs.
+-> {job="cloudwatch_logs"}
+
+-> Rate of 4xx and 5xx Errors
+-> Shows how frequently errors occur over a 5-minute window.
+-> rate({job="cloudwatch_logs"} |= "HTTP" |~ "4[0-9][0-9]|5[0-9][0-9]" [5m])
+
+
+-> Count of 4xx and 5xx Errors
+-> sum(count_over_time({job="cloudwatch_logs"} |= "HTTP" |~ "4[0-9][0-9]|5[0-9][0-9]" [$__interval]))
+
+
+
+
 Queries
 node_time_seconds - node_boot_time_seconds   --> How long server is running
 node_memory_MemTotal_bytes    --> Memory

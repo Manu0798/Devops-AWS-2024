@@ -525,6 +525,14 @@ WantedBy=multi-user.target
 
 
 
+
+
+
+
+
+
+
+
 # Install only nodeport in uat, stg, prod
 
 #!/bin/bash

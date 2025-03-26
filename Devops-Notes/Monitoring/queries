@@ -312,6 +312,149 @@ Concurrent Connections	80% of max_connections	    95% of max_connections
 
 
 
+# HTTP Error
+# Overall Error Rate (4xx + 5xx)
+-> Percentage of failed requests (client + server errors).
+-> (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4..|5.."}[5m])) 
+  / 
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+) * 100  # <-- Closing parenthesis added
+-> (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4..|5.."}[5m]))
+  / 
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+) * 100 > 2                  # Warning Alert (>2% Errors):
+-> (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4..|5.."}[5m]))
+  / 
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+) * 100 > 5               #  Critical Alert (>5% Errors):
+
+-> Why It Matters:
+
+Errors degrade user experience and may indicate breaking changes or outages.
+
+
+
+#  Client Errors (4xx)
+-> Client-side issues (invalid requests, rate limits, auth failures).
+-> sum by (status_code) (rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4.."}[5m]))
+-> (
+  sum by (status_code) (
+    rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4.."}[5m])
+  )
+  / 
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+) * 100 > 1         # Alert when any 4xx error exceeds 1% of total traffic
+-> (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code="404"}[5m]))
+  / 
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+) * 100 > 1
+-> (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code="429"}[5m]))
+  / 
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+) * 100 > 0.5
+
+
+
+# Server Errors (5xx)
+-> Server-side failures (crashes, timeouts, misconfigurations).
+-> sum by (status_code) (rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"5.."}[5m]))
+-> probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"5.."} > 0                  #  Alert if any 5xx occurs (zero-tolerance for critical services)
+-> (sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"5.."}[5m])) 
+/ sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))) * 100 > 0.5             # # Alert if 5xx rate > 0.5%
+
+Why It Matters:
+
+5xx errors directly impact service reliability.
+
+
+# Error Spike Detection
+-> Abnormal error rate deviations.
+-> (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4..|5.."}[5m]))
+  /
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+)
+> 
+3 * (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4..|5.."}[1h]))
+  /
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[1h]))
+)
+-> (
+  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4..|5.."}[5m]))
+  / 
+  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+)
+> 
+3 * (
+  sum(avg_over_time(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"4..|5.."}[5m])[1h:]))
+  /
+  sum(avg_over_time(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m])[1h:]))
+)
+
+Why It Matters:
+
+Detects incidents like deployments gone wrong or dependency failures.
+
+
+
+#  Error by Endpoint
+-> Which API endpoints/pages are failing most.
+-> sum by (endpoint) (rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"5.."}[5m]))
+-> (
+  sum by (endpoint) (rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"5.."}[5m])) 
+  / 
+  sum by (endpoint) (rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+) * 100 > 10             # Alert if any endpoint has >10% error rate
+
+Why It Matters:
+
+Isolates problematic endpoints for debugging.
+
+
+
+# Error vs. Latency Correlation
+-> Whether slow requests also fail (e.g., timeouts).
+-> probe_http_duration_seconds{instance="https://admin.frissly.com"} > 1
+AND ON()
+probe_http_failed_total{instance="https://admin.frissly.com", status_code=~"5.."} > 0
+
+
+Alert Severity Guide
+Error Type	             Warning Threshold	            Critical Threshold
+All                       Errors (4xx+5xx)	                2%	5%
+5xx                       Errors	                        0.1%	0.5%
+400	                       > 1%                   	Check malformed requests
+401/403	                   > 0.5%	                  Investigate auth issues
+404	                       > 1%	                      Fix broken links/APIs
+429	                       > 0.5%	                    Review rate limiting
+
+
+
+
+
+#  SSH Certificate Monitoring
+# Certificate Expiry Check
+-> Days until SSH certificate expires
+-> (probe_ssl_earliest_cert_expiry{instance="https://admin.frissly.com"} - time()) / 86400
+-> (probe_ssl_earliest_cert_expiry{instance="https://admin.frissly.com"} - time()) / 86400 < 15             # Warning: Expires in <15 days
+-> (probe_ssl_earliest_cert_expiry{instance="https://admin.frissly.com"} - time()) / 86400 < 7            # Critical: Expires in <7 days
+
+Why It Matters:
+
+Prevents service disruptions from expired certificates
+
+Allows time for certificate rotation
+
+
+
+
+
 
 
 

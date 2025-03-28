@@ -124,12 +124,13 @@ import requests
 import boto3
 import time
 from datetime import datetime
+from requests.auth import HTTPDigestAuth
 
-# MongoDB Atlas API Keys
-ATLAS_PUBLIC_KEY = "yuhrwkxc"
-ATLAS_PRIVATE_KEY = "36ca34f3-6679-4e09-86e3-d0059adb9434"
-ATLAS_GROUP_ID = "67694dc86d55bd55a0dd81ca"
-CLUSTER_NAME = "Cluster-01"
+# MongoDB Atlas API Keys (Store securely in AWS Secrets Manager or environment variables)
+ATLAS_PUBLIC_KEY = "tkoufjhu"
+ATLAS_PRIVATE_KEY = "b05ae7ee-89cd-4213-8c34-18c94951621e"
+ATLAS_GROUP_ID = "67b8a009d2b1ae1f589260a7"
+CLUSTER_NAME = "UAT-Cluster"
 
 # AWS S3 Configuration
 S3_BUCKET_NAME = "mongodb-backup-3003"
@@ -144,50 +145,99 @@ HEADERS = {
 # Step 1: Trigger MongoDB Snapshot
 def trigger_snapshot():
     url = f"https://cloud.mongodb.com/api/atlas/v1.0/groups/{ATLAS_GROUP_ID}/clusters/{CLUSTER_NAME}/backup/snapshots"
-    
-    response = requests.post(url, headers=HEADERS, auth=(ATLAS_PUBLIC_KEY, ATLAS_PRIVATE_KEY))
-    data = response.json()
-    
-    if "id" in data:
-        return data["id"]
+
+    payload = {
+        "description": "Automated backup",
+        "retentionInDays": 7
+    }
+
+    response = requests.post(url, headers=HEADERS, auth=HTTPDigestAuth(ATLAS_PUBLIC_KEY, ATLAS_PRIVATE_KEY), json=payload)
+
+    if response.status_code in [201, 202]:  # 202 means "accepted"
+        data = response.json()
+        snapshot_id = data.get("id")
+        if snapshot_id:
+            print(f"Snapshot successfully triggered. ID: {snapshot_id}")
+            return snapshot_id
+        else:
+            print("Error: No snapshot ID returned.")
+            return None
     else:
-        print("Error triggering backup:", data)
+        print("Error triggering backup:", response.text)
         return None
 
-# Step 2: Download Snapshot
+# Step 2: Wait for Snapshot Completion and Get Download URL
 def get_snapshot(snapshot_id):
-    url = f"https://cloud.mongodb.com/api/atlas/v1.0/groups/{ATLAS_GROUP_ID}/backup/snapshots/{snapshot_id}"
-    
-    while True:
-        response = requests.get(url, headers=HEADERS, auth=(ATLAS_PUBLIC_KEY, ATLAS_PRIVATE_KEY))
-        data = response.json()
-        
-        if data.get("status") == "COMPLETED":
-            return data["downloadUrl"]
-        
-        print("Waiting for snapshot completion...")
-        time.sleep(60)
+    url = f"https://cloud.mongodb.com/api/atlas/v1.0/groups/{ATLAS_GROUP_ID}/clusters/{CLUSTER_NAME}/backup/snapshots/{snapshot_id}"
 
-# Step 3: Upload to S3
+    max_retries = 30  # Wait up to 30 minutes
+    retries = 0
+
+    while retries < max_retries:
+        response = requests.get(url, headers=HEADERS, auth=HTTPDigestAuth(ATLAS_PUBLIC_KEY, ATLAS_PRIVATE_KEY))
+        data = response.json()
+
+        if response.status_code == 200:
+            status = data.get("status", "").lower()
+            print(f"Snapshot Status: {status}")
+
+            if status == "completed":
+                print("Snapshot is ready for download.")
+                return data.get("downloadUrl")
+            elif status in ["failed", "error"]:
+                print(f"Snapshot failed: {data}")
+                return None
+        else:
+            print("Error checking snapshot status:", response.text)
+            return None
+
+        print(f"Waiting for snapshot completion... Retry {retries + 1}/{max_retries}")
+        retries += 1
+        time.sleep(60)  # Check every minute
+
+    print("Snapshot process timed out.")
+    return None
+
+# Step 3: Download and Upload to S3
 def upload_to_s3(download_url):
+    if not download_url:
+        print("No download URL provided, skipping S3 upload.")
+        return False
+
     s3_client = boto3.client("s3", region_name=S3_REGION)
-    
+
     response = requests.get(download_url, stream=True)
     filename = f"{S3_FILE_PREFIX}_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.gz"
 
-    with open(filename, "wb") as file:
-        for chunk in response.iter_content(chunk_size=1024):
-            file.write(chunk)
+    local_path = f"/tmp/{filename}"
+    try:
+        with open(local_path, "wb") as file:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                file.write(chunk)
 
-    s3_client.upload_file(filename, S3_BUCKET_NAME, filename)
-    print(f"Backup uploaded to S3: s3://{S3_BUCKET_NAME}/{filename}")
+        # Upload file to S3
+        s3_client.upload_file(local_path, S3_BUCKET_NAME, filename)
+        print(f"Backup uploaded to S3: s3://{S3_BUCKET_NAME}/{filename}")
+        return True
 
+    except Exception as e:
+        print(f"Error uploading to S3: {str(e)}")
+        return False
+
+# Lambda Handler
 def lambda_handler(event, context):
+    print("Starting MongoDB Atlas backup process...")
+
     snapshot_id = trigger_snapshot()
     if snapshot_id:
         download_url = get_snapshot(snapshot_id)
-        upload_to_s3(download_url)
-    return {"statusCode": 200, "body": json.dumps("Backup completed successfully.")}
+        if download_url:
+            success = upload_to_s3(download_url)
+            if success:
+                return {"statusCode": 200, "body": json.dumps("Backup completed successfully.")}
+    
+    return {"statusCode": 500, "body": json.dumps("Backup process failed.")}
+
 
 
 -> After paste the above in console, u have to install some packages in our local and upload in layers

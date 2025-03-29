@@ -263,11 +263,11 @@ Unexpected write/delete traffic may indicate abuse.
 
 
 # Bandwidth (Bytes Transferred)
-# Ingress traffic (bytes/sec)
+-> Ingress traffic (bytes/sec)
 rate(nginx_http_request_bytes_total{host="admin.frissly.com"}[5m])
 
 # Egress traffic
-rate(nginx_http_response_bytes_total{host="admin.frissly.com"}[5m])
+-> rate(nginx_http_response_bytes_total{host="admin.frissly.com"}[5m])
 -> rate(nginx_http_request_bytes_total{host="admin.frissly.com"}[1m]) > 10e6            # Alert if bandwidth exceeds 10MB/s (adjust based on capacity)
 
 Why It Matters:
@@ -352,11 +352,11 @@ Errors degrade user experience and may indicate breaking changes or outages.
   / 
   sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
 ) * 100 > 1
--> (
-  sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code="429"}[5m]))
-  / 
-  sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
-) * 100 > 0.5
+ -> (
+   sum(rate(probe_http_failed_total{instance="https://admin.frissly.com", status_code="429"}[5m]))
+   / 
+   sum(rate(probe_http_requests_total{instance="https://admin.frissly.com"}[5m]))
+ ) * 100 > 0.5
 
 
 

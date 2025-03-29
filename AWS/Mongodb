@@ -374,6 +374,10 @@ db.couredetails.remove({ name: 'VARMA' })
 -> After set up the above steps, go to VPC and clikc peering connecton and accept the request, later it will take some time to get approval
 -> There after go to the click route table of private subnets, click edit, add the peering connection to that route table, give Atlas CIDR (VPC Region) ip at place, choose peering, save
 
+
+-> If you want to connect with servers which running in public subnet then you have to add as like above to route table of public subenet like below
+-> There after go to the click route table of public subnets, click edit, add the peering connection to that route table, give Atlas CIDR (VPC Region) ip at place, choose peering, save
+
 # You will watch below video to get more info
 -> https://youtu.be/b78Pz0gWqX4?si=8KIJjA7-Bw0zufn_
 -> https://youtu.be/8NITVf0L5X0?si=GbgL9ourI4j97hCD

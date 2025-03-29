@@ -68,6 +68,7 @@ sudo systemctl start node_exporter
 
 
 # You will install below script in Monitoring server for promethous, grafana, loki and promtail
+
 #!/bin/bash
 
 # Update package list
@@ -96,6 +97,329 @@ sudo mkdir /var/lib/prometheus
 # Configure Prometheus alert rules
 echo "Configuring Prometheus alert rules..."
 cat <<EOF | sudo tee /opt/prometheus/prometheus-3.2.1.linux-amd64/alert_rules.yml
+groups:
+  - name: alert_rules
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Endpoint {{ \$labels.instance }} down
+          description: "{{ \$labels.instance }} of job {{ \$labels.job }} has been down for more than 1 minute."
+
+      - alert: WebsiteDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Website down
+          description: The website at {{ \$labels.instance }} is down.
+
+      - alert: HostOutOfMemory
+        expr: (node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of memory (instance {{ \$labels.instance }})
+          description: |-
+            Node memory is filling up (< 25% left)
+              VALUE = {{ \$value }}
+              LABELS: {{ \$labels }}
+
+      - alert: HostOutOfDiskSpace
+        expr: (node_filesystem_avail{mountpoint="/"} * 100) / node_filesystem_size{mountpoint="/"} < 50
+        for: 1s
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of disk space (instance {{ \$labels.instance }})
+          description: |-
+            Disk is almost full (< 50% left)
+              VALUE = {{ \$value }}
+              LABELS: {{ \$labels }}
+
+      - alert: HostHighCpuLoad
+        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host high CPU load (instance {{ \$labels.instance }})
+          description: |-
+            CPU load is > 80%
+              VALUE = {{ \$value }}
+              LABELS: {{ \$labels }}
+
+      - alert: ServiceUnavailable
+        expr: up{job="node_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Service Unavailable (instance {{ \$labels.instance }})
+          description: |-
+            The service {{ \$labels.job }} is not available
+              VALUE = {{ \$value }}
+              LABELS: {{ \$labels }}
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_Active / node_memory_MemTotal) * 100 > 90
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: High Memory Usage (instance {{ \$labels.instance }})
+          description: |-
+            Memory usage is > 90%
+              VALUE = {{ \$value }}
+              LABELS: {{ \$labels }}
+
+      - alert: FileSystemFull
+        expr: (node_filesystem_avail / node_filesystem_size) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: File System Almost Full (instance {{ \$labels.instance }})
+          description: |-
+            File system has < 10% free space
+              VALUE = {{ \$value }}
+              LABELS: {{ \$labels }}
+
+  - name: docker-container-alerts
+    rules:
+      # 🚨 Alert: Docker Disk Usage High
+      - alert: DockerDiskUsageHigh
+        expr: node_filesystem_free_bytes{mountpoint="/var/lib/docker"} / node_filesystem_size_bytes{mountpoint="/var/lib/docker"} * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Docker Disk Usage High"
+          description: "Docker disk usage is above 90%, remaining space is less than 10%."
+
+      # 🚨 Alert: High Memory Usage in a Container
+      - alert: DockerContainerHighMemory
+        expr: container_memory_usage_bytes{container_label_com_docker_compose_service!=""} / container_spec_memory_limit_bytes * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Memory Usage in Docker Container"
+          description: "Container {{ $labels.container_label_com_docker_compose_service }} is using more than 80% of its allocated memory."
+
+      # 🚨 Alert: High CPU Usage in a Container
+      - alert: DockerContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=""}[5m]) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU Usage in Docker Container"
+          description: "Container {{ $labels.container_label_com_docker_compose_service }} is using more than 80% CPU."
+
+      # 🚨 Alert: Frequent Container Restarts
+      - alert: DockerContainerRestarting
+        expr: increase(container_restart_count{container_label_com_docker_compose_service!=""}[10m]) > 3
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Docker Container Restarting Frequently"
+          description: "Container {{ $labels.container_label_com_docker_compose_service }} has restarted more than 3 times in 10 minutes."
+
+      # 🚨 Alert: Stopped Docker Containers
+      - alert: DockerContainerStopped
+        expr: sum by (state) (engine_daemon_container_states_containers{state="stopped"}) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Stopped Container Alert"
+          description: "One or more Docker containers are in a stopped state for more than 2 minutes."
+
+      # 🚨 Alert: Paused Docker Containers
+      - alert: DockerContainerPaused
+        expr: sum by (state) (engine_daemon_container_states_containers{state="paused"}) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Paused Container Alert"
+          description: "One or more Docker containers are in a paused state."
+
+      # 🚨 Alert: No Running Containers
+      - alert: NoRunningContainers
+        expr: sum by (state) (engine_daemon_container_states_containers{state="running"}) == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No Running Containers"
+          description: "There are no running containers on the host."
+
+  - name: website_alerts
+    rules:
+      - alert: StaticWebsiteDown
+        expr: probe_success{instance="https://frissly.com"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Static Website is Down
+          description: The Static website at https://frissly.com is unreachable.
+
+      - alert: AdminWebsiteDown
+        expr: probe_success{instance="https://admin.frissly.com"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Admin Website is Down
+          description: The Admin website at https://admin.frissly.com is unreachable.
+
+  - name: ssl_alerts
+    rules:
+      - alert: SSLCertificateExpiring
+        expr: ssl_cert_expires_in < 30 * 24 * 60 * 60
+        for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: SSL certificate expiring soon ({{ \$labels.instance }})
+          description: "The SSL certificate expires in less than 30 days."
+
+      - alert: SSLCertificateExpired
+        expr: ssl_cert_expires_in <= 0
+        for: 1d
+        labels:
+          severity: critical
+        annotations:
+          summary: SSL certificate expired ({{ \$labels.instance }})
+          description: "The SSL certificate has expired."
+
+  - name: latency_alerts
+    rules:
+      - alert: HighApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High application latency ({{ \$labels.instance }})
+          description: "The 99th percentile latency is above 500ms."
+
+      - alert: CriticalApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Critical application latency ({{ \$labels.instance }})
+          description: "The 99th percentile latency is above 1000ms."
+EOF
+
+# Set ownership and permissions
+echo "Setting ownership and permissions..."
+sudo chown prometheus:prometheus /var/lib/prometheus
+sudo chown -R prometheus:prometheus /opt/prometheus
+sudo chmod -R 755 /opt/prometheus
+
+# Configure Prometheus
+echo "Configuring Prometheus..."
+cat <<EOF | sudo tee /opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "localhost:9093"
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets:
+          - "localhost:9090"
+
+  - job_name: "node_exporter"
+    static_configs:
+      - targets:
+          - "localhost:9100"
+          - "13.203.149.189:9100"
+
+  - job_name: "docker"
+    static_configs:
+      - targets:
+          - "13.203.149.189:9323"
+
+  - job_name: "blackbox"
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - "https://frissly.com"
+          - "https://admin.frissly.com"
+    relabel_configs:
+      - source_labels: [address]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: address
+        replacement: "localhost:9115"
+EOF
+
+# Create Prometheus service
+echo "Creating Prometheus service..."
+cat <<EOF | sudo tee /etc/systemd/system/prometheus.service
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus --config.file=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml --storage.tsdb.path=/var/lib/prometheus
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and start Prometheus
+echo "Reloading systemd and starting Prometheus..."
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus
+sudo systemctl start prometheus
+
+# Verify Prometheus is running
+echo "Verifying Prometheus is running..."
+ps aux | grep prometheus
+sudo netstat -tulnp | grep 9090
+
+echo "Prometheus installation and configuration complete!"
+
+
+
+
+
+
+
+
+-> After execute the above script , You will update below script to get more alerts
+-> sudo vi /opt/prometheus/prometheus-3.2.1.linux-amd64/alert_rules.yml
+
+
 groups:
   - name: alert_rules
     rules:
@@ -356,93 +680,10 @@ groups:
         annotations:
           summary: Critical application latency ({{ $labels.instance }})
           description: "The 99th percentile latency is above 1000ms."
-EOF
 
-# Set ownership and permissions
-echo "Setting ownership and permissions..."
-sudo chown prometheus:prometheus /var/lib/prometheus
-sudo chown -R prometheus:prometheus /opt/prometheus
-sudo chmod -R 755 /opt/prometheus
 
-# Configure Prometheus
-echo "Configuring Prometheus..."
-cat <<EOF | sudo tee /opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - "localhost:9093"
 
-rule_files:
-  - "alert_rules.yml"
-
-scrape_configs:
-  - job_name: "prometheus"
-    static_configs:
-      - targets:
-          - "localhost:9090"
-
-  - job_name: "node_exporter"
-    static_configs:
-      - targets:
-          - "localhost:9100"
-          - "13.203.149.189:9100"
-
-  - job_name: "docker"
-    static_configs:
-      - targets:
-          - "13.203.149.189:9323"
-
-  - job_name: "blackbox"
-    metrics_path: /probe
-    params:
-      module: [http_2xx]
-    static_configs:
-      - targets:
-          - "https://frissly.com"
-          - "https://admin.frissly.com"
-    relabel_configs:
-      - source_labels: [address]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: address
-        replacement: "localhost:9115"
-EOF
-
-# Create Prometheus service
-echo "Creating Prometheus service..."
-cat <<EOF | sudo tee /etc/systemd/system/prometheus.service
-[Unit]
-Description=Prometheus
-After=network.target
-
-[Service]
-User=prometheus
-Group=prometheus
-Type=simple
-ExecStart=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus --config.file=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml --storage.tsdb.path=/var/lib/prometheus
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Reload systemd and start Prometheus
-echo "Reloading systemd and starting Prometheus..."
-sudo systemctl daemon-reload
-sudo systemctl enable prometheus
-sudo systemctl start prometheus
-
-# Verify Prometheus is running
-echo "Verifying Prometheus is running..."
-ps aux | grep prometheus
-sudo netstat -tulnp | grep 9090
-
-echo "Prometheus installation and configuration complete!"
 
 
 -> After execute the above script , if blackbox exporter not appear in promethous you will copy below data and pate this path 

@@ -562,6 +562,40 @@ sum(rate({job="cloudwatch_logs"} |~ "HTTP/[0-9.]+" [5m]))
 -> sum(count_over_time({job="cloudwatch_logs"} |= "HTTP" |~ "4[0-9][0-9]|5[0-9][0-9]" [$__interval]))
 
 
+# Logs
+-> Percentage of 4xx and 5xx Errors
+-> Calculates error rate as a percentage of total HTTP requests
+-> sum(rate({filename="/var/log/staging_application_cloudwatch.log"} |~ "HTTP/[0-9.]+\" (4[0-9][0-9]|5[0-9][0-9])" [5m]))
+/
+sum(rate({filename="/var/log/staging_application_cloudwatch.log"} |~ "HTTP/[0-9.]+" [5m]))
+
+-> Count of Warnings Over Time
+-> Counts occurrences of "warning" messages.
+-> count_over_time({filename="/var/log/staging_application_cloudwatch.log"} |= "warning" [$__interval])
+
+-> Warnings in Logs
+-> Filters logs for "warning" messages.
+-> {filename="/var/log/staging_application_cloudwatch.log"} |= "warning"
+
+-> Count of Errors Over Time
+-> Counts occurrences of "error" in logs.
+-> count_over_time({filename="/var/log/staging_application_cloudwatch.log"} |= "error" [$__interval])
+
+# Extra
+
+-> Application Logs, Errors, and Warnings - Loki + Promtail
+-> Shows all application logs.
+-> {filename="/var/log/staging_application_cloudwatch.log"}
+
+-> Rate of 4xx and 5xx Errors
+-> Shows how frequently errors occur over a 5-minute window.
+-> rate({filename="/var/log/staging_application_cloudwatch.log"} |= "HTTP" |~ "4[0-9][0-9]|5[0-9][0-9]" [5m])
+
+-> Count of 4xx and 5xx Errors
+-> sum(count_over_time({filename="/var/log/staging_application_cloudwatch.log"} |= "HTTP" |~ "4[0-9][0-9]|5[0-9][0-9]" [$__interval])))
+
+
+
 
 
 Queries

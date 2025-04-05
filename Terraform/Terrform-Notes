@@ -264,4 +264,17 @@ aws configure
 aws sts get-caller-identity
 
 
+# Terraform commands
+-> terraform init
+-> terraform fmt
+-> terraform validate
+-> terraform plan -var-file="accounts/stag/terraform.tfvars"
+-> terraform apply -var-file="accounts/stag/terraform.tfvars"
+
+# For backend s3
+-> terraform init -backend-config="accounts/stag/backend.tfvars"
+
+# For destoring 
+-> terraform init -migrate-state
+-> terraform destroy -var-file="accounts/stag/terraform.tfvars"
 

@@ -229,6 +229,7 @@ terraform destroy
 
 # How to install terraform in windows
 -> https://developer.hashicorp.com/terraform/install
+-> Click on AMD64
 -> Extract the file
 -> you create one folder in you system and copy terraform in that folder and paste the file in created folder
 -> after copy the that address and go env and click path and add new and past that path there

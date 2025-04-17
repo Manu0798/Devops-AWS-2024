@@ -1,4 +1,5 @@
 # Latency Queries
+-> probe_duration_seconds{instance="https://4qft2jsmnh.ap-south-1.awsapprunner.com"}
 # http_request_duration_seconds
 -> Triggers if the HTTP response time exceeds 100ms.
 -> http_request_duration_seconds{job="https://admin.frisely.com"}

@@ -45,7 +45,7 @@ Degraded performance even if the service is technically "up."
 
 
 # DNS Lookup Time
--> Time taken to resolve the domain name (admin.frissly.com) to an IP address.
+-> DNS Lookup Time is the amount of time it takes to translate a domain name (like example.com) into an IP address (like 93.184.216.34).
 -> probe_http_duration_seconds{phase="resolve", instance="https://admin.frissly.com"}
 -> probe_http_duration_seconds{phase="resolve", instance="https://admin.frissly.com"} > 0.1     # Alert if DNS lookup exceeds 100ms
 

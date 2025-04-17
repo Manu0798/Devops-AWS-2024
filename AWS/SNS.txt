@@ -101,5 +101,9 @@ Select Event Type → Amplify Deployment Status Change.
 
 {
   "source": ["aws.amplify"],
-  "detail-type": ["Amplify Deployment Status Change"]
+  "detail-type": ["Amplify Deployment Status Change"],
+  "detail": {
+    "jobStep": ["DEPLOY"],
+    "jobStepStatus": ["SUCCEED", "FAILED"]
+  }
 }

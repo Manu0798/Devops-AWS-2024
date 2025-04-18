@@ -10,6 +10,9 @@ metadata:
   name: jenkins
   namespace: webapps
 
+-> kubectl get serviceaccount -n webapps
+-> kubectl describe serviceaccount jenkins -n webapps
+
 
 # create role 
 apiVersion: rbac.authorization.k8s.io/v1
@@ -49,6 +52,10 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
 
+-> kubectl get role -n webapps
+-> kubectl describe role jenkins-role -n webapps
+
+
 # Bine the role and service account
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -63,6 +70,10 @@ subjects:
 - namespace: webapps 
   kind: ServiceAccount
   name: jenkins
+
+
+-> kubectl get rolebinding -n webapps
+-> kubectl describe rolebinding app-rolebinding -n webapps
 
 
 -> For persistence volume you have to create cluster role. Because persistence volume not in role
@@ -90,6 +101,11 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
 
+-> kubectl get clusterrole -n webapps
+-> kubectl get clusterrole persistence-volume-access
+-> kubectl describe clusterrole persistence-volume-access -n webapps
+
+
 # Bind the role to service account
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -104,6 +120,10 @@ subjects:
   kind: ServiceAccount
   name: jenkins
 
+
+-> kubectl get clusterrolebinding jenkins-persistence-volume-access -n webapps
+-> kubectl describe clusterrolebinding jenkins-persistence-volume-access -n webapps
+
 --> After complete to create role and cluster role. you have to one for your service account
 
 apiVersion: v1
@@ -114,31 +134,36 @@ metadata:
   annotations:
     kubernetes.io/service-account.name: jenkins
 
+-> kubectl apply -f secret.yml -n webapps
 -> kubectl get secret -n webapps
 -> kubectl describe secret mysecretname -n webapps
 -> Copy the that token and keep it in one place
+
+# If you want to use docker private repo you should execute below command
+-> kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=manoj3003 --docker-password=Varma_3003 --namespace=webapps
 
 
 Note:- jenkins, docker, Trivy, awscli, kubectl and sonarqube
 -> I want to configure the jenkins to execute the pipeline to follow the below instructions
 
 -> You have to install the below plugins
-    -> EclipseTemurin
+    -> Eclipse Temurin installer
     -> Docker
     -> Docker pipeline
     -> SonarQube scanner
-    -> SonarQube Quality gate
-    -> Quality gate
+    -> Sonar Quality Gates
+    -> Quality gates
     -> Nodejs
     -> OWASP Dependency-Check
-    -> Email-extension plugin
+    -> Email Extension Template
     -> Kubernetes
     -> Kuberntes Client API
-    -> Kubernetes Credentials plugin
+    -> Kubernetes Credentials
     -> Kubernetes CLI
     -> Kubernetes Credentials Provider
-    -> Kubernetes plugin
+    -> Kubernetes :: Pipeline :: DevOps Steps
     -> Bitbucket
+    -> Pipeline: Stage View
 
 -> You will restart the Jenkins after install the plugins
 -> Go to manage Jenkins, click credentials and cofigure below credentials
@@ -162,7 +187,7 @@ Note:- jenkins, docker, Trivy, awscli, kubectl and sonarqube
 -> After complete to configure the tools later click the system configuration
    SonarQube-Installition, Give name, Give the Sonar-qube URL and choose the soanr-token credentials id which you have created in credentials
    Extended Email Notification -> Give smtp.gmail.com, Give 465 port, Click Advanced choose mail-id which you created in credentals, Click use SSL
-   Email Notification -> Give smtp.gmail.com, click advanced, Give mail and email token which you created before in gmail.
+   Email Notification -> Give smtp.gmail.com, click advanced, click Use SMTP Authentication Give mail and email token which you created before in gmail, Click use SSL, Give 465 port
 
 -> To set up the sonar-quality gate. Go to sonarqube, click administation, click configuration, click webhook and give jenkins URL 
        http://54.198.209.63:8080/sonarqube-webhook

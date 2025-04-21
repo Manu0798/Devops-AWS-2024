@@ -375,6 +375,15 @@ db.couredetails.remove({ name: 'VARMA' })
 -> There after go to the click route table of private subnets, click edit, add the peering connection to that route table, give Atlas CIDR (VPC Region) ip at place, choose peering, save
 
 
+When configuring a VPC for peering with MongoDB Atlas, your VPC CIDR block must be in one of the following private IP ranges:
+
+10.0.0.0/8 (e.g., 10.0.0.0 – 10.255.255.255)
+
+172.16.0.0/12 (e.g., 172.16.0.0 – 172.31.255.255)
+
+192.168.0.0/16 (e.g., 192.168.0.0 – 192.168.255.255)
+
+
 -> If you want to connect with servers which running in public subnet then you have to add as like above to route table of public subenet like below
 -> There after go to the click route table of public subnets, click edit, add the peering connection to that route table, give Atlas CIDR (VPC Region) ip at place, choose peering, save
 

@@ -67,7 +67,7 @@ sudo systemctl start node_exporter
 
 
 
-# You will install below script in Monitoring server for promethous, grafana, loki and promtail
+# You will install below script in Monitoring server for promethous
 
 #!/bin/bash
 

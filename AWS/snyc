@@ -1,0 +1,64 @@
+# what is snyc
+Snyk is a developer-first security platform that helps you find and fix vulnerabilities in your applications, containers, and infrastructure as code (IaC). 
+It's widely used for securing modern DevOps workflows and integrates seamlessly with tools like GitHub, Bitbucket, Docker, Kubernetes, and CI/CD pipelines.
+
+
++-----------------------------------------------+-------------------------------+------------------------------+--------------------------------------------+
+| Component / Feature                           | Snyk 🛡️                       | Trivy 🐳                      | SonarQube 🧠                                |
++-----------------------------------------------+-------------------------------+------------------------------+--------------------------------------------+
+| Source Code Analysis                          | ❌ No (only manifest files)   | ❌ No                        | ✅ Yes (static code analysis)              |
+| Dependency Scanning                           | ✅ Yes (e.g., package.json)   | ✅ Yes (inside images)       | ❌ No                                      |
+| Docker Image Scanning                         | ✅ Yes                        | ✅ Yes                       | ❌ No                                      |
+| Dockerfile Misconfiguration Detection         | ✅ Yes (IaC analysis)         | ✅ Yes                       | ❌ No                                      |
+| Infrastructure-as-Code (IaC) Scanning         | ✅ Yes (Terraform, K8s, etc.) | ✅ Yes (Terraform, K8s, etc.)| ❌ No                                      |
+| Secrets Detection (.env, API keys)            | ❌ No                         | ✅ Yes (detects secrets)     | ❌ No                                      |
+| Security Bugs in Code                         | ❌ No                         | ❌ No                        | ✅ Yes (e.g., SQLi, XSS)                   |
+| Code Quality / Maintainability                | ❌ No                         | ❌ No                        | ✅ Yes (code smells, duplication)          |
+| Git Integration                               | ✅ Yes (PR checks)            | ✅ Yes (CI/CD friendly)      | ✅ Yes (with plugins)                      |
+| Free Tier Available                           | ✅ Yes (limited)              | ✅ Fully open-source         | ✅ Yes (Community Edition)                 |
+| Best Used For                                 | Dependencies, IaC, Containers| Docker, Secrets, IaC        | Code quality & security                   |
++-----------------------------------------------+-------------------------------+------------------------------+--------------------------------------------+
+
+
+
+
+From the image you've shared, you're looking at a Snyk project with the following scans:
+
+Dockerfile – Snyk scans it for vulnerabilities and misconfigurations.
+
+package.json – Snyk scans your dependencies (e.g., npm packages).
+
+Code analysis – Here's what it means in Snyk vs. SonarQube:
+
+🔍 "Code Analysis" in Snyk:
+In Snyk, code analysis refers to scanning your open source dependencies and their usage in your codebase. It's known as Snyk Code, which is a static application security testing (SAST) tool.
+
+✅ Detects vulnerabilities in your custom source code (like insecure APIs, SQL injections, XSS, etc.).
+
+✅ Focuses on security issues, not on code quality or maintainability.
+
+❗ Doesn’t do code smells, duplication, or maintainability scoring like SonarQube.
+
+Example:
+
+If you write code like eval(userInput), Snyk Code will flag that as a security issue, not a quality issue.
+
+🧠 "Code Analysis" in SonarQube:
+In SonarQube, code analysis is more comprehensive and focused on:
+
+✅ Code Quality (maintainability, duplication, formatting, complexity)
+
+✅ Code Security (injection flaws, access control, etc.)
+
+✅ Code Smells, Bugs, Vulnerabilities, and Technical Debt
+
+❌ It does not scan third-party dependencies (e.g., npm libraries) unless paired with something like Snyk or Trivy.
+
+🔁 Summary Comparison
+
+Feature	Snyk Code Analysis	SonarQube Code Analysis
+Focus	Security flaws in custom code	Security, bugs, code quality
+Type	SAST	SAST + quality + maintainability
+Dependency Scanning	✅ Yes (separate module)	❌ No
+Detects Security Flaws	✅ Yes	✅ Yes
+Detects Code Quality Issues	❌ No	✅ Yes

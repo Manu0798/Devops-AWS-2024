@@ -876,3 +876,6 @@ WantedBy=multi-user.target
 -> sudo systemctl start cloudwatch_exporter
 -> sudo systemctl status cloudwatch_exporter
 -> sudo journalctl -u cloudwatch_exporter -f
+
+# For restart
+-> sudo systemctl restart cloudwatch_exporter

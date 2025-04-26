@@ -510,42 +510,36 @@ crontab -l
 
 #!/bin/bash
 
-# Set Variables
+# ====== Set Variables ======
 BACKUP_DIR="/home/ubuntu/mongodb_backup"
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_NAME="mongodb_backup_${TIMESTAMP}"
-MONGO_URI="mongodb+srv://vsrpvarma:%21HKdf7uwekn%40%21%40%23@uat-cluster.aoiaw.mongodb.net/frissly_prod?retryWrites=true&w=majority&appName=UAT-Cluster"
-S3_BUCKET="s3://production-mongodb-backups-frissly"
+MONGO_URI="mongodb+srv://organicplaceapp:ArthV3d!@uat-stg-cluster.ivpds.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=uat-stg-cluster"
+S3_BUCKET="s3://frissly-mongo-backup"
+DATABASES=("frissly_stg")
 BACKUP_SCRIPT="/home/ubuntu/mongo_backup.sh"
 
-# Ensure Backup Directory Exists
-mkdir -p "$BACKUP_DIR" # Ensure the backup directory exists
-chmod 755 "$BACKUP_DIR" # Ensure it has write permissions
+# ====== Ensure Backup Directory Exists ======
+mkdir -p "$BACKUP_DIR"
+chmod 755 "$BACKUP_DIR"
 
-# Ensure Backup Script Exists
+# ====== Create Backup Script ======
 cat << 'EOF' > "$BACKUP_SCRIPT"
 #!/bin/bash
 
-# Define the MongoDB database backup directory
 BACKUP_DIR="/home/ubuntu/mongodb_backup"
-DATE=$(date +%Y-%m-%d-%H-%M-%S)
+MONGO_URI="mongodb+srv://organicplaceapp:ArthV3d!@uat-stg-cluster.ivpds.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=uat-stg-cluster"
+DATABASES=("frissly_stg")
+S3_BUCKET="s3://frissly-mongo-backup"
 
-# Define the MongoDB dump directory
-DUMP_DIR="$BACKUP_DIR/dump_$DATE"
+# Generate a fresh timestamp for every backup
+TIMESTAMP=$(TZ='Asia/Kolkata' date +"%d-%m-%Y_%H-%M")
+DUMP_DIR="$BACKUP_DIR/dump_$TIMESTAMP"
+S3_PATH="$TIMESTAMP"
 
-# Create the backup directory if it does not exist
 mkdir -p "$DUMP_DIR"
 
-# MongoDB URI for Atlas
-MONGO_URI="mongodb+srv://vsrpvarma:%21HKdf7uwekn%40%21%40%23@uat-cluster.aoiaw.mongodb.net/frissly_prod?retryWrites=true&w=majority&appName=UAT-Cluster"
-
-# MongoDB database names to backup
-DATABASES=("frissly_prod")
-
-# Loop through each database and dump
 for DB in "${DATABASES[@]}"; do
-  echo "Dumping $DB to $DUMP_DIR/$DB.bson"
-  mongodump --uri="$MONGO_URI" --db "$DB" --out "$DUMP_DIR" --gzip
+  echo "Dumping database: $DB"
+  mongodump --uri="$MONGO_URI" --db="$DB" --out="$DUMP_DIR"
 
   if [[ $? -ne 0 ]]; then
     echo "Error: Failed to dump database $DB"
@@ -553,41 +547,24 @@ for DB in "${DATABASES[@]}"; do
   fi
 done
 
-# Compress the backup directory into a tarball
-echo "Compressing backup into tar file"
-tar -czf "$DUMP_DIR.tar.gz" -C "$BACKUP_DIR" "dump_$DATE"
+echo "Uploading dump to S3: $S3_BUCKET/$S3_PATH/"
 
-# Check if tar command was successful
-if [[ $? -ne 0 ]]; then
-  echo "Error: Failed to create tarball"
-  exit 1
-fi
+aws s3 cp "$DUMP_DIR" "$S3_BUCKET/$S3_PATH/" --recursive
 
-# Upload the backup tarball to S3
-echo "Uploading backup to S3"
-aws s3 cp "$DUMP_DIR.tar.gz" s3://production-mongodb-backups-frissly/backups/
-
-# Check if AWS S3 upload was successful
 if [[ $? -ne 0 ]]; then
   echo "Error: Failed to upload backup to S3"
   exit 1
 fi
 
-# Clean up local backup files
-echo "Cleaning up local backup files"
-rm -rf "$DUMP_DIR" "$DUMP_DIR.tar.gz"
-
-# Check if cleanup was successful
-if [[ $? -ne 0 ]]; then
-  echo "Error: Failed to clean up backup files"
-  exit 1
-fi
+echo "Cleaning up local dump..."
+rm -rf "$DUMP_DIR"
 
 echo "Backup and upload completed successfully!"
 EOF
+
 chmod +x "$BACKUP_SCRIPT"
 
-# Install Necessary Packages
+# ====== Install Necessary Packages ======
 echo "Installing necessary packages..."
 sudo apt-get update -y
 sudo apt-get install -y net-tools wget curl unzip apt-transport-https tar jq
@@ -599,23 +576,23 @@ unzip awscliv2.zip
 sudo ./aws/install
 rm -rf awscliv2.zip aws
 
-# Install MongoDB Database Tools
+# ====== Install MongoDB Database Tools ======
 echo "Installing MongoDB Database Tools..."
 wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2004-x86_64-100.8.0.tgz
 tar -xvzf mongodb-database-tools-ubuntu2004-x86_64-100.8.0.tgz
 sudo mv mongodb-database-tools-ubuntu2004-x86_64-100.8.0/bin/* /usr/local/bin/
 rm -rf mongodb-database-tools-ubuntu2004-x86_64-100.8.0.tgz mongodb-database-tools-ubuntu2004-x86_64-100.8.0/
 
-# Verify Installation
+# ====== Verify Installation ======
 mongodump --version
 
-# MongoDB Change Stream Listener Script (Node.js)
+# ====== Create MongoDB Change Stream Listener ======
 echo "Creating MongoDB listener script..."
 cat << 'EOF' > /home/ubuntu/mongo_listener.js
 const { MongoClient } = require("mongodb");
 const { exec } = require("child_process");
 
-const uri = "mongodb+srv://vsrpvarma:%21HKdf7uwekn%40%21%40%23@uat-cluster.aoiaw.mongodb.net/frissly_prod?retryWrites=true&w=majority&appName=UAT-Cluster";
+const uri = "mongodb+srv://organicplaceapp:ArthV3d!@uat-stg-cluster.ivpds.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=uat-stg-cluster";
 const client = new MongoClient(uri);
 
 async function watchDatabase() {
@@ -623,13 +600,13 @@ async function watchDatabase() {
         await client.connect();
         console.log("Connected to MongoDB");
 
-        const db = client.db("frissly_prod"); // Set to the correct database
+        const db = client.db("frissly_stg");
         const changeStream = db.watch();
 
         changeStream.on("change", (change) => {
             console.log("Change detected:", JSON.stringify(change, null, 2));
             exec("/bin/bash /home/ubuntu/mongo_backup.sh", (error, stdout, stderr) => {
-                console.log("Executing backup script...");
+                console.log("Executing backup script on change...");
                 if (error) {
                     console.error(`Backup Error: ${error.message}`);
                     return;
@@ -651,18 +628,17 @@ async function watchDatabase() {
 watchDatabase();
 EOF
 
-# Install Node.js and Required Modules
+# ====== Install Node.js and Required Modules ======
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt install -y nodejs
 npm install mongodb
 
-# Ensure the MongoDB Listener Script is Executable
+# ====== Make Listener Executable and Start It ======
 chmod +x /home/ubuntu/mongo_listener.js
-
-# Run the Change Stream Listener
 nohup node /home/ubuntu/mongo_listener.js > /home/ubuntu/mongo_listener.log 2>&1 &
 
-# Start Initial Backup
+# ====== Take Initial Full Backup ======
+echo "Taking initial full backup..."
 /bin/bash "$BACKUP_SCRIPT"
 
 echo "MongoDB change stream listener and backup setup completed successfully!"

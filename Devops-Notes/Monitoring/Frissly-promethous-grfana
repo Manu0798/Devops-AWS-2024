@@ -766,3 +766,113 @@ scrape_configs:
 -> sudo systemctl restart prometheus
 -> ps aux | grep prometheus
 -> sudo netstat -tulnp | grep 9090
+
+
+
+
+# Install cloud watch exporter
+# Download the correct "with dependencies" JAR (replace link with latest from GitHub if needed)
+-> sudo wget https://repo1.maven.org/maven2/io/prometheus/cloudwatch/cloudwatch_exporter/0.15.4/cloudwatch_exporter-0.15.4-jar-with-dependencies.jar
+
+# Rename for convenience
+-> sudo mv cloudwatch_exporter-0.15.4-jar-with-dependencies.jar cloudwatch_exporter-0.15.4.jar
+-> sudo mkdir -p /opt/cloudwatch_exporter
+-> sudo mv cloudwatch_exporter-0.15.4.jar /opt/cloudwatch_exporter/
+-> sudo vi /etc/cloudwatch_exporter.yml
+
+region: ap-south-1
+
+metrics:
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: RequestCount
+    dimensions: [ServiceId]
+    statistics: [Sum]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: HTTPCode_Target_2XX_Count
+    dimensions: [ServiceId]
+    statistics: [Sum]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: HTTPCode_Target_4XX_Count
+    dimensions: [ServiceId]
+    statistics: [Sum]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: HTTPCode_Target_5XX_Count
+    dimensions: [ServiceId]
+    statistics: [Sum]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: Latency
+    dimensions: [ServiceId]
+    statistics: [Average]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: ActiveInstances
+    dimensions: [ServiceId]
+    statistics: [Average]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: CPUUtilization
+    dimensions: [ServiceId]
+    statistics: [Average]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: MemoryUtilization
+    dimensions: [ServiceId]
+    statistics: [Average]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+  - aws_namespace: AWS/AppRunner
+    aws_metric_name: Concurrency
+    dimensions: [ServiceId]
+    statistics: [Average]
+    period_seconds: 300
+    range_seconds: 600
+    delay_seconds: 60
+
+-> sudo vi /etc/systemd/system/cloudwatch_exporter.service
+
+[Unit]
+Description=CloudWatch Exporter
+After=network.target
+
+[Service]
+User=ubuntu
+ExecStart=/usr/bin/java -jar /opt/cloudwatch_exporter/cloudwatch_exporter-0.15.4.jar 9106 /etc/cloudwatch_exporter.yml
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+-> sudo apt install default-jre
+-> sudo systemctl daemon-reexec
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable cloudwatch_exporter
+-> sudo systemctl start cloudwatch_exporter
+-> sudo systemctl status cloudwatch_exporter
+-> sudo journalctl -u cloudwatch_exporter -f

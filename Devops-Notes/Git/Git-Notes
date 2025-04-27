@@ -17,6 +17,41 @@
 -> If one system fails system continues work with other 
 -> More reliable
 
+# Examples
+Centralized vs Distributed Version Control Systems
+
+Feature	Centralized VCS (CVCS)	Distributed VCS (DVCS)
+Where is the code stored?	One central server (main copy)	Everyone has a full copy
+If server goes down?	You can't work or get history	You can still work locally
+Examples	SVN, Perforce	Git, Mercurial
+How do you commit changes?	Commit directly to central server	Commit to your local machine first, then push
+Speed	Slower (needs server for most actions)	Faster (local operations)
+Collaboration	Always needs internet connection	Can work offline, push later
+Easy Example:
+Imagine a group project:
+
+Centralized (CVCS) — like SVN:
+You have one master notebook kept in the classroom.
+
+Whenever you want to write or read something, you must go to the classroom and use the notebook.
+
+If the classroom is locked, you can't do anything.
+
+Distributed (DVCS) — like Git:
+Every student has their own full copy of the notebook at home.
+
+You can write and read at home (even without internet).
+
+When ready, you can go and share your updates with the main notebook.
+
+In short:
+Centralized VCS → "One main brain."
+
+Distributed VCS → "Everyone has a full brain!"
+
+
+
+
 # What is fork in github
 -> On GitHub, "fork" refers to creating a personal copy of someone else's repository. This allows you to freely experiment with changes without affecting the original project
 

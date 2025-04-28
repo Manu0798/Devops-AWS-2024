@@ -168,3 +168,206 @@ pipelines:
                 -- "$TO_EMAIL"
 
               echo "📧 Stagging deployment complete notification sent to ${TO_EMAIL}"
+
+
+
+
+
+# With Sonar-Qube
+
+image: node:20
+
+pipelines:
+  branches:
+    stag:
+      # ------------------------------
+      # 1️⃣ Build, Test, and Scan (Test)
+      # ------------------------------
+      - step:
+          name: Build, Test, and Scan Source-Code (Stagging)
+          deployment: Production-test
+          services:
+            - docker
+          caches:
+            - node
+          script:
+            # Print environment variables for debugging
+            - |
+              echo "SonarQube Host: ${SONAR_HOST_URL}"
+              echo "Project Key: ${SONAR_PROJECT_KEY}"
+              echo "Token Length: ${#SONARQUBE_TOKEN}"
+
+            # Free up disk space before running scans
+            - docker system prune -af || true
+            - docker volume prune -f || true
+            - rm -rf /root/.cache/trivy || true  # Clean old Trivy cache
+
+            # Install required dependencies
+            - apt-get update && apt-get install -y curl unzip jq mutt
+
+            # Install Node.js dependencies, build, and run tests
+            - npm install
+            - npm run build --if-present
+            - npm test --if-present
+
+            # Install Trivy for security scanning
+            - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.39.0/trivy_0.39.0_Linux-64bit.deb -o trivy.deb
+            - dpkg -i trivy.deb
+
+            # Set custom Trivy cache directory to prevent "no space left on device" error
+            - export TRIVY_CACHE_DIR=/tmp/trivy-cache
+            - mkdir -p $TRIVY_CACHE_DIR
+
+            # Run Trivy filesystem scan for vulnerabilities in the project files
+            - trivy fs --cache-dir $TRIVY_CACHE_DIR --format table -o fs-report.html .
+
+            # Build Docker image for the project
+            - docker build -t "$DOCKER_IMAGE_NAME" .
+
+            # Run Trivy image scan on the Docker image
+            - trivy image --cache-dir $TRIVY_CACHE_DIR --format table -o image.html "$DOCKER_IMAGE_NAME"
+
+            # Install SonarScanner
+            - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+            - unzip sonar-scanner.zip
+            - export PATH=$PATH:$(pwd)/sonar-scanner-4.8.0.2856-linux/bin
+
+            # Verify SonarScanner installation
+            - sonar-scanner -v
+
+            # Run SonarQube analysis
+            - sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONARQUBE_TOKEN}"
+
+            # Save Docker Image as tar file
+            - docker save -o image.tar "$DOCKER_IMAGE_NAME:latest"
+
+            # Collect artifacts for later inspection (e.g., security scans)
+            - mkdir -p artifacts
+            - cp fs-report.html artifacts/
+            - cp image.html artifacts/
+            - mv image.tar artifacts/
+            - tar -cvf artifacts.tar artifacts/
+
+            # ------------------------------
+            # 📧 Send Email Notification
+            # ------------------------------
+            - |
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="587"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"  # Use an App Password, not your actual Gmail password
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="🚀 Approval Required: Deploy to Stagging"
+              BODY="Hello Team,\n\nThe uat deployment for branch 'uat' is complete.\n\n⚠️ Please approve the Stagging deployment:\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your prompt approval."
+
+              # Send email using Mutt
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=\"$FROM_EMAIL\"" \
+                -e "set smtp_url=\"smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT/\"" \
+                -e "set smtp_pass=\"$SMTP_PASS\"" \
+                -e "set ssl_starttls=yes" \
+                -e "set ssl_force_tls=yes" \
+                -a "artifacts/fs-report.html" \
+                -a "artifacts/image.html" \
+                -- "$TO_EMAIL"
+
+            - echo "📧 Approval request for Stagging deployment sent to ${TO_EMAIL}"
+
+          artifacts:
+            - artifacts/*
+
+      # ------------------------------
+      # 2️⃣ Approval for Stagging Deployment
+      # ------------------------------
+      - step:
+          name: Approval for Stagging Deployment
+          deployment: staging-approval  # ✅ Must match staging step
+          trigger: manual
+          script:
+            - echo "⏳ Waiting for approval before deploying to Stagging..."
+            - echo "✅ Please approve the deployment manually in Bitbucket Pipelines UI."
+
+      # ------------------------------
+      # 3️⃣ Deploy for Stagging Deployment
+      # ------------------------------
+      - step:
+          name: Deploy to Stagging
+          deployment: Stagging
+          services:
+            - docker
+          script:
+            # Install required dependencies
+            - apt-get update && apt-get install -y mutt awscli
+
+            # Configure AWS CLI with provided credentials
+            - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+            - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+            - aws configure set region "$AWS_REGION"
+
+            # ------------------------------
+            # 🟢 ECR Repository Management
+            # ------------------------------
+            - |
+              # Ensure valid ECR repository name
+              export ECR_REPO_NAME=$(echo "$ECR_REPO_NAME" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]//g')
+
+              echo "✅ Final ECR Repository Name: '${ECR_REPO_NAME}'"
+
+              # Check if ECR repository exists, if not, create it
+              echo "🔍 Checking if ECR repository exists..."
+              if ! aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" --region "$AWS_REGION" > /dev/null 2>&1; then
+                echo "🚀 Creating ECR repository: $ECR_REPO_NAME"
+                aws ecr create-repository --repository-name "$ECR_REPO_NAME" --region "$AWS_REGION"
+              else
+                echo "✅ ECR repository already exists."
+              fi
+
+            # Log in to AWS ECR with Docker credentials
+            - |
+              aws ecr get-login-password --region "$AWS_REGION" | \
+              docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+            # Load the saved Docker image
+            - docker load -i artifacts/image.tar
+
+            # Tag and push the Docker image
+            - |
+              # Ensure IMAGE_TAG is valid by removing spaces
+              export IMAGE_TAG=$(echo "$IMAGE_TAG" | tr -d '[:space:]')
+
+              echo "🔄 Tagging Docker Image..."
+              docker tag "$DOCKER_IMAGE_NAME:latest" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
+
+            # Push the new staging tag to the same ECR repository
+            - docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
+
+            # Clean up unused Docker images and volumes
+            - |
+              docker system prune -af || true
+              docker volume prune -f
+
+            # ------------------------------
+            # 📧 Send Email Notification
+            # ------------------------------
+            - |
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="$SMTP_PORT"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"  # Use an App Password, not your actual Gmail password
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="🚀 Stagging Deployment Complete"
+              BODY="Hello Team,\n\nThe Stagging deployment for branch 'staging' has been successfully completed and the Stagging deployment is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
+
+              # Send email using Mutt
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=\"$FROM_EMAIL\"" \
+                -e "set smtp_url=\"smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT/\"" \
+                -e "set smtp_pass=\"$SMTP_PASS\"" \
+                -e "set ssl_starttls=yes" \
+                -e "set ssl_force_tls=yes" \
+                -- "$TO_EMAIL"
+
+            - echo "📧 Stagging deployment complete notification sent to ${TO_EMAIL}"
+

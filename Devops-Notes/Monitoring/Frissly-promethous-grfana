@@ -744,6 +744,12 @@ scrape_configs:
       - targets:
           - "13.127.210.203:9323"
 
+  - job_name: 'cloudwatch_apprunner'
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['localhost:9106']  # CloudWatch Exporter running locally
+
   - job_name: "blackbox"
     metrics_path: /probe
     params:

@@ -1,4 +1,4 @@
---> You have install below script in uat, stg, prod
+-> You will install below script while you creating the server
 
 #!/bin/bash
 
@@ -7,14 +7,30 @@ echo "Updating package list..."
 sudo apt-get update -y
 
 
+# Install Java
+sudo apt-get update
+sudo apt-get install fontconfig openjdk-17-jre -y
+
 
 # Monitoring Tools
 # Update the packages
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y net-tools wget curl unzip apt-transport-https
 
+# Install AWS_CLI
+sudo apt-get update -y
+sudo apt-get install -y curl unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+
+
 # Variables
 NODE_EXPORTER_VERSION="1.9.0"
+BLACKBOX_EXPORTER_VERSION="0.26.0"
+ALERTMANAGER_VERSION="v0.27.0"
+# LOKI_VERSION="v3.4.2"
 # PROMTAIL_VERSION="latest"
 
 # Install Node Exporter
@@ -47,27 +63,127 @@ sudo systemctl enable node_exporter
 sudo systemctl start node_exporter
 
 
-# After complete the install for docker metrics you will execute the below commands
-
--> sudo vi /etc/docker/daemon.json
-
-{
-  "metrics-addr": "0.0.0.0:9323",
-  "experimental": true
-}
-
--> sudo systemctl daemon-reload
--> sudo systemctl restart docker
--> sudo systemctl status docker
--> curl http://13.235.242.134:9323/metrics
--> After complete above you install docker containers
--> For docker logs we will look at loki-protail file
+# Install Blackbox Exporter
+wget https://github.com/prometheus/blackbox_exporter/releases/download/v$BLACKBOX_EXPORTER_VERSION/blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64.tar.gz
+tar -xvf blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64.tar.gz
+rm blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64.tar.gz
+sudo mkdir -p /opt/blackbox_exporter
+sudo mv blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64 /opt/blackbox_exporter/
+sudo useradd --no-create-home --shell /bin/false blackbox_exporter
+sudo chown -R blackbox_exporter:blackbox_exporter /opt/blackbox_exporter
+sudo chmod -R 755 /opt/blackbox_exporter/
+sudo chmod 644 /opt/blackbox_exporter/blackbox_exporter-0.26.0.linux-amd64/blackbox.yml
 
 
+cat <<EOF | sudo tee /etc/systemd/system/blackbox_exporter.service
+[Unit]
+Description=Blackbox Exporter
+After=network.target
+
+[Service]
+User=blackbox_exporter
+Group=blackbox_exporter
+Type=simple
+ExecStart=/opt/blackbox_exporter/blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64/blackbox_exporter --config.file=/opt/blackbox_exporter/blackbox_exporter-0.26.0.linux-amd64/blackbox.yml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable blackbox_exporter
+sudo systemctl start blackbox_exporter
 
 
+# Install Alert Manager
+wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.27.0.linux-amd64.tar.gz
+tar -xvf alertmanager-0.27.0.linux-amd64.tar.gz
+rm alertmanager-0.27.0.linux-amd64.tar.gz
+sudo mkdir -p /opt/alertmanager
+sudo mv alertmanager-0.27.0.linux-amd64 /opt/alertmanager/
+sudo useradd --no-create-home --shell /bin/false alertmanager
+sudo mkdir /var/lib/alertmanager
+sudo chown alertmanager:alertmanager /var/lib/alertmanager
+sudo chown -R alertmanager:alertmanager /opt/alertmanager
+sudo chmod -R 755 /opt/alertmanager
 
-# You will install below script in Monitoring server for promethous
+cat <<EOF | sudo tee /opt/alertmanager/alertmanager-0.27.0.linux-amd64/alertmanager.yml
+route:
+  group_by:
+    - alertname
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: email-notifications
+receivers:
+  - name: email-notifications
+    email_configs:
+      - to: manojvarmapotthutri@gmail.com
+        from: varmapotthuri4@gmail.com
+        smarthost: smtp.gmail.com:587
+        auth_username: varmapotthuri4@gmail.com
+        auth_identity: varmapotthuri4@gmail.com
+        auth_password: sojtftvdabttfgdu
+        send_resolved: true
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/alertmanager.service
+[Unit]
+Description=Alertmanager
+After=network.target
+
+[Service]
+User=alertmanager
+Group=alertmanager
+Type=simple
+ExecStart=/opt/alertmanager/alertmanager-0.27.0.linux-amd64/alertmanager --config.file=/opt/alertmanager/alertmanager-0.27.0.linux-amd64/alertmanager.yml --storage.path=/var/lib/alertmanager
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable alertmanager
+sudo systemctl start alertmanager
+ps aux | grep alertmanager
+sudo netstat -tulnp | grep 9093
+
+
+# Install Grafana
+echo "Installing Grafana..."
+sudo apt-get install -y adduser libfontconfig1 musl
+wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.5.2_amd64.deb
+sudo dpkg -i grafana-enterprise_11.5.2_amd64.deb
+
+# Reload systemd and enable Grafana
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl enable grafana-server
+sudo /bin/systemctl start grafana-server
+# sudo /bin/systemctl status grafana-server
+
+# Configure Grafana for email notifications
+echo "Configuring Grafana for email notifications..."
+cat <<EOF | sudo tee -a /etc/grafana/grafana.ini
+[smtp]
+enabled = true
+host = smtp.gmail.com:587
+user = varmapotthuri4@gmail.com
+# If the password contains # or ; you have to wrap it with triple quotes. Ex """#password;"""
+password = sojtftvdabttfgdu
+skip_verify = true
+from_address = varmapotthuri4@gmail.com
+from_name = Grafana
+EOF
+
+# Restart Grafana to apply changes
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl restart grafana-server
+
+
+-> After execute the above script you will install promethous
+-> Create one file in terminal and execute the below script
 
 #!/bin/bash
 
@@ -97,329 +213,6 @@ sudo mkdir /var/lib/prometheus
 # Configure Prometheus alert rules
 echo "Configuring Prometheus alert rules..."
 cat <<EOF | sudo tee /opt/prometheus/prometheus-3.2.1.linux-amd64/alert_rules.yml
-groups:
-  - name: alert_rules
-    rules:
-      - alert: InstanceDown
-        expr: up == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: Endpoint {{ \$labels.instance }} down
-          description: "{{ \$labels.instance }} of job {{ \$labels.job }} has been down for more than 1 minute."
-
-      - alert: WebsiteDown
-        expr: probe_success == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: Website down
-          description: The website at {{ \$labels.instance }} is down.
-
-      - alert: HostOutOfMemory
-        expr: (node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: Host out of memory (instance {{ \$labels.instance }})
-          description: |-
-            Node memory is filling up (< 25% left)
-              VALUE = {{ \$value }}
-              LABELS: {{ \$labels }}
-
-      - alert: HostOutOfDiskSpace
-        expr: (node_filesystem_avail{mountpoint="/"} * 100) / node_filesystem_size{mountpoint="/"} < 50
-        for: 1s
-        labels:
-          severity: warning
-        annotations:
-          summary: Host out of disk space (instance {{ \$labels.instance }})
-          description: |-
-            Disk is almost full (< 50% left)
-              VALUE = {{ \$value }}
-              LABELS: {{ \$labels }}
-
-      - alert: HostHighCpuLoad
-        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: Host high CPU load (instance {{ \$labels.instance }})
-          description: |-
-            CPU load is > 80%
-              VALUE = {{ \$value }}
-              LABELS: {{ \$labels }}
-
-      - alert: ServiceUnavailable
-        expr: up{job="node_exporter"} == 0
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: Service Unavailable (instance {{ \$labels.instance }})
-          description: |-
-            The service {{ \$labels.job }} is not available
-              VALUE = {{ \$value }}
-              LABELS: {{ \$labels }}
-
-      - alert: HighMemoryUsage
-        expr: (node_memory_Active / node_memory_MemTotal) * 100 > 90
-        for: 10m
-        labels:
-          severity: critical
-        annotations:
-          summary: High Memory Usage (instance {{ \$labels.instance }})
-          description: |-
-            Memory usage is > 90%
-              VALUE = {{ \$value }}
-              LABELS: {{ \$labels }}
-
-      - alert: FileSystemFull
-        expr: (node_filesystem_avail / node_filesystem_size) * 100 < 10
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: File System Almost Full (instance {{ \$labels.instance }})
-          description: |-
-            File system has < 10% free space
-              VALUE = {{ \$value }}
-              LABELS: {{ \$labels }}
-
-  - name: docker-container-alerts
-    rules:
-      # 🚨 Alert: Docker Disk Usage High
-      - alert: DockerDiskUsageHigh
-        expr: node_filesystem_free_bytes{mountpoint="/var/lib/docker"} / node_filesystem_size_bytes{mountpoint="/var/lib/docker"} * 100 < 10
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Docker Disk Usage High"
-          description: "Docker disk usage is above 90%, remaining space is less than 10%."
-
-      # 🚨 Alert: High Memory Usage in a Container
-      - alert: DockerContainerHighMemory
-        expr: container_memory_usage_bytes{container_label_com_docker_compose_service!=""} / container_spec_memory_limit_bytes * 100 > 80
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High Memory Usage in Docker Container"
-          description: "Container {{ $labels.container_label_com_docker_compose_service }} is using more than 80% of its allocated memory."
-
-      # 🚨 Alert: High CPU Usage in a Container
-      - alert: DockerContainerHighCPU
-        expr: rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=""}[5m]) * 100 > 80
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High CPU Usage in Docker Container"
-          description: "Container {{ $labels.container_label_com_docker_compose_service }} is using more than 80% CPU."
-
-      # 🚨 Alert: Frequent Container Restarts
-      - alert: DockerContainerRestarting
-        expr: increase(container_restart_count{container_label_com_docker_compose_service!=""}[10m]) > 3
-        for: 10m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Docker Container Restarting Frequently"
-          description: "Container {{ $labels.container_label_com_docker_compose_service }} has restarted more than 3 times in 10 minutes."
-
-      # 🚨 Alert: Stopped Docker Containers
-      - alert: DockerContainerStopped
-        expr: sum by (state) (engine_daemon_container_states_containers{state="stopped"}) > 0
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Stopped Container Alert"
-          description: "One or more Docker containers are in a stopped state for more than 2 minutes."
-
-      # 🚨 Alert: Paused Docker Containers
-      - alert: DockerContainerPaused
-        expr: sum by (state) (engine_daemon_container_states_containers{state="paused"}) > 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Paused Container Alert"
-          description: "One or more Docker containers are in a paused state."
-
-      # 🚨 Alert: No Running Containers
-      - alert: NoRunningContainers
-        expr: sum by (state) (engine_daemon_container_states_containers{state="running"}) == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "No Running Containers"
-          description: "There are no running containers on the host."
-
-  - name: website_alerts
-    rules:
-      - alert: StaticWebsiteDown
-        expr: probe_success{instance="https://frissly.com"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: Static Website is Down
-          description: The Static website at https://frissly.com is unreachable.
-
-      - alert: AdminWebsiteDown
-        expr: probe_success{instance="https://admin.frissly.com"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: Admin Website is Down
-          description: The Admin website at https://admin.frissly.com is unreachable.
-
-  - name: ssl_alerts
-    rules:
-      - alert: SSLCertificateExpiring
-        expr: ssl_cert_expires_in < 30 * 24 * 60 * 60
-        for: 1d
-        labels:
-          severity: warning
-        annotations:
-          summary: SSL certificate expiring soon ({{ \$labels.instance }})
-          description: "The SSL certificate expires in less than 30 days."
-
-      - alert: SSLCertificateExpired
-        expr: ssl_cert_expires_in <= 0
-        for: 1d
-        labels:
-          severity: critical
-        annotations:
-          summary: SSL certificate expired ({{ \$labels.instance }})
-          description: "The SSL certificate has expired."
-
-  - name: latency_alerts
-    rules:
-      - alert: HighApplicationLatency
-        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 0.5
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: High application latency ({{ \$labels.instance }})
-          description: "The 99th percentile latency is above 500ms."
-
-      - alert: CriticalApplicationLatency
-        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 1
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: Critical application latency ({{ \$labels.instance }})
-          description: "The 99th percentile latency is above 1000ms."
-EOF
-
-# Set ownership and permissions
-echo "Setting ownership and permissions..."
-sudo chown prometheus:prometheus /var/lib/prometheus
-sudo chown -R prometheus:prometheus /opt/prometheus
-sudo chmod -R 755 /opt/prometheus
-
-# Configure Prometheus
-echo "Configuring Prometheus..."
-cat <<EOF | sudo tee /opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - "localhost:9093"
-
-rule_files:
-  - "alert_rules.yml"
-
-scrape_configs:
-  - job_name: "prometheus"
-    static_configs:
-      - targets:
-          - "localhost:9090"
-
-  - job_name: "node_exporter"
-    static_configs:
-      - targets:
-          - "localhost:9100"
-          - "13.203.149.189:9100"
-
-  - job_name: "docker"
-    static_configs:
-      - targets:
-          - "13.203.149.189:9323"
-
-  - job_name: "blackbox"
-    metrics_path: /probe
-    params:
-      module: [http_2xx]
-    static_configs:
-      - targets:
-          - "https://frissly.com"
-          - "https://admin.frissly.com"
-    relabel_configs:
-      - source_labels: [address]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: address
-        replacement: "localhost:9115"
-EOF
-
-# Create Prometheus service
-echo "Creating Prometheus service..."
-cat <<EOF | sudo tee /etc/systemd/system/prometheus.service
-[Unit]
-Description=Prometheus
-After=network.target
-
-[Service]
-User=prometheus
-Group=prometheus
-Type=simple
-ExecStart=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus --config.file=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml --storage.tsdb.path=/var/lib/prometheus
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Reload systemd and start Prometheus
-echo "Reloading systemd and starting Prometheus..."
-sudo systemctl daemon-reload
-sudo systemctl enable prometheus
-sudo systemctl start prometheus
-
-# Verify Prometheus is running
-echo "Verifying Prometheus is running..."
-ps aux | grep prometheus
-sudo netstat -tulnp | grep 9090
-
-echo "Prometheus installation and configuration complete!"
-
-
-
-
-
-
-
-
--> After execute the above script , You will update below script to get more alerts
--> sudo vi /opt/prometheus/prometheus-3.2.1.linux-amd64/alert_rules.yml
-
-
 groups:
   - name: alert_rules
     rules:
@@ -551,7 +344,6 @@ groups:
 
   - name: docker-container-alerts
     rules:
-      # 🚨 Alert: Docker Disk Usage High
       - alert: DockerDiskUsageHigh
         expr: node_filesystem_free_bytes{mountpoint="/var/lib/docker"} / node_filesystem_size_bytes{mountpoint="/var/lib/docker"} * 100 < 10
         for: 5m
@@ -561,7 +353,6 @@ groups:
           summary: "Docker Disk Usage High"
           description: "Docker disk usage is above 90%, remaining space is less than 10%."
 
-      # 🚨 Alert: High Memory Usage in a Container
       - alert: DockerContainerHighMemory
         expr: container_memory_usage_bytes{container_label_com_docker_compose_service!=""} / container_spec_memory_limit_bytes * 100 > 80
         for: 2m
@@ -571,7 +362,6 @@ groups:
           summary: "High Memory Usage in Docker Container"
           description: "Container {{ .container_label_com_docker_compose_service }} is using more than 80% of its allocated memory."
 
-      # 🚨 Alert: High CPU Usage in a Container
       - alert: DockerContainerHighCPU
         expr: rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=""}[5m]) * 100 > 80
         for: 2m
@@ -581,7 +371,6 @@ groups:
           summary: "High CPU Usage in Docker Container"
           description: "Container {{ .container_label_com_docker_compose_service }} is using more than 80% CPU."
 
-      # 🚨 Alert: Frequent Container Restarts
       - alert: DockerContainerRestarting
         expr: increase(container_restart_count{container_label_com_docker_compose_service!=""}[10m]) > 3
         for: 10m
@@ -591,7 +380,6 @@ groups:
           summary: "Docker Container Restarting Frequently"
           description: "Container {{ .container_label_com_docker_compose_service }} has restarted more than 3 times in 10 minutes."
 
-      # 🚨 Alert: Stopped Docker Containers
       - alert: DockerContainerStopped
         expr: sum by (state) (engine_daemon_container_states_containers{state="stopped"}) > 0
         for: 2m
@@ -601,7 +389,6 @@ groups:
           summary: "Stopped Container Alert"
           description: "One or more Docker containers are in a stopped state for more than 2 minutes."
 
-      # 🚨 Alert: Paused Docker Containers
       - alert: DockerContainerPaused
         expr: sum by (state) (engine_daemon_container_states_containers{state="paused"}) > 0
         for: 2m
@@ -611,7 +398,6 @@ groups:
           summary: "Paused Container Alert"
           description: "One or more Docker containers are in a paused state."
 
-      # 🚨 Alert: No Running Containers
       - alert: NoRunningContainers
         expr: sum by (state) (engine_daemon_container_states_containers{state="running"}) == 0
         for: 1m
@@ -620,26 +406,6 @@ groups:
         annotations:
           summary: "No Running Containers"
           description: "There are no running containers on the host."
-
-  - name: website_alerts
-    rules:
-      - alert: StaticWebsiteDown
-        expr: probe_success{instance="https://frissly.com"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: Static Website is Down
-          description: The Static website at https://frissly.com is unreachable.
-
-      - alert: AdminWebsiteDown
-        expr: probe_success{instance="https://admin.frissly.com"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: Admin Website is Down
-          description: The Admin website at https://admin.frissly.com is unreachable.
 
   - name: ssl_alerts
     rules:
@@ -681,8 +447,151 @@ groups:
           summary: Critical application latency ({{ $labels.instance }})
           description: "The 99th percentile latency is above 1000ms."
 
+  - name: Alerts of HTTP Duration phase
+    rules:
+      - alert: SlowTCPConnection
+        expr: probe_http_duration_seconds{phase="connect"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High TCP connection time to website {{ $labels.instance }}"
+          description: "The TCP connection time to the website {{ $labels.instance }} has exceeded 100ms for 2 minutes. This may indicate network issues or delays in the load balancer."
+
+      - alert: SlowBackendProcessing
+        expr: probe_http_duration_seconds{phase="processing"} > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High backend processing time for website {{ $labels.instance }}"
+          description: "The backend response time for website {{ $labels.instance }} has exceeded 50ms for 2 minutes. This may impact application performance, causing delays in checkout, product loading, or search functionalities."
+
+      - alert: DNSResolutionDelay
+        expr: probe_http_duration_seconds{phase="resolve"} > 0.05
+        for: 2m
+        labels:
+          severity: info
+        annotations:
+          summary: "DNS resolution delay for website {{ $labels.instance }}"
+          description: "DNS resolution for website {{ $labels.instance }} has taken longer than expected, with a lookup time exceeding 50ms for 2 minutes. Consider optimizing DNS configurations or caching DNS results."
+
+      - alert: TLSHandshakeLatency
+        expr: probe_http_duration_seconds{phase="tls"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS handshake time is high for website {{ $labels.instance }}"
+          description: "TLS negotiation for website {{ $labels.instance }} is taking longer than 100ms. This may impact secure connections and performance."
+
+      - alert: SlowHTTPTransfer
+        expr: probe_http_duration_seconds{phase="transfer"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response transfer time for website {{ $labels.instance }}"
+          description: "HTTP response transfer for website {{ $labels.instance }} is slow (>100ms). This may be due to large payloads or slow backend."
 
 
+  - name: Alerts of High Probe Duration
+    rules:
+      - alert: HighProbeDuration
+        expr: probe_duration_seconds > 0.3
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High probe duration detected for website {{ $labels.instance }}"
+          description: "Probe duration for website {{ $labels.instance }} is high (>300ms). This may indicate network latency or slow server response."
+EOF
+
+# Set ownership and permissions
+echo "Setting ownership and permissions..."
+sudo chown prometheus:prometheus /var/lib/prometheus
+sudo chown -R prometheus:prometheus /opt/prometheus
+sudo chmod -R 755 /opt/prometheus
+
+# Configure Prometheus
+echo "Configuring Prometheus..."
+cat <<EOF | sudo tee /opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "localhost:9093"
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets:
+          - "localhost:9090"
+
+  - job_name: "node_exporter"
+    static_configs:
+      - targets:
+          - "localhost:9100"
+          - "13.203.149.189:9100"
+
+  - job_name: "docker"
+    static_configs:
+      - targets:
+          - "13.203.149.189:9323"
+
+  - job_name: "blackbox"
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - "https://frissly.com"
+          - "https://admin.frissly.com"
+    relabel_configs:
+      - source_labels: [address]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: address
+        replacement: "localhost:9115"
+EOF
+
+# Create Prometheus service
+echo "Creating Prometheus service..."
+cat <<EOF | sudo tee /etc/systemd/system/prometheus.service
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus --config.file=/opt/prometheus/prometheus-3.2.1.linux-amd64/prometheus.yml --storage.tsdb.path=/var/lib/prometheus
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and start Prometheus
+echo "Reloading systemd and starting Prometheus..."
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus
+sudo systemctl start prometheus
+
+# Verify Prometheus is running
+echo "Verifying Prometheus is running..."
+ps aux | grep prometheus
+sudo netstat -tulnp | grep 9090
+
+echo "Prometheus installation and configuration complete!"
 
 
 
@@ -713,52 +622,16 @@ scrape_configs:
       - targets:
           - "localhost:9100"
 
-  - job_name: "uat_node_exporter"
-    static_configs:
-      - targets:
-          - "65.2.174.154:9100"
-
-  - job_name: "stg_node_exporter"
-    static_configs:
-      - targets:
-          - "13.202.180.244:9100"
-
-  - job_name: "prod_node_exporter"
-    static_configs:
-      - targets:
-          - "13.127.210.203:9100"
-
-
-  - job_name: "uat_docker"
-    static_configs:
-      - targets:
-          - "65.2.174.154:9323"
-
-  - job_name: "stg_docker"
-    static_configs:
-      - targets:
-          - "13.202.180.244:9323"
-
-  - job_name: "prod_docker"
-    static_configs:
-      - targets:
-          - "13.127.210.203:9323"
-
-  - job_name: 'cloudwatch_apprunner'
-    metrics_path: /metrics
-    scheme: http
-    static_configs:
-      - targets: ['localhost:9106']  # CloudWatch Exporter running locally
-
   - job_name: "blackbox"
     metrics_path: /probe
     params:
       module: [http_2xx]
     static_configs:
       - targets:
+          - "https://4qft2jsmnh.ap-south-1.awsapprunner.com"
           - "https://frissly.com"
-          - "https://m.frissly.com"
           - "https://admin.frissly.com"
+          - "https://m.frissly.com"
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -767,121 +640,61 @@ scrape_configs:
       - target_label: __address__
         replacement: "localhost:9115"
 
-
 -> sudo systemctl daemon-reload
 -> sudo systemctl restart prometheus
 -> ps aux | grep prometheus
 -> sudo netstat -tulnp | grep 9090
 
 
+-> After complete all the installation you will sign in promethous and grafana
+-> You will datasource promethous and cloud watch in grafana
+-> You will add nodeport exporter and blackbox exporter dashboard with import number 
+     # Import Dash board numbers 
+      -> 1860   --> Node exporter
+      -> 7587   --> Balckbox exporter
+      -> 13041  --> Website
+      -> 13659  
+
+-> After you monitor the apprunner metrics with the help cloud watch data source
+-> Enter into dashboard choose cloud watch in data source, click code, give the below query and click run query   --> one way
+-> Choose manually, select region, cloudwatch metrics, metric insights. Choose AWS/AppRunner in namespace, select metrics, select Aggregation, click filter choose service name and select apprunner name   --> another way
+    
+-> Request
+SELECT COUNT(Requests) FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> 2xx responce count
+SELECT COUNT("2xxStatusResponses") FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> 4xx responce count
+SELECT COUNT("4xxStatusResponses") FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> 5xx responce count
+SELECT COUNT("5xxStatusResponses") FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> CPU Utilization
+SELECT MAX(CPUUtilization) FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> Memoty Utilization
+SELECT SUM(MemoryUtilization) FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> Request Latency
+SELECT MIN(RequestLatency) FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> Active Instance
+SELECT COUNT(ActiveInstances) FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
+
+-> Concurrency
+SELECT MAX(Concurrency) FROM "AWS/AppRunner" WHERE ServiceName = 'staging-Backend-01'
 
 
-# Install cloud watch exporter
-# Download the correct "with dependencies" JAR (replace link with latest from GitHub if needed)
--> sudo wget https://repo1.maven.org/maven2/io/prometheus/cloudwatch/cloudwatch_exporter/0.15.4/cloudwatch_exporter-0.15.4-jar-with-dependencies.jar
+# To set up the alert rule for above metrics
+-> First the setup the mail notification for alert
+-> click contact point, click create contact point, give name, enter mail, click test, save the contact point
+-> Click Notification policies, click more, click edit, choose contact point which you created.
+-> After complete above set the alert rules
+-> Go to dashbaord, click more specific metric, click new alert rule, click bulider, workin A and C, dont touch B, create folder, cretae evaluation group, choode contact point, save
 
-# Rename for convenience
--> sudo mv cloudwatch_exporter-0.15.4-jar-with-dependencies.jar cloudwatch_exporter-0.15.4.jar
--> sudo mkdir -p /opt/cloudwatch_exporter
--> sudo mv cloudwatch_exporter-0.15.4.jar /opt/cloudwatch_exporter/
--> sudo vi /etc/cloudwatch_exporter.yml
 
-region: ap-south-1
 
-metrics:
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: RequestCount
-    dimensions: [ServiceId]
-    statistics: [Sum]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
 
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: HTTPCode_Target_2XX_Count
-    dimensions: [ServiceId]
-    statistics: [Sum]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
 
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: HTTPCode_Target_4XX_Count
-    dimensions: [ServiceId]
-    statistics: [Sum]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
-
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: HTTPCode_Target_5XX_Count
-    dimensions: [ServiceId]
-    statistics: [Sum]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
-
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: Latency
-    dimensions: [ServiceId]
-    statistics: [Average]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
-
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: ActiveInstances
-    dimensions: [ServiceId]
-    statistics: [Average]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
-
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: CPUUtilization
-    dimensions: [ServiceId]
-    statistics: [Average]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
-
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: MemoryUtilization
-    dimensions: [ServiceId]
-    statistics: [Average]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
-
-  - aws_namespace: AWS/AppRunner
-    aws_metric_name: Concurrency
-    dimensions: [ServiceId]
-    statistics: [Average]
-    period_seconds: 300
-    range_seconds: 600
-    delay_seconds: 60
-
--> sudo vi /etc/systemd/system/cloudwatch_exporter.service
-
-[Unit]
-Description=CloudWatch Exporter
-After=network.target
-
-[Service]
-User=ubuntu
-ExecStart=/usr/bin/java -jar /opt/cloudwatch_exporter/cloudwatch_exporter-0.15.4.jar 9106 /etc/cloudwatch_exporter.yml
-SuccessExitStatus=143
-
-[Install]
-WantedBy=multi-user.target
-
--> sudo apt install default-jre
--> sudo systemctl daemon-reexec
--> sudo systemctl daemon-reload
--> sudo systemctl enable cloudwatch_exporter
--> sudo systemctl start cloudwatch_exporter
--> sudo systemctl status cloudwatch_exporter
--> sudo journalctl -u cloudwatch_exporter -f
-
-# For restart
--> sudo systemctl restart cloudwatch_exporter

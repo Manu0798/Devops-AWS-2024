@@ -153,9 +153,7 @@ HTTP Request/Response	     Time for sending the request and receiving the full r
 # Alert of probe
 
 🟨 probe_duration – High Probe Duration Alert
-yaml
-Copy
-Edit
+
 - alert: HighProbeDuration
   expr: probe_duration_seconds > 0.3
   for: 2m

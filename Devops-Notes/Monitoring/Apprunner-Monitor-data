@@ -1,0 +1,177 @@
+These AWS App Runner metrics help you understand the performance, health, and scalability of your backend e-commerce application. Here's a clear explanation of each:
+
+📊 1. Request count
+Meaning: Total number of HTTP requests received by your App Runner service.
+Use: Shows overall traffic volume to your backend.
+
+✅ 2. HTTP 2xx response count
+Meaning: Number of requests that returned successful responses (e.g., 200 OK, 201 Created).
+Use: Indicates how many requests were successfully processed.
+
+⚠️ 3. HTTP 4xx response count
+Meaning: Number of requests that resulted in client-side errors (e.g., 400 Bad Request, 404 Not Found).
+Use: Helps identify problems in the frontend or API clients, like incorrect URLs or missing parameters.
+
+❌ 4. HTTP 5xx response count
+Meaning: Number of requests that resulted in server-side errors (e.g., 500 Internal Server Error, 503 Service Unavailable).
+Use: Indicates issues in your backend logic or server performance. Needs immediate attention in e-commerce apps.
+
+⏱️ 5. Request latency
+Meaning: Time taken to process each request (in milliseconds).
+Use: Monitors application responsiveness. High latency = slow user experience.
+
+🔄 6. Active instances
+Meaning: Number of running service instances at a time (App Runner scales automatically).
+Use: Helps understand scaling behavior. More instances = high traffic/load.
+
+🧠 7. CPU Utilization
+Meaning: Percentage of CPU resources used by the app.
+Use: High values may indicate intensive processing or a need to scale.
+
+💾 8. Memory Utilization
+Meaning: Percentage of memory (RAM) used.
+Use: High memory usage may signal memory leaks or insufficient resources.
+
+👥 9. Concurrency
+Meaning: Number of concurrent (simultaneous) requests handled per instance.
+Use: Helps detect overload. High concurrency = each instance is handling many users at once.
+
+
+
+
+# 📊 Metric: HTTP Duration
+This graph visualizes how long different stages of the HTTP request take. Here's what each colored line represents:
+
+
+🟩 connect  (TCP creates a connection between the client and the server)
+What it means: Time to establish a TCP connection to your App Runner service.
+Significance: Spikes may indicate network instability or DNS resolution delays.
+
+💡 What is TCP?
+TCP stands for Transmission Control Protocol — it’s one of the main protocols that powers the internet.
+
+🧠 In simple terms:
+TCP is the set of rules that ensures data sent between computers is delivered accurately and in order.
+When a user (or client) sends a request to your e-commerce backend running on App Runner:
+TCP creates a connection between the client and the server.
+It ensures all packets (pieces of data) arrive intact, in sequence, and without duplication.
+
+🟧 processing
+What it means: Time your backend takes to generate a response.
+Significance: If this grows, it suggests slow backend processing (e.g., DB calls, code logic).
+
+🟦 resolve   (DNS Lookup Time is the amount of time it takes to translate a domain name (like example.com) into an IP address (like 93.184.216.34).)
+What it means: Time taken to resolve the domain name (DNS lookup).
+Significance: High values may indicate DNS issues or delays in DNS resolution.
+
+🔶 tls  (Time taken to establish a secure HTTPS connection)
+What it means: Time taken to complete the TLS/SSL handshake (HTTPS connection).
+Significance: Rarely a bottleneck, but spikes could mean cert negotiation issues.
+
+🟨 transfer
+What it means: Time spent transferring the response back from your app to the client.
+Significance: High values may suggest large payloads or slow network.
+
+
+# Alerts of HTTP Duration phase
+
+🟩 connect – Alert for Slow TCP Connection
+
+- alert: SlowTCPConnection
+  expr: probe_http_duration_seconds{phase="connect"} > 0.1
+  for: 2m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High TCP connection time to App Runner"
+    description: "Connection time exceeds 100ms for 2 minutes. Possible network issues or load balancer delays."
+
+
+🟧 processing – Backend Slowness
+
+- alert: SlowBackendProcessing
+  expr: probe_http_duration_seconds{phase="processing"} > 0.05
+  for: 2m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Backend processing time is high"
+    description: "Backend response time > 50ms for 2 minutes. This may slow down checkout, product loading, or search."
+
+
+🟦 resolve – DNS Latency
+
+- alert: DNSResolutionDelay
+  expr: probe_http_duration_seconds{phase="resolve"} > 0.05
+  for: 2m
+  labels:
+    severity: info
+  annotations:
+    summary: "DNS resolution taking longer than expected"
+    description: "DNS lookup time is > 50ms. Consider caching or checking DNS configuration."
+
+
+🔶 tls – SSL/TLS Handshake Time
+
+- alert: TLSHandshakeLatency
+  expr: probe_http_duration_seconds{phase="tls"} > 0.1
+  for: 2m
+  labels:
+    severity: warning
+  annotations:
+    summary: "TLS handshake time is high"
+    description: "TLS negotiation is taking longer than 100ms. May impact secure connections and app responsiveness."
+
+
+🟨 transfer – Slow Response Transfer
+
+- alert: SlowHTTPTransfer
+  expr: probe_http_duration_seconds{phase="transfer"} > 0.1
+  for: 2m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High response transfer time"
+    description: "HTTP response transfer is slow (>100ms). May be due to large payloads or slow client connections."
+
+
+
+
+
+# ✅ What does “Probe Duration” mean?
+Probe Duration is the total time taken by a probe (such as from Prometheus’ Blackbox Exporter) to complete a network request to your target service (e.g., a web server, API, etc.).
+
+This includes all phases of the network connection:
+
+Phase	                         Description
+DNS Resolution	           Time to resolve domain name to IP address.
+TCP Connection	           Time to establish a TCP connection with the server.
+TLS Handshake	             Time for secure negotiation (only for HTTPS).
+HTTP Request/Response	     Time for sending the request and receiving the full response.
+
+
+# Alert of probe
+
+🟨 probe_duration – High Probe Duration Alert
+yaml
+Copy
+Edit
+- alert: HighProbeDuration
+  expr: probe_duration_seconds > 0.3
+  for: 2m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High probe duration detected"
+    description: "Probe duration is high (>300ms). This may indicate network latency or slow server response."
+
+
+
+🔍 Breakdown:
+Field	                      Meaning
+alert	                 Name of the alert
+expr	                 Alert condition – triggers if duration > 0.3 seconds (300ms)
+for	                   Alert must be true for 2 minutes before triggering
+labels	               Used to classify the severity (warning, critical, etc.)
+annotations	           Used to describe the alert in notifications (e.g., Slack, email, UI)
+

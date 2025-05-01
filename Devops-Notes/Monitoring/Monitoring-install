@@ -1329,3 +1329,53 @@ groups:
         annotations:
           summary: Critical application latency ({{ $labels.instance }})
           description: "The 99th percentile latency is above 1000ms."
+
+
+# For blackbox extract data
+
+-> sudo vi /etc/blackbox-config.yml
+
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: [ "HTTP/1.1", "HTTP/2" ]
+      valid_status_codes: []  # Defaults to 2xx
+      method: GET
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+
+  https_cert:
+    prober: http
+    timeout: 5s
+    http:
+      tls_config:
+        insecure_skip_verify: false
+      fail_if_ssl: false
+      fail_if_not_ssl: true
+
+  ping:
+    prober: icmp
+    timeout: 5s
+
+-> sudo vi /etc/systemd/system/blackbox_exporter.service
+
+[Unit]
+Description=Blackbox Exporter
+After=network.target
+
+[Service]
+User=blackbox_exporter
+Group=blackbox_exporter
+Type=simple
+ExecStart=/opt/blackbox_exporter/blackbox_exporter-0.26.0.linux-amd64/blackbox_exporter  --config.file=/etc/blackbox-config.yml
+
+[Install]
+WantedBy=multi-user.target
+
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable blackbox_exporter
+-> sudo systemctl start blackbox_exporter
+-> ps aux | grep blackbox_exporter
+-> sudo netstat -tulnp | grep 9115

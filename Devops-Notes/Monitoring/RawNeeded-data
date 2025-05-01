@@ -1,0 +1,532 @@
+# Install grafana 
+-> https://grafana.com/grafana/download
+-> sudo apt-get install -y adduser libfontconfig1 musl
+-> wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.5.2_amd64.deb
+-> sudo dpkg -i grafana-enterprise_11.5.2_amd64.deb
+-> sudo /bin/systemctl daemon-reload
+-> sudo /bin/systemctl enable grafana-server
+-> sudo /bin/systemctl start grafana-server
+-> sudo /bin/systemctl status grafana-server
+
+
+# To get email notification we need to configure below thinsgs in this file sudo vi /etc/grafana/grafana.ini
+
+[smtp]
+enabled = true
+host = smtp.gmail.com:587
+user = varmapotthuri4@gmail.com
+# If the password contains # or ; you have to wrap it with triple quotes. Ex """#password;"""
+password = dzxbhazwoggfybxx
+;cert_file =
+;key_file =
+skip_verify = true
+from_address = varmapotthuri4@gmail.com
+from_name = Grafana
+
+-> sudo /bin/systemctl daemon-reload
+-> sudo /bin/systemctl restart grafana-server
+-> sudo /bin/systemctl status grafana-server
+
+-> After that copy the ip paste it in web browser along with port number 3000 
+-> Add the promethous as a data source in grafana
+-> Set the alert, Click the alerting, contact point, click create contact point, give name, choose Email, give mail id, click test for sample
+-> click save contact point
+-> Click on notification policy, click more on defult, click edit, choose above create contact poin, click update policy
+-> click alert rule, 
+
+
+
+# If promethous it could not start you will use below alerts
+groups:
+  - name: alert_rules
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Endpoint {{ $labels.instance }} down
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+      - alert: WebsiteDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Website down
+          description: The website at {{ $labels.instance }} is down.
+
+      - alert: HostOutOfMemory
+        expr: (node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of memory (instance {{ $labels.instance }})
+          description: |-
+            Node memory is filling up (< 25% left)
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HostOutOfDiskSpace
+        expr: (node_filesystem_avail{mountpoint="/"} * 100) / node_filesystem_size{mountpoint="/"} < 50
+        for: 1s
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of disk space (instance {{ $labels.instance }})
+          description: |-
+            Disk is almost full (< 50% left)
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HostHighCpuLoad
+        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host high CPU load (instance {{ $labels.instance }})
+          description: |-
+            CPU load is > 80%
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: ServiceUnavailable
+        expr: up{job="node_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Service Unavailable (instance {{ $labels.instance }})
+          description: |-
+            The service {{ $labels.job }} is not available
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_Active / node_memory_MemTotal) * 100 > 90
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: High Memory Usage (instance {{ $labels.instance }})
+          description: |-
+            Memory usage is > 90%
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: FileSystemFull
+        expr: (node_filesystem_avail / node_filesystem_size) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: File System Almost Full (instance {{ $labels.instance }})
+          description: |-
+            File system has < 10% free space
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: High CPU Usage on {{ $labels.instance }}
+          description: "CPU usage is above 80% for more than 5 minutes."
+
+      - alert: HighSystemLoad
+        expr: node_load1 > 0.9 * count(node_cpu_seconds_total{mode="user"})
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High System Load on {{ $labels.instance }}
+          description: "System load is above 90% for more than 5 minutes."
+
+      - alert: HighSwapUsage
+        expr: (node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) / node_memory_SwapTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High Swap Usage on {{ $labels.instance }}
+          description: "Swap usage is above 80% for more than 5 minutes."
+
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High Disk Usage on {{ $labels.instance }}
+          description: "Root filesystem usage is above 85% for more than 5 minutes."
+
+  - name: docker-container-alerts
+    rules:
+      # 🚨 Alert: Docker Disk Usage High
+      - alert: DockerDiskUsageHigh
+        expr: node_filesystem_free_bytes{mountpoint="/var/lib/docker"} / node_filesystem_size_bytes{mountpoint="/var/lib/docker"} * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Docker Disk Usage High"
+          description: "Docker disk usage is above 90%, remaining space is less than 10%."
+
+      # 🚨 Alert: High Memory Usage in a Container
+      - alert: DockerContainerHighMemory
+        expr: container_memory_usage_bytes{container_label_com_docker_compose_service!=""} / container_spec_memory_limit_bytes * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Memory Usage in Docker Container"
+          description: "Container {{ .container_label_com_docker_compose_service }} is using more than 80% of its allocated memory."
+
+      # 🚨 Alert: High CPU Usage in a Container
+      - alert: DockerContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=""}[5m]) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU Usage in Docker Container"
+          description: "Container {{ .container_label_com_docker_compose_service }} is using more than 80% CPU."
+
+      # 🚨 Alert: Frequent Container Restarts
+      - alert: DockerContainerRestarting
+        expr: increase(container_restart_count{container_label_com_docker_compose_service!=""}[10m]) > 3
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Docker Container Restarting Frequently"
+          description: "Container {{ .container_label_com_docker_compose_service }} has restarted more than 3 times in 10 minutes."
+
+      # 🚨 Alert: Stopped Docker Containers
+      - alert: DockerContainerStopped
+        expr: sum by (state) (engine_daemon_container_states_containers{state="stopped"}) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Stopped Container Alert"
+          description: "One or more Docker containers are in a stopped state for more than 2 minutes."
+
+      # 🚨 Alert: Paused Docker Containers
+      - alert: DockerContainerPaused
+        expr: sum by (state) (engine_daemon_container_states_containers{state="paused"}) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Paused Container Alert"
+          description: "One or more Docker containers are in a paused state."
+
+      # 🚨 Alert: No Running Containers
+      - alert: NoRunningContainers
+        expr: sum by (state) (engine_daemon_container_states_containers{state="running"}) == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No Running Containers"
+          description: "There are no running containers on the host."
+
+  - name: website_alerts
+    rules:
+      - alert: StaticWebsiteDown
+        expr: probe_success{instance="https://frissly.com"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Static Website is Down
+          description: The Static website at https://frissly.com is unreachable.
+
+      - alert: AdminWebsiteDown
+        expr: probe_success{instance="https://admin.frissly.com"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Admin Website is Down
+          description: The Admin website at https://admin.frissly.com is unreachable.
+
+  - name: ssl_alerts
+    rules:
+      - alert: SSLCertificateExpiring
+        expr: ssl_cert_expires_in < 30 * 24 * 60 * 60
+        for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: SSL certificate expiring soon ({{ $labels.instance }})
+          description: "The SSL certificate expires in less than 30 days."
+
+      - alert: SSLCertificateExpired
+        expr: ssl_cert_expires_in <= 0
+        for: 1d
+        labels:
+          severity: critical
+        annotations:
+          summary: SSL certificate expired ({{ $labels.instance }})
+          description: "The SSL certificate has expired."
+
+  - name: latency_alerts
+    rules:
+      - alert: HighApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High application latency ({{ $labels.instance }})
+          description: "The 99th percentile latency is above 500ms."
+
+      - alert: CriticalApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Critical application latency ({{ $labels.instance }})
+          description: "The 99th percentile latency is above 1000ms."
+
+
+# For blackbox extract data
+
+-> sudo vi /etc/blackbox-config.yml
+
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: [ "HTTP/1.1", "HTTP/2" ]
+      valid_status_codes: []  # Defaults to 2xx
+      method: GET
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+
+  https_cert:
+    prober: http
+    timeout: 5s
+    http:
+      tls_config:
+        insecure_skip_verify: false
+      fail_if_ssl: false
+      fail_if_not_ssl: true
+
+  ping:
+    prober: icmp
+    timeout: 5s
+
+-> sudo vi /etc/systemd/system/blackbox_exporter.service
+
+[Unit]
+Description=Blackbox Exporter
+After=network.target
+
+[Service]
+User=blackbox_exporter
+Group=blackbox_exporter
+Type=simple
+ExecStart=/opt/blackbox_exporter/blackbox_exporter-0.26.0.linux-amd64/blackbox_exporter  --config.file=/etc/blackbox-config.yml
+
+[Install]
+WantedBy=multi-user.target
+
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable blackbox_exporter
+-> sudo systemctl start blackbox_exporter
+-> ps aux | grep blackbox_exporter
+-> sudo netstat -tulnp | grep 9115
+
+
+
+
+
+# How to install CloudWatch Agent configuration 
+-> sudo apt-get update -y
+-> sudo apt-get install -y curl unzip
+-> curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+-> unzip awscliv2.zip
+-> sudo ./aws/install
+-> aws configure
+-> curl -O https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+-> sudo dpkg -i amazon-cloudwatch-agent.deb
+-> ls /opt/aws/amazon-cloudwatch-agent/bin/
+-> export PATH=$PATH:/opt/aws/amazon-cloudwatch-agent/bin
+-> amazon-cloudwatch-agent --version
+-> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+-> sudo vi /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> sudo systemctl restart amazon-cloudwatch-agent
+-> sudo systemctl status amazon-cloudwatch-agent
+-> aws logs describe-log-groups --region ap-south-1
+-> aws logs describe-log-streams --log-group-name "/aws/apprunner/UAT-Backend-01/12ddc089d52a40d39b6be47313fd04f9/application" --region ap-south-1
+-> sudo journalctl -u amazon-cloudwatch-agent -f
+-> cat /opt/aws/amazon-cloudwatch-agent/bin/config.json
+
+
+# How to install CloudWatch Agent configuration
+-> sudo apt-get update -y
+-> sudo apt install collectd -y
+-> curl -O https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+-> sudo dpkg -i amazon-cloudwatch-agent.deb
+-> ls /opt/aws/amazon-cloudwatch-agent/bin/
+-> export PATH=$PATH:/opt/aws/amazon-cloudwatch-agent/bin
+-> amazon-cloudwatch-agent --version
+-> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+-> After complete the configuration it will defaulty save that configuration file at /opt/aws/amazon-cloudwatch-agent/bin/config.json
+-> The CloudWatch agent expects the configuration at  /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> sudo cp /opt/aws/amazon-cloudwatch-agent/bin/config.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> cat /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> sudo systemctl enable amazon-cloudwatch-agent
+-> sudo systemctl start amazon-cloudwatch-agent
+-> sudo systemctl status amazon-cloudwatch-agent
+
+# If you want to get logs of server you should below configuration
+# Create a Log Group
+-> Go to AWS Console → CloudWatch → Logs
+-> Click Log groups
+-> Click Create log group
+-> Enter a name (e.g., /ec2/logs) and click Create
+-> sudo vi /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+-> Remove existing and paste the below contenent
+
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/syslog",
+            "log_group_name": "/ec2/logs",
+            "log_stream_name": "{instance_id}-syslog",
+            "timestamp_format": "%b %d %H:%M:%S"
+          },
+          {
+            "file_path": "/var/log/messages",
+            "log_group_name": "/ec2/logs",
+            "log_stream_name": "{instance_id}-messages",
+            "timestamp_format": "%b %d %H:%M:%S"
+          }
+        ]
+      }
+    }
+  }
+}
+
+-> sudo systemctl restart amazon-cloudwatch-agent
+-> sudo systemctl status amazon-cloudwatch-agent
+
+-> After complete the above configuration Verify Log Streams in CloudWatch
+-> Go to CloudWatch → Logs → Log Groups
+-> Open /ec2/logs
+-> Check if logs are streaming
+
+# How to create the Dashboards
+# Create a CloudWatch Dashboard for EC2
+-> Go to the AWS Console → CloudWatch
+-> Click Dashboards from the left panel
+-> Click Create Dashboard
+-> Enter a dashboard name (e.g., EC2-Monitoring) and click Create
+-> Click Add widget and choose Line Graph
+-> Select EC2 → Per-Instance Metrics
+-> Copy your instance ID in search bar to keep only for that instance
+-> Choose CPUUtilization, NetworkIn, NetworkOut
+-> remove the content in search bar
+-> Choose CWAgent
+-> Copy your instance ID in search bar to keep only for that instance
+-> Choose Disk Used, Memory Utilization
+-> Click Create widget
+-> Click save the dashboard
+# For logs we have to create another widget
+-> Click Add Widget
+-> Select logs rather than metrics
+-> Scroll down and select Logs Table
+-> Click browser select log name
+-> Click Create widget
+-> Click save the dashboard
+
+# How to create alarms
+# Set Up an Alarm for High CPU Usage
+-> Go to AWS Console → CloudWatch → Alarms
+-> Click Create alarm
+-> Click Select metric
+-> Choose EC2 → Per-Instance Metrics
+-> Select CPUUtilization and click Select metric
+-> Set the condition:
+-> Threshold type: Static
+-> Greater than 80%
+-> Click Next
+-> Select in alarm
+-> Select your SNS topic
+-> Give alaram name
+-> Click create  [it take time state to becoma ok]
+
+# For Checking you will increate load on cpu by using below command
+-> stress --cpu 2 --timeout 500    --> Increase the load
+-> pkill stress   --> Decrease the load
+
+for i in 1 2 4 8 16; do
+    echo "Increasing CPU load with $i workers..."
+    stress --cpu $i --timeout 60
+    sleep 5
+done
+
+-> As like above we have to create the alarm for all the metrics
+
+
+
+
+
+
+
+
+
+# Install promtail
+-> wget https://github.com/grafana/loki/releases/latest/download/promtail-linux-amd64.zip -O ~/promtail.zip
+-> sudo apt update && sudo apt install unzip -y
+-> unzip ~/promtail.zip -d ~/promtail
+-> sudo mv ~/promtail/promtail-linux-amd64 /usr/local/bin/promtail
+-> sudo chmod +x /usr/local/bin/promtail
+-> promtail --version
+-> sudo vi /etc/promtail-config.yml
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/log/positions.yaml  # Make sure this file is writable
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push  # Ensure Loki is accessible
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          host: ${HOSTNAME}
+          __path__: /var/log/*.log  # Ensure logs exist in this path
+
+
+-> sudo touch /var/log/positions.yaml
+-> sudo useradd -r -s /sbin/nologin promtail
+-> sudo chown promtail:promtail /var/log/positions.yaml
+-> sudo chmod 664 /var/log/positions.yaml
+-> sudo chown promtail:promtail /var/log
+-> sudo chmod 777 /var/log
+-> nohup promtail -config.file=/etc/promtail-config.yml > /tmp/promtail.log 2>&1 &
+-> ps aux | grep promtail
+-> sudo cat /tmp/promtail.log

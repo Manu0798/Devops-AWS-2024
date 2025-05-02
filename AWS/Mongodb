@@ -649,3 +649,9 @@ echo "MongoDB change stream listener and backup setup completed successfully!"
 -> nohup node /home/ubuntu/mongo_listener.js > /home/ubuntu/mongo_listener.log 2>&1 &
 -> tail -f /home/ubuntu/mongo_listener.log
 
+
+
+# Download the s3 bucket from AWS to Local
+-> aws configure
+-> aws s3 cp s3://frissly-mongo-backup/02-05-2025_10-20/ D:\bucket --recursive
+

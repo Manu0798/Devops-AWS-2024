@@ -71,19 +71,13 @@ Choose "Custom patterns (JSON editor)."
 
 Enter the following JSON to capture deployment success and failure events:
 
-json
-Copy
-Edit
-{
-  "source": ["aws.apprunner"],
-  "detail-type": ["AppRunner Service Operation Status Change"],
-  "detail": {
-    "operationStatus": [
-      "DeploymentCompletedSuccessfully",
-      "DeploymentFailed"
-    ]
-  }
-}
+event_pattern = jsonencode({
+    source      = ["aws.apprunner"]
+    "detail-type" = ["AppRunner Service Operation Status Change"]
+    detail = {
+      operationStatus = ["DeploymentCompletedSuccessfully", "DeploymentFailed"]
+    }
+  })
 In the "Select targets" section, click "Add target."
 
 Choose "SNS topic" as the target type.

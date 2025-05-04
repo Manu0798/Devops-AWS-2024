@@ -649,6 +649,27 @@ echo "MongoDB change stream listener and backup setup completed successfully!"
 -> nohup node /home/ubuntu/mongo_listener.js > /home/ubuntu/mongo_listener.log 2>&1 &
 -> tail -f /home/ubuntu/mongo_listener.log
 
+-> sudo npm install -g pm2
+-> pm2 start /home/ubuntu/mongo_listener.js --name mongo_listener
+-> pm2 save
+-> pm2 startup
+-> pm2 logs mongo_listener
+
+
+✅ 3. Enable Swap Space
+Since you're running backups and Node.js, add swap to avoid memory-related crashes:
+
+bash
+Copy
+Edit
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+
+
 
 
 # Download the s3 bucket from AWS to Local

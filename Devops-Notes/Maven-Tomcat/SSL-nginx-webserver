@@ -58,22 +58,20 @@ https://youtu.be/qgLlJXBvqR0?si=w9WNUgo4mPxrx9fQ
 
 
 # Another way to attach the SSL certifictes[real time]
--> First we will map our IP address to our domain
+-> First we will map our IP address to our domain in route53 or any another domain paltform 
 -> nslookup <domain name>   --> To check wheather IP is map to our domain or not
 -> After map the IP to our domain. you will follow below steps
 -> First you will install nginx in your terminal using belwo commnads
    sudo apt update
    sudo apt install nginx 
 -> you will create one file in below location with tha below data
-   sudo vi /etc/nginx/sites-available/leave.greenenco.in.conf
+   sudo vi /etc/nginx/sites-available/grafana.frissly.com.conf
 
 server {
-    listen 80;
-    listen [::]:80;
-    server_name demo-backend.greenencopvapm.com;
+    server_name grafana.frissly.com;
 
     location / {
-        proxy_pass http://13.51.76.222:8001;
+        proxy_pass http://3.109.94.209:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -83,7 +81,8 @@ server {
 
 -> you will execute the below command after create the above file
 
-ln -s /etc/nginx/sites-available/leave.greenenco.in.conf /etc/nginx/sites-enabled
-sudo certbot --nginx -d www.yourdomain
-sudo certbot certonly --dry-run -d example.com      --> It won't expair our SSL Certificates
+sudo ln -s /etc/nginx/sites-available/grafana.frissly.com /etc/nginx/sites-enabled
+sudo apt install certbot python3-certbot-nginx -y
+sudo certbot --nginx -d grafana.frissly.com
+sudo certbot certonly --dry-run -d grafana.frissly.com      --> It won't expair our SSL Certificates
 

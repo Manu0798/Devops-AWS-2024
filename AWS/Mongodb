@@ -676,3 +676,39 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 -> aws configure
 -> aws s3 cp s3://frissly-mongo-backup/02-05-2025_10-20/ D:\bucket --recursive
 
+
+
+
+# How to automatically delete older files in an S3 bucket only when the file count exceeds 10
+-> vi cleanup_s3.sh
+
+#!/bin/bash
+
+# Cleanup old backups from S3 — Keep only the latest 10 folders
+echo "Cleaning up old backups from S3..."
+S3_BUCKET="s3://frissly-prod-mongodb-backup-1"
+
+# Loop to continuously run the cleanup process
+while true; do
+    FOLDERS=$(aws s3 ls "$S3_BUCKET/" | awk '{print $2}' | sort -r)
+    COUNT=0
+
+    for FOLDER in $FOLDERS; do
+        COUNT=$((COUNT + 1))
+        if [ $COUNT -gt 10 ]; then
+            echo "Deleting old backup folder: $FOLDER"
+            aws s3 rm "${S3_BUCKET}/${FOLDER}" --recursive
+        fi
+    done
+
+    # Sleep for 60 seconds before the next iteration (adjust the sleep time as needed)
+    sleep 60
+done
+
+
+
+-> nohup /home/ubuntu/cleanup_s3.sh >> /home/ubuntu/cleanup_s3.log 2>&1 &
+-> ps aux | grep cleanup_s3.sh
+
+# if you want to kill
+-> pgrep -af cleanup_s3.sh

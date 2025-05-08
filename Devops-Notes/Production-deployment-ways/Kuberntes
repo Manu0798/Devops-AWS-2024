@@ -498,6 +498,47 @@ pipeline {
     }
 
 
+# After complete to create Ingress, In load balancer it will show only 1 and 2 service no problem it will work
+-> kubectl get pods -n ingress-nginx
+-> kubectl get svc -n ingress-nginx
+-> It will give one Load Balancer URL, Copy that URL  (In load balancer it will show only 1 and 2 service no problem it will work)
+-> Go to the Route 53, click host name [If your Load Balancer and Host name located at same account you will follow below steps]
+-> click record, give name, click alais, choose load balancer, click load balancer and click create record
+-> If Route53 abd Load Balancer located at different account [You will below as like below]
+-> click record, click CNAME, give Your load balancer URL at value place and click create record
+-> After complete to create hostename, copy hostename
+-> Come teminal 
+-> sudo vi /etc/hosts
+-> keep it like below 127.0.0.1 localhost
+   a15259f57f9cf416a8d6f83dba83892e-1131911110.us-east-2.elb.amazonaws.com ingress.frissly.com
+-> vi ingress.yml
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ingress.frissly.com      # replace withyour hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-app-service    # Replace with your service
+                port:
+                  number: 80
+
+-> kubectl apply -f ingress.yml
+-> kubectl get ingress
+  
+
+
+
 # I have worked with EFS for persistence volume. If i want to use EBS for persistence volume. we have to execute the some below commands
 -> eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster <give clustername> --approve
 -> eksctl create iamserviceaccount --region ap-south-1 --name ebs-csi-controller-sa --namespace kube-system --cluster <give clustername> --attach-policy-arn arn:aws:iam:aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve --override-existing-serviceaccounts

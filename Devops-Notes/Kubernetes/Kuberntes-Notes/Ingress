@@ -1,5 +1,6 @@
 # What is ingress
 -> Ingress is an API object that provides external access to service within cluster.
+-> Purpose: Routes traffic from outside the cluster to internal services based on rules (host, path, etc.).
 -> It acts as a layer 7 (application layer) load balancer, allowing external traffic to be routed to different services based on HTTP/HTTPS routes and rules
 
 Note:-
@@ -174,6 +175,7 @@ spec:
 
 # What is ingress controller
 -> Ingress Controller is a component that manages and operates the ingress resources.
+-> Purpose: It watches Ingress resources and manages routing and TLS termination.
 -> Ingress controller will read the rules in ingress and process them that component is called ingress controller. without ingress control ingress rules dont do anything So that we mush install the ingress controller in our cluster
 
 # What is Ingress resources

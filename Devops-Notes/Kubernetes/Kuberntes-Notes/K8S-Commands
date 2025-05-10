@@ -15,7 +15,9 @@
 -> kubectl delete pods <podsname> --> To delete the pods
 -> kubectl describe pod <podname> --> To describe the pod
 -> kubectl get pods -o wide -> To see on which node pod is running
--> curl podip (or) external node ip:portnumber -> To access the pod inside the cluster
+-> kubectl get nodes -o wide    --> To get pubilc Ip of Pod
+-> curl http://<public-node-ip>:31267         [suppose you nodes are in private subnets, give it privateIp insted of public IP]
+-> curl http://13.234.100.200:31267         -> To access the pod inside the cluster
 -> kubectl logs <pod-name>  --> To check the logs of pod
 -> kubectl logs <pod-name> -c <containername>  --> To check the logs of pod
 -> kubectl edit pods <podsname> --> To edit the pods

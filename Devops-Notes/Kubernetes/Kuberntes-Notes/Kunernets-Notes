@@ -307,10 +307,38 @@ Api server stores this info in etcd
 # Pod Lifecycle
 -> We will create the pod using manifest file(yml) 
 -> After execute the manifest file that request will go to API server
--> API server will store that pod request in ETCD
--> Scheduler will find the unschedule pods in ETCD and schedule that pods
--> Kubectl will see the pod schedule and kubectl will trigger the Docker runtime
--> Docker runtime will create the container inside the pod
+-> API server validate the request and store that pod request in ETCD
+-> Scheduler will find the unschedule pods in ETCD and schedule that pods to a suitable Node according to the resources
+-> Controller Manager Ensures the system moves towards the desired state. Detects if additional actions are needed (e.g., create ReplicaSets, replace failed Pods).
+-> Once the Scheduler assigns a Pod to a specific Node, that Pod's specification (its details) is stored in the Kubernetes API Server with the assigned Node name.
+-> kubelet
+     Pulls the Pod spec from the API Server.
+     Interacts with the container runtime to start the container(s).
+     Monitors Pod and Node health.
+
+-> Container runtime
+    Pulls the required container image from a container registry.
+    Creates and starts the container(s) within a Pod.
+
+-> Kubeproxy
+   Maintains network connectivity and load balancing.
+   Ensures the Pod can send/receive traffic through Kubernetes Services.
+
+after the containers are successfully started, the Kubelet sends a status update back to the API Server, and that’s how you see the final result when you check your Pod’s status.
+he Kubelet continuously reports back to the API Server with the Pod’s current status (e.g., Pending, Running, CrashLoopBackOff, etc.).
+
+
+1. kubectl apply -f pod.yaml 
+2. --> API Server validates and stores in etcd
+3. --> Scheduler assigns Pod to a Node
+4. --> Controller Manager ensures desired state
+5. --> Kubelet on Node picks up the Pod
+6. --> Kubelet triggers Container Runtime
+7. --> Containers are created container in pod
+8. --> Pod is running
+9. --> Kube Proxy enables network access for pod
+10. --> After the containers are successfully started in pod, the Kubelet sends a status update back to the API Server, and that’s how you see the final result when you check your Pod’s status.
+
 
 # How to create the pod
 we can create the pod in two ways

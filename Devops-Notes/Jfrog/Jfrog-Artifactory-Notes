@@ -72,6 +72,10 @@ cd ~
 source /etc/profile
 java --version
 
+# You can install java by using below commands aslo
+-> sudo apt-get update
+-> sudo apt-get install fontconfig openjdk-17-jre -y
+
 --> Get the link from https://jfrog.com/community/open-source/
 cd /opt
 sudo wget https://releases.jfrog.io/artifactory/bintray-artifactory/org/artifactory/oss/jfrog-artifactory-oss/7.71.3/jfrog-artifactory-oss-7.71.3-linux.tar.gz
@@ -83,7 +87,7 @@ sudo sh artifactory.sh
 -> After complete the abpve steps you will access the browser along with public ip and 8081 or 8082 
 -> Jfrog default username is admin and password is password
 -> After login the jfrog skip all options
--> After open the jfrog go to administraton and go repositories and create one local repositorie with maven
+-> After open the jfrog go to administraton and go repositories and create one local repositorie with maven [for java you can take maven other else you will take another one like garden]
 -> Go to application and go to artifactory and click artifacts and go to created repo and click set me up option in above 
 -> go to deploy and copy that code 
 

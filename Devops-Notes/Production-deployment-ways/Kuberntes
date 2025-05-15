@@ -561,6 +561,10 @@ parameters:
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 
+
+
+
+
 -> vi pv.yml
 apiVersion: v1
 kind: PersistentVolume

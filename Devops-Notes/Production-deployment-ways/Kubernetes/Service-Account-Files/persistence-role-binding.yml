@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manoj-persistence-volume-access
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: persistence-volume-access
+subjects:
+- namespace: frissly
+  kind: ServiceAccount
+  name: manoj
+
+
+
+-> kubectl apply -f persistence-role-binding.yml
+-> kubectl get clusterrolebinding manoj-persistence-volume-access -n frissly
+-> kubectl describe clusterrolebinding manoj-persistence-volume-access -n frissly

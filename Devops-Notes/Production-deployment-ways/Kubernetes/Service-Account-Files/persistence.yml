@@ -1,0 +1,32 @@
+-> For persistence volume we have to create cluster role. Because persistence volume not comes under role
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: persistence-volume-access
+rules:
+  # Permission for persistence volumes
+  - apiGroups: [""]
+    resources:
+      - persistentvolumes 
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for Storage class 
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for ClusterIssuser 
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+    
+
+-> kubectl apply -f persistence.yml
+-> kubectl get clusterrole -n frissly
+-> kubectl get clusterrole persistence-volume-access
+-> kubectl describe clusterrole persistence-volume-access -n frissly

@@ -1,0 +1,43 @@
+# create role 
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manoj-role
+  namespace: frissly
+rules:
+  # Permission for core API resources
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/exec  # Allow exec on pods
+      - secrets
+      - configmaps
+      - persistentvolumeclaims
+      - services
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for apps API group
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for networking API group
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+   # Permission for networking API group
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+
+
+
+-> kubectl apply -f role.yml
+-> kubectl get role -n frissly
+-> kubectl describe role manoj-role -n frissly

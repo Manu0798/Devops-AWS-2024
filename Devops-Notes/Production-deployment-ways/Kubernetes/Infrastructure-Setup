@@ -1,0 +1,34 @@
+-> First We have to setup the Ec2, EKS, VPC infrastructure using terraform. The Script would be available this Github URL ()
+-> We have to create Service Account and Roles in our EKS Cluster. The manifest files should be available in this Github URL ()
+->  After complete the infrastructure setup you will access Jenkins and sonarqube with the help of service public IP and those port numbers 
+-> Loginto the Jenkins and Install below plugins
+    -> Eclipse Temurin installer
+    -> Docker
+    -> Docker pipeline
+    -> SonarQube scanner
+    -> Sonar Quality Gates
+    -> Quality gates
+    -> Nodejs
+    -> OWASP Dependency-Check
+    -> Email Extension Template
+    -> Kubernetes
+    -> Kuberntes Client API
+    -> Kubernetes Credentials
+    -> Kubernetes CLI
+    -> Kubernetes Credentials Provider
+    -> Kubernetes :: Pipeline :: DevOps Steps
+    -> Bitbucket
+    -> Pipeline: Stage View
+
+-> Once restart the Jenkins after install the above all plugins
+
+
+-> Go to manage Jenkins, click credentials and cofigure below credentials
+    docker -> Click username and password, Give username and password and give id name
+    Sonarube -> Click secret, Give token which you created in sonarqube and give id name
+    Git -> Click username and password, give username and token which you created in github, give id name
+    Email -> Click username and password, Give mail-id and email token [To get this email-token you have to go gmail, click manage google account
+                  click security and search App password in search bar and click app password and give one name and create
+    kuubernets-> Click secret text in kind and paste token which you copied eariler and id name and create     [You will get this token from Serviceaccount secret]
+
+

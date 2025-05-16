@@ -1,0 +1,19 @@
+-> For Ingress we have to create cluster role. Because Ingress not comes under role
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ingress-install-role
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "create", "list"]
+- apiGroups: ["apps", "networking.k8s.io", "rbac.authorization.k8s.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "create", "update", "patch", "delete", "apply"]
+
+
+
+  -> kubectl apply -f ingress-role.yml
+  -> kubectl get clusterrole ingress-install-role
+  -> kubectl describe clusterrole ingress-install-role -n frissly

@@ -26,7 +26,7 @@ rules:
 
     
 
--> kubectl apply -f persistence.yml
+-> kubectl apply -f persistence-role.yml
 -> kubectl get clusterrole -n frissly
 -> kubectl get clusterrole persistence-volume-access
 -> kubectl describe clusterrole persistence-volume-access -n frissly

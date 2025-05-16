@@ -1,0 +1,113 @@
+# If you want to use Self-Hosted Script fisrt you have to make connection between server and repo for that
+-> Go to the Bitbucket, click on repositories, clike setting right side, click workspace settings, click workspace runner at left side bottom
+-> Click the linux docker, clikc next, copy the command and execute that container command in server, click next, ok
+
+# If you want to run Bitbucket-Hosted Script you no need run anything Bitbucket itself it will take each and everything.
+
+# Passing Environment Variables
+-> Go to the repository, click the repository settings, if you scorll down you will detect the repository variables and Deployment
+-> You have pass Email regarding variables in repository variables
+
+SMTP_SERVER:  smtp.gmail.com, smtp.office365.com  --> take based on requirment
+SMTP_PORT: 587
+SMTP_USER: varmapotthuri4@gmail.com
+SMTP_PASS: Give App password from mail
+TO_EMAIL: Give mail reciving person mail id
+FROM_EMAIL: varmapotthuri4@gmail.com
+
+Uat-Test, Staging-Test, Production-Test     --> Makesure name should be same at both places in your script and here
+SONAR_HOST_URL
+SONAR_PROJECT_KEY
+SONARQUBE_TOKEN
+DOCKER_IMAGE_NAME: uat-backend-image
+
+-> Add one env variable for on below name 
+Staging-Approval, Production-Approval
+
+
+Staging-Deployment, Production-Deployment
+AWS_ACCOUNT_ID
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+DOCKER_IMAGE_NAME: uat-backend-image
+ECR_REPO_NAME: uat-backend-repo
+IMAGE_TAG: stagging
+NVD_API_KEY: If want to run owsap dependency check you have to keep
+
+
+
+
+# If you want to use Self-Hosted Script these tools should be installed in our server [If you want to use Bitbucket hosted you no need install these tools because Bitbucker it will take care itslef]
+
+#!/bin/bash
+
+# Update package list
+echo "Updating package list..."
+sudo apt-get update -y
+
+
+
+# Install Java
+sudo apt-get update
+sudo apt-get install fontconfig openjdk-17-jre -y
+
+
+# Install Docker
+# Add Docker's official GPG key
+sudo apt-get update -y
+sudo apt-get install ca-certificates curl -y
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo chmod 666 /var/run/docker.sock
+# sudo usermod -aG docker jenkins
+sudo usermod -aG docker ubuntu
+sudo systemctl enable docker
+sudo systemctl start docker
+echo "Docker installation complete."
+
+
+# Install AWS_CLI
+sudo apt-get update -y
+sudo apt-get install -y curl unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+
+# Install SonarQube
+# Install unzip if not already installed
+sudo apt-get install unzip -y
+
+# Create a user for SonarQube
+sudo adduser --disabled-password --gecos 'SonarQube' sonarqube
+
+# Switch to SonarQube user and install SonarQube
+sudo su - sonarqube <<EOF
+# Fetch the latest SonarQube version from the official source
+SONARQUBE_VERSION=$(curl -s https://api.github.com/repos/SonarSource/sonarqube/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+SONARQUBE_URL="https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip"
+
+# Download and extract SonarQube
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.4.0.54424.zip
+unzip sonarqube-9.4.0.54424.zip
+chmod -R 755 /home/sonarqube/sonarqube-9.4.0.54424
+# Change ownership
+chown -R sonarqube:sonarqube /home/sonarqube/sonarqube-9.4.0.54424
+# Start SonarQube
+cd sonarqube-9.4.0.54424/bin/linux-x86-64/
+./sonar.sh start
+EOF
+
+echo "Installation complete. Jenkins, Docker, Maven, Git, and SonarQube are set up."
+echo "Sonarqube installation complete."

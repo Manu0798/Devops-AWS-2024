@@ -1,0 +1,34 @@
+-> You want to install ingress controller and calico network we have cluster admin access (Full Cluster Access)
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manoj-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: manoj
+  namespace: frissly
+
+
+-> kubectl apply -f manoj-cluster-admin.yaml
+-> kubectl get clusterrolebinding manoj-cluster-admin
+-> kubectl describe clusterrolebinding manoj-cluster-admin
+
+
+# Check if the service account manoj now has cluster-admin access
+-> kubectl auth can-i create serviceaccount --as=system:serviceaccount:frissly:manoj --namespace ingress-nginx
+-> kubectl auth can-i create clusterrolebinding --as=system:serviceaccount:frissly:manoj
+-> kubectl auth can-i list pods --as=system:serviceaccount:frissly:manoj --all-namespaces
+
+
+
+
+Binding Type             Role Type	       Scope	               Level of Access
+
+RoleBinding	              Role	          Namespace	         Limited to frissly namespace
+ClusterRoleBinding	     ClusterRole	    Cluster-wide	    Limited to cluster-level resources (e.g., PVs)
+ClusterRoleBinding	    cluster-admin	    Cluster-wide	    Full admin access to entire cluster

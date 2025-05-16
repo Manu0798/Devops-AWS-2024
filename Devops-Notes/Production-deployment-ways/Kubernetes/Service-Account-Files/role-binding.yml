@@ -1,0 +1,20 @@
+# Bine the role and service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manoj-rolebinding
+  namespace: frissly 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: manoj-role 
+subjects:
+- namespace: frissly 
+  kind: ServiceAccount
+  name: manoj
+
+
+
+-> kubectl apply -f role-binding.yml
+-> kubectl get rolebinding -n frissly
+-> kubectl describe rolebinding manoj-rolebinding -n frissly

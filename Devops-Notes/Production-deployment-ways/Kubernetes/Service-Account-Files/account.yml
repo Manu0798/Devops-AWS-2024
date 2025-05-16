@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: manoj
+  namespace: frissly
+
+
+-> kubectl apply -f account.yml
+-> kubectl get serviceaccount -n frissly
+-> kubectl describe serviceaccount manoj -n frissly

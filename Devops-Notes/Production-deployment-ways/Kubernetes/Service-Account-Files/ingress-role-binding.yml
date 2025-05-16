@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ingress-install-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ingress-install-role
+subjects:
+- kind: ServiceAccount
+  name: manoj
+  namespace: frissly
+
+
+  -> kubectl apply -f ingress-role-binding.yml
+  -> kubectl get clusterrolebinding ingress-install-binding
+  -> kubectl describe clusterrolebinding ingress-install-binding -n frissly

@@ -541,9 +541,9 @@ spec:
 
 # I have worked with EFS for persistence volume. If i want to use EBS for persistence volume. we have to execute the some below commands
 -> eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster <give clustername> --approve
--> eksctl create iamserviceaccount --region ap-south-1 --name ebs-csi-controller-sa --namespace kube-system --cluster <give clustername> --attach-policy-arn arn:aws:iam:aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve --override-existing-serviceaccounts
+-> eksctl create iamserviceaccount   --region us-east-2   --name ebs-csi-controller-sa   --namespace kube-system   --cluster eks-1   --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy   --approve   --override-existing-serviceaccounts
 -> After execute above it will in cloud formation
--> kubectl applu -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
+-> kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
 
 # For EBS you will follow below manifeast files
 -> vi storage.yml

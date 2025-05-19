@@ -4,6 +4,15 @@
 # If you want to use docker private repo to store docker images in docker hub you should execute below command in server
 -> kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=manoj3003 --docker-password=Varma_3003 --namespace=frissly
 
+# For Attach EBS to persistence Volumes
+-> Go to volumes in AWS, create EBS volume with same AZ wherever workernodes at located
+-> After create the volume, you will keep that volumeID in your persistence volumes
+-> We have to Install below commands for EBS volume to attache the persistence volume
+-> eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster <give clustername> --approve
+-> eksctl create iamserviceaccount   --region us-east-2   --name ebs-csi-controller-sa   --namespace kube-system   --cluster eks-1   --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy   --approve   --override-existing-serviceaccounts
+-> After execute above it will in cloud formation
+-> kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
+
 
 ->  After complete the infrastructure setup you will access Jenkins and sonarqube with the help of service public IP and those port numbers 
 -> Loginto the Jenkins and Go to manage Jenkins and click plugins Install below plugins

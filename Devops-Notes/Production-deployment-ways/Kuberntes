@@ -600,6 +600,10 @@ spec:
 # If you want to assign SSL Certificates you have to install below command
 -> kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml"
 
+-> kubectl get pods --namespace cert-manager
+
+-> vi ssl.yml
+
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -615,6 +619,10 @@ spec:
           ingress:
             class: nginx # Replace with your Ingress class if different
 
+
+-> kubectl apply -f ssl.yml -n frissly
+-> kubectl get pods -n cert-manager
+-> kubectl describe clusterissuer letsencrypt-prod
 
 --> Finally to understand about EBS and SSL you will follow the below video link
 -> https://www.youtube.com/live/KvH7TLKmymE?si=FSnfrUt1ysFeoQw7

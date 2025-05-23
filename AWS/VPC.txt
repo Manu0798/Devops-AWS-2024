@@ -1,5 +1,11 @@
 # What is VPC
--> VPC stands for Virtual Private Cloud. Its a virtual network in aws that allows you to control your virtual network environment.
+-> VPC stands for Virtual Private Cloud. Its a virtual network in aws that allows you to control your virtual network environment. It allows you to provision your own IP address ranges, subnets, route tables, internet gateways, NATs, and more.
+
+
+# What is VPN
+A VPN (Virtual Private Network) is a secure, encrypted connection that allows a user or device to safely access a private network over the public internet.
+
+It creates a private tunnel between your device and the destination network — like your company's internal systems or a cloud infrastructure — so that data can be transmitted securely and privately, even when using an untrusted network like public Wi-Fi.
 
 # How to create sample VPC based on one public sub-net having internet connection and another private subnet doesnt have internet
 connection

@@ -414,6 +414,172 @@ When configuring a VPC for peering with MongoDB Atlas, your VPC CIDR block must 
 
 
 
+-> Take mongoDB Full backup whenever chnages detect in mongoDB
+
+#!/bin/bash
+
+# Update package list
+echo "Updating package list..."
+sudo apt-get update -y
+
+# Install AWS_CLI
+sudo apt-get update -y
+sudo apt-get install -y curl unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+
+# MongoDB backup system with change detection
+
+#!/bin/bash
+
+# ========== BACKUP CONFIGURATION ==========
+BACKUP_DIR="/home/ubuntu/mongodb_backup"
+MONGO_URI="mongodb+srv://organicplaceapp:ArthV3d!@uat-stg-cluster.ivpds.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=uat-stg-cluster"
+S3_BUCKET="s3://frissly-prod-mongodb-backup-1"
+DATABASES=("frissly_stg")
+BACKUP_SCRIPT="/home/ubuntu/mongo_backup.sh"
+LISTENER_SCRIPT="/home/ubuntu/mongo_listener.js"
+SERVICE_FILE="/etc/systemd/system/mongo-listener.service"
+
+# ========== CREATE BACKUP SCRIPT ==========
+echo "Creating MongoDB backup script..."
+mkdir -p "$BACKUP_DIR"
+chmod 755 "$BACKUP_DIR"
+
+cat << 'EOF' > "$BACKUP_SCRIPT"
+#!/bin/bash
+
+BACKUP_DIR="/home/ubuntu/mongodb_backup"
+MONGO_URI="mongodb+srv://organicplaceapp:ArthV3d!@uat-stg-cluster.ivpds.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=uat-stg-cluster"
+DATABASES=("frissly_stg")
+S3_BUCKET="s3://frissly-prod-mongodb-backup-1"
+
+TIMESTAMP=$(TZ='Asia/Kolkata' date +"%d-%m-%Y_%H-%M")
+DUMP_DIR="$BACKUP_DIR/dump_$TIMESTAMP"
+S3_PATH="$TIMESTAMP"
+
+mkdir -p "$DUMP_DIR"
+
+for DB in "${DATABASES[@]}"; do
+  echo "Dumping database: $DB"
+  mongodump --uri="$MONGO_URI" --db="$DB" --out="$DUMP_DIR"
+  if [[ $? -ne 0 ]]; then
+    echo "Error: Failed to dump database $DB"
+    exit 1
+  fi
+done
+
+echo "Uploading to S3: $S3_BUCKET/$S3_PATH/"
+aws s3 cp "$DUMP_DIR" "$S3_BUCKET/$S3_PATH/" --recursive
+if [[ $? -ne 0 ]]; then
+  echo "Error: Failed to upload to S3"
+  exit 1
+fi
+
+echo "Cleaning local backup..."
+rm -rf "$DUMP_DIR"
+echo "Backup completed successfully!"
+EOF
+
+chmod +x "$BACKUP_SCRIPT"
+
+# ========== INSTALL DEPENDENCIES ==========
+echo "Installing required packages..."
+sudo apt-get update -y
+sudo apt-get install -y curl wget unzip apt-transport-https net-tools jq awscli gnupg
+
+# ========== INSTALL MONGODB TOOLS ==========
+echo "Installing MongoDB Database Tools..."
+wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2004-x86_64-100.8.0.tgz
+tar -xvzf mongodb-database-tools-ubuntu2004-x86_64-100.8.0.tgz
+sudo mv mongodb-database-tools-*/bin/* /usr/local/bin/
+rm -rf mongodb-database-tools-*
+
+mongodump --version || { echo "mongodump installation failed!"; exit 1; }
+
+# ========== INSTALL NODEJS ==========
+echo "Installing Node.js..."
+curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v && npm -v
+
+# ========== CREATE LISTENER SCRIPT ==========
+echo "Creating MongoDB Change Listener Script..."
+cat << 'EOF' > "$LISTENER_SCRIPT"
+const { MongoClient } = require("mongodb");
+const { exec } = require("child_process");
+
+const uri = "mongodb+srv://organicplaceapp:ArthV3d!@uat-stg-cluster.ivpds.mongodb.net/frissly_stg?retryWrites=true&w=majority&appName=uat-stg-cluster";
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+async function watchDatabase() {
+  try {
+    await client.connect();
+    console.log("Connected to MongoDB");
+
+    const db = client.db("frissly_stg");
+    const changeStream = db.watch();
+
+    changeStream.on("change", (change) => {
+      console.log("Change detected:", JSON.stringify(change, null, 2));
+      exec("/bin/bash /home/ubuntu/mongo_backup.sh", (error, stdout, stderr) => {
+        if (error) return console.error(`Backup error: ${error.message}`);
+        if (stderr) return console.error(`Backup stderr: ${stderr}`);
+        console.log(`Backup output: ${stdout}`);
+      });
+    });
+
+    console.log("Listening for changes...");
+  } catch (error) {
+    console.error("Connection error:", error);
+    setTimeout(watchDatabase, 5000); // retry after 5 seconds
+  }
+}
+
+watchDatabase();
+EOF
+
+chown ubuntu:ubuntu "$LISTENER_SCRIPT"
+chmod +x "$LISTENER_SCRIPT"
+
+# ========== INSTALL NODE MODULES ==========
+cd /home/ubuntu
+npm install mongodb
+
+# ========== CREATE SYSTEMD SERVICE ==========
+echo "Creating systemd service for MongoDB change listener..."
+cat << EOF | sudo tee "$SERVICE_FILE"
+[Unit]
+Description=MongoDB Change Stream Listener
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/node /home/ubuntu/mongo_listener.js
+Restart=always
+User=ubuntu
+Environment=NODE_ENV=production
+WorkingDirectory=/home/ubuntu
+StandardOutput=append:/home/ubuntu/mongo_listener.log
+StandardError=append:/home/ubuntu/mongo_listener.err
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable mongo-listener
+sudo systemctl start mongo-listener
+sudo systemctl status mongo-listener --no-pager
+
+
+
+
+
+
+
+
 # MonogoDB To S3 bucket Backup Script
 
 # CronJob Backup

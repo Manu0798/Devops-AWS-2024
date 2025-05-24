@@ -530,3 +530,587 @@ scrape_configs:
 -> nohup promtail -config.file=/etc/promtail-config.yml > /tmp/promtail.log 2>&1 &
 -> ps aux | grep promtail
 -> sudo cat /tmp/promtail.log
+
+
+
+
+
+
+#!/bin/bash
+
+echo "Updating package list..."
+sudo apt-get update -y
+
+# Install Java
+sudo apt-get install fontconfig openjdk-17-jre -y
+
+# Install AWS CLI
+sudo apt-get install -y curl unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+# Monitoring tools dependencies
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y net-tools wget curl unzip apt-transport-https
+
+# Versions
+NODE_EXPORTER_VERSION="1.9.0"
+BLACKBOX_EXPORTER_VERSION="0.26.0"
+ALERTMANAGER_VERSION="0.27.0"
+PROMETHEUS_VERSION="2.52.0"
+
+### Node Exporter
+wget https://github.com/prometheus/node_exporter/releases/download/v$NODE_EXPORTER_VERSION/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+tar -xvf node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+rm node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz
+sudo mkdir -p /opt/node_exporter
+sudo mv node_exporter-$NODE_EXPORTER_VERSION.linux-amd64 /opt/node_exporter
+sudo useradd --no-create-home --shell /bin/false node_exporter
+sudo chown -R node_exporter:node_exporter /opt/node_exporter/
+sudo chmod -R 755 /opt/node_exporter/
+
+cat <<EOF | sudo tee /etc/systemd/system/node_exporter.service
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/opt/node_exporter/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable node_exporter
+sudo systemctl start node_exporter
+
+### cAdvisor
+wget https://github.com/google/cadvisor/releases/download/v0.52.1/cadvisor-v0.52.1-linux-amd64 -O cadvisor
+chmod +x cadvisor
+sudo mv cadvisor /usr/local/bin/
+
+cat <<EOF | sudo tee /etc/systemd/system/cadvisor.service
+[Unit]
+Description=cAdvisor
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/cadvisor -port=8080
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable cadvisor
+sudo systemctl start cadvisor
+
+### Blackbox Exporter
+wget https://github.com/prometheus/blackbox_exporter/releases/download/v$BLACKBOX_EXPORTER_VERSION/blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64.tar.gz
+tar -xvf blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64.tar.gz
+rm blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64.tar.gz
+sudo mkdir -p /opt/blackbox_exporter
+sudo mv blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64 /opt/blackbox_exporter/
+sudo useradd --no-create-home --shell /bin/false blackbox_exporter
+sudo chown -R blackbox_exporter:blackbox_exporter /opt/blackbox_exporter
+sudo chmod -R 755 /opt/blackbox_exporter/
+
+# Create a default blackbox.yml config (adjust as needed)
+cat <<EOF | sudo tee /opt/blackbox_exporter/blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64/blackbox.yml
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+      method: GET
+      tls_config:
+        insecure_skip_verify: false
+EOF
+
+sudo chmod 644 /opt/blackbox_exporter/blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64/blackbox.yml
+
+cat <<EOF | sudo tee /etc/systemd/system/blackbox_exporter.service
+[Unit]
+Description=Blackbox Exporter
+After=network.target
+
+[Service]
+User=blackbox_exporter
+Group=blackbox_exporter
+Type=simple
+ExecStart=/opt/blackbox_exporter/blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64/blackbox_exporter --config.file=/opt/blackbox_exporter/blackbox_exporter-$BLACKBOX_EXPORTER_VERSION.linux-amd64/blackbox.yml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable blackbox_exporter
+sudo systemctl start blackbox_exporter
+
+### Alertmanager
+wget https://github.com/prometheus/alertmanager/releases/download/v$ALERTMANAGER_VERSION/alertmanager-$ALERTMANAGER_VERSION.linux-amd64.tar.gz
+tar -xvf alertmanager-$ALERTMANAGER_VERSION.linux-amd64.tar.gz
+rm alertmanager-$ALERTMANAGER_VERSION.linux-amd64.tar.gz
+sudo mkdir -p /opt/alertmanager
+sudo mv alertmanager-$ALERTMANAGER_VERSION.linux-amd64 /opt/alertmanager/
+sudo useradd --no-create-home --shell /bin/false alertmanager
+sudo mkdir /var/lib/alertmanager
+sudo chown alertmanager:alertmanager /var/lib/alertmanager
+sudo chown -R alertmanager:alertmanager /opt/alertmanager
+sudo chmod -R 755 /opt/alertmanager
+
+# Alertmanager config for email notifications (update credentials accordingly)
+cat <<EOF | sudo tee /opt/alertmanager/alertmanager-$ALERTMANAGER_VERSION.linux-amd64/alertmanager.yml
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: email-notifications
+receivers:
+  - name: email-notifications
+    email_configs:
+      - to: manojvarmapotthutri@gmail.com
+        from: varmapotthuri4@gmail.com
+        smarthost: smtp.gmail.com:587
+        auth_username: varmapotthuri4@gmail.com
+        auth_identity: varmapotthuri4@gmail.com
+        auth_password: sojtftvdabttfgdu
+        send_resolved: true
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/alertmanager.service
+[Unit]
+Description=Alertmanager
+After=network.target
+
+[Service]
+User=alertmanager
+Group=alertmanager
+Type=simple
+ExecStart=/opt/alertmanager/alertmanager-$ALERTMANAGER_VERSION.linux-amd64/alertmanager \\
+  --config.file=/opt/alertmanager/alertmanager-$ALERTMANAGER_VERSION.linux-amd64/alertmanager.yml \\
+  --storage.path=/var/lib/alertmanager
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable alertmanager
+sudo systemctl start alertmanager
+
+### Prometheus
+wget https://github.com/prometheus/prometheus/releases/download/v$PROMETHEUS_VERSION/prometheus-$PROMETHEUS_VERSION.linux-amd64.tar.gz
+tar -xvf prometheus-$PROMETHEUS_VERSION.linux-amd64.tar.gz
+rm prometheus-$PROMETHEUS_VERSION.linux-amd64.tar.gz
+sudo mkdir -p /opt/prometheus
+sudo mv prometheus-$PROMETHEUS_VERSION.linux-amd64 /opt/prometheus/
+sudo useradd --no-create-home --shell /bin/false prometheus
+sudo mkdir /var/lib/prometheus
+sudo chown -R prometheus:prometheus /opt/prometheus
+sudo chown prometheus:prometheus /var/lib/prometheus
+sudo chmod -R 755 /opt/prometheus
+
+# Prometheus alert rules file
+cat <<EOF | sudo tee /opt/prometheus/prometheus-$PROMETHEUS_VERSION.linux-amd64/alert_rules.yml
+groups:
+  - name: alert_rules
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Endpoint {{ $labels.instance }} down
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+      - alert: WebsiteDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Website down
+          description: The website at {{ $labels.instance }} is down.
+
+      - alert: HostOutOfMemory
+        expr: (node_memory_MemAvailable / node_memory_MemTotal * 100) < 25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of memory (instance {{ $labels.instance }})
+          description: |-
+            Node memory is filling up (< 25% left)
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HostOutOfDiskSpace
+        expr: (node_filesystem_avail{mountpoint="/"} * 100) / node_filesystem_size{mountpoint="/"} < 50
+        for: 1s
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of disk space (instance {{ $labels.instance }})
+          description: |-
+            Disk is almost full (< 50% left)
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HostHighCpuLoad
+        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host high CPU load (instance {{ $labels.instance }})
+          description: |-
+            CPU load is > 80%
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: ServiceUnavailable
+        expr: up{job="node_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Service Unavailable (instance {{ $labels.instance }})
+          description: |-
+            The service {{ $labels.job }} is not available
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_Active / node_memory_MemTotal) * 100 > 90
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: High Memory Usage (instance {{ $labels.instance }})
+          description: |-
+            Memory usage is > 90%
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: FileSystemFull
+        expr: (node_filesystem_avail / node_filesystem_size) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: File System Almost Full (instance {{ $labels.instance }})
+          description: |-
+            File system has < 10% free space
+              VALUE = {{ $value }}
+              LABELS: {{ $labels }}
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: High CPU Usage on {{ $labels.instance }}
+          description: "CPU usage is above 80% for more than 5 minutes."
+
+      - alert: HighSystemLoad
+        expr: node_load1 > 0.9 * count(node_cpu_seconds_total{mode="user"})
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High System Load on {{ $labels.instance }}
+          description: "System load is above 90% for more than 5 minutes."
+
+      - alert: HighSwapUsage
+        expr: (node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) / node_memory_SwapTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High Swap Usage on {{ $labels.instance }}
+          description: "Swap usage is above 80% for more than 5 minutes."
+
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High Disk Usage on {{ $labels.instance }}
+          description: "Root filesystem usage is above 85% for more than 5 minutes."
+
+  - name: docker-container-alerts
+    rules:
+      - alert: DockerDiskUsageHigh
+        expr: node_filesystem_free_bytes{mountpoint="/var/lib/docker"} / node_filesystem_size_bytes{mountpoint="/var/lib/docker"} * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Docker Disk Usage High"
+          description: "Docker disk usage is above 90%, remaining space is less than 10%."
+
+      - alert: DockerContainerHighMemory
+        expr: container_memory_usage_bytes{container_label_com_docker_compose_service!=""} / container_spec_memory_limit_bytes * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Memory Usage in Docker Container"
+          description: "Container {{ .container_label_com_docker_compose_service }} is using more than 80% of its allocated memory."
+
+      - alert: DockerContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=""}[5m]) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU Usage in Docker Container"
+          description: "Container {{ .container_label_com_docker_compose_service }} is using more than 80% CPU."
+
+      - alert: DockerContainerRestarting
+        expr: increase(container_restart_count{container_label_com_docker_compose_service!=""}[10m]) > 3
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Docker Container Restarting Frequently"
+          description: "Container {{ .container_label_com_docker_compose_service }} has restarted more than 3 times in 10 minutes."
+
+      - alert: DockerContainerStopped
+        expr: sum by (state) (engine_daemon_container_states_containers{state="stopped"}) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Stopped Container Alert"
+          description: "One or more Docker containers are in a stopped state for more than 2 minutes."
+
+      - alert: DockerContainerPaused
+        expr: sum by (state) (engine_daemon_container_states_containers{state="paused"}) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Paused Container Alert"
+          description: "One or more Docker containers are in a paused state."
+
+      - alert: NoRunningContainers
+        expr: sum by (state) (engine_daemon_container_states_containers{state="running"}) == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No Running Containers"
+          description: "There are no running containers on the host."
+
+  - name: ssl_alerts
+    rules:
+      - alert: SSLCertificateExpiring
+        expr: ssl_cert_expires_in < 30 * 24 * 60 * 60
+        for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: SSL certificate expiring soon ({{ $labels.instance }})
+          description: "The SSL certificate expires in less than 30 days."
+
+      - alert: SSLCertificateExpired
+        expr: ssl_cert_expires_in <= 0
+        for: 1d
+        labels:
+          severity: critical
+        annotations:
+          summary: SSL certificate expired ({{ $labels.instance }})
+          description: "The SSL certificate has expired."
+
+  - name: latency_alerts
+    rules:
+      - alert: HighApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High application latency ({{ $labels.instance }})
+          description: "The 99th percentile latency is above 500ms."
+
+      - alert: CriticalApplicationLatency
+        expr: histogram_quantile(0.99, sum by (instance, job) (rate(application_latency_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Critical application latency ({{ $labels.instance }})
+          description: "The 99th percentile latency is above 1000ms."
+
+  - name: Alerts of HTTP Duration phase
+    rules:
+      - alert: SlowTCPConnection
+        expr: probe_http_duration_seconds{phase="connect"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High TCP connection time to website {{ $labels.instance }}"
+          description: "The TCP connection time to the website {{ $labels.instance }} has exceeded 100ms for 2 minutes. This may indicate network issues or delays in the load balancer."
+
+      - alert: SlowBackendProcessing
+        expr: probe_http_duration_seconds{phase="processing"} > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High backend processing time for website {{ $labels.instance }}"
+          description: "The backend response time for website {{ $labels.instance }} has exceeded 50ms for 2 minutes. This may impact application performance, causing delays in checkout, product loading, or search functionalities."
+
+      - alert: DNSResolutionDelay
+        expr: probe_http_duration_seconds{phase="resolve"} > 0.05
+        for: 2m
+        labels:
+          severity: info
+        annotations:
+          summary: "DNS resolution delay for website {{ $labels.instance }}"
+          description: "DNS resolution for website {{ $labels.instance }} has taken longer than expected, with a lookup time exceeding 50ms for 2 minutes. Consider optimizing DNS configurations or caching DNS results."
+
+      - alert: TLSHandshakeLatency
+        expr: probe_http_duration_seconds{phase="tls"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS handshake time is high for website {{ $labels.instance }}"
+          description: "TLS negotiation for website {{ $labels.instance }} is taking longer than 100ms. This may impact secure connections and performance."
+
+      - alert: SlowHTTPTransfer
+        expr: probe_http_duration_seconds{phase="transfer"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response transfer time for website {{ $labels.instance }}"
+          description: "HTTP response transfer for website {{ $labels.instance }} is slow (>100ms). This may be due to large payloads or slow backend."
+
+
+  - name: Alerts of High Probe Duration
+    rules:
+      - alert: HighProbeDuration
+        expr: probe_duration_seconds > 0.3
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High probe duration detected for website {{ $labels.instance }}"
+          description: "Probe duration for website {{ $labels.instance }} is high (>300ms). This may indicate network latency or slow server response."
+EOF
+
+# Prometheus main config file
+cat <<EOF | sudo tee /opt/prometheus/prometheus-$PROMETHEUS_VERSION.linux-amd64/prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alert_rules.yml
+
+scrape_configs:
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  - job_name: 'blackbox_exporter'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - http://yourwebsite.com
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['localhost:8080']
+
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['localhost:9093']
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/prometheus.service
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/opt/prometheus/prometheus-$PROMETHEUS_VERSION.linux-amd64/prometheus \\
+  --config.file=/opt/prometheus/prometheus-$PROMETHEUS_VERSION.linux-amd64/prometheus.yml \\
+  --storage.tsdb.path=/var/lib/prometheus \\
+  --web.enable-lifecycle
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus
+sudo systemctl start prometheus
+
+echo "All services installed and started successfully!"
+
+
+# Install Grafana
+echo "Installing Grafana..."
+sudo apt-get install -y adduser libfontconfig1 musl
+wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.5.2_amd64.deb
+sudo dpkg -i grafana-enterprise_11.5.2_amd64.deb
+
+# Reload systemd and enable Grafana
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl enable grafana-server
+sudo /bin/systemctl start grafana-server
+# sudo /bin/systemctl status grafana-server
+
+# Configure Grafana for email notifications
+echo "Configuring Grafana for email notifications..."
+cat <<EOF | sudo tee -a /etc/grafana/grafana.ini
+[smtp]
+enabled = true
+host = smtp.gmail.com:587
+user = varmapotthuri4@gmail.com
+# If the password contains # or ; you have to wrap it with triple quotes. Ex """#password;"""
+password = sojtftvdabttfgdu
+skip_verify = true
+from_address = varmapotthuri4@gmail.com
+from_name = Grafana
+EOF
+
+# Restart Grafana to apply changes
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl restart grafana-server

@@ -83,7 +83,10 @@ sudo tar -xvf jfrog-artifactory-oss-7.71.3-linux.tar.gz
 cd artifactory-oss-7.71.3/
 cd app
 cd bin
-sudo sh artifactory.sh
+sudo chmod 775 artifactory.sh
+sudo ./artifactory.sh start
+sudo systemctl status artifactory
+
 -> After complete the abpve steps you will access the browser along with public ip and 8081 or 8082 
 -> Jfrog default username is admin and password is password
 -> After login the jfrog skip all options

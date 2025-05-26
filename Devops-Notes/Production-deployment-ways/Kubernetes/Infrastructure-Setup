@@ -372,9 +372,8 @@ pipeline {
                     to: 'manojvarmapotthutri@gmail.com',
                     from: 'jenkins@example.com',
                     replyTo: 'jenkins@example.com',
-                    attachmentsPattern: 'trivy.txt',
-                    mimeType: 'text/html',
-                    attachmentPattern: 'fs-report.html'
+                    attachmentsPattern: 'trivy.txt, fs-report.html',
+                    mimeType: 'text/html'
                 )
             }
         }

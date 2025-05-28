@@ -1,0 +1,74 @@
+1. Page Load Time: 1522 ms
+This is the total time it took for the page to fully load (including all resources).
+
+🟢 Good: Under 2 seconds is optimal.
+
+This metric includes:
+DNS + Connection time
+SSL Handshake
+First Byte + Content Download
+JavaScript/CSS/Image load
+
+
+
+2. Start Render: 840 ms
+This means the first visual elements (like background, header, logo, etc.) are visible to the user within 0.84 seconds.
+
+🟢 Very Good: Anything <1s is considered fast and responsive.
+
+✅ Suggests that your frontend rendering pipeline (HTML, CSS, fonts) is efficient.
+
+
+✅ Key Metrics & Alert Conditions
+📦 1. CDN Usage — 80%
+What it means: 80% of your website’s content is served from the Content Delivery Network (CDN), improving load speed and reducing server load.
+Why it’s good: Anything above 70% is efficient.
+
+
+🎨 3. First Contentful Paint (FCP) — 1929 ms
+What it is: Time for the first visible element (text/image/logo) to render.
+Current value: 1.93 sec → acceptable.
+Goal: Keep it < 2 seconds for good UX.
+
+
+
+📊 What is CDN Hit Ratio?
+CDN (Content Delivery Network) Hit Ratio tells you how often your website’s content is served from the CDN’s cache (which is faster), versus going all the way back to your main server (which is slower).
+
+✅ High CDN Hit Ratio (e.g. 80%)
+Most content is coming from CDN cache (fast and efficient).
+Website loads faster.
+Reduces load on your origin server.
+
+❌ Low CDN Hit Ratio (e.g. below 70%)
+More requests are going to the origin server.
+Slower page load times.
+Possible reasons:
+Cache is purging too often.
+Cache rules misconfigured.
+CDN misbehaving.
+
+
+
+| Metric            | Value   | Good Range   |
+| ----------------- | ------- | ------------ |
+| Start Render Time | 840 ms  | < 1,000 ms ✅ |
+| Page Load Time    | 1522 ms | < 2,000 ms ✅ |
+
+
+| Metric            | Current Value | Good Threshold | Alert If  |
+| ----------------- | ------------- | -------------- | --------- |
+| CDN Usage         | 80%           | > 70%          | < 70%     |
+| CDN Hit Ratio     | 80%           | > 70%          | < 70%     |
+| FCP (First Paint) | 1929 ms       | < 2000 ms      | > 2000 ms |
+
+
+
+| Condition             | Value     | Type     |
+| --------------------- | --------- | -------- |
+| Availability < 100%   | Immediate | Critical |
+| Page Load Time > 4s   | 3 times   | Trouble  |
+| FCP > 2s              | 2 times   | Warning  |
+| SSL Handshake > 100ms | 2 times   | Info     |
+| CDN Hits < 70%        | Once      | Warning  |
+| First Byte > 800ms    | 2 times   | Warning  |

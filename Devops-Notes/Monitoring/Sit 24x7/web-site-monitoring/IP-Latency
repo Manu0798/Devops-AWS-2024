@@ -1,0 +1,110 @@
+# Latency
+Latency = how long it takes for data to travel from source to destination
+Purpose: Ensure customers can access the site quickly from all cities.
+
+
+🧠 Why This Matters
+Latency monitoring helps you:
+Ensure fast access from all regions.
+Detect regional internet provider issues.
+Improve user experience by optimizing routing or using CDN.
+
+
+🧠 Why This Is Useful
+If this were a live shopping platform and a buyer in Kolkata was trying to complete a payment:
+
+High latency could delay the transaction
+Jitter might cause errors in secure communication (SSL handshakes)
+The user may abandon the cart
+
+
+🔎 Impact Analysis
+User Experience Impact: Slow page load, payment timeouts.
+Region Impacted: East India (Kolkata users).
+Business Risk: Cart abandonment or failed orders during peak time.
+
+
+
+🎯 What is Jitter?
+Jitter refers to the variation in the time delay between packets arriving over a network connection.
+It's measured in milliseconds (ms).
+It represents inconsistency in latency.
+Latency = how long it takes for data to travel from source to destination
+Jitter = how much that time fluctuates between packets
+
+
+🧠 Simple Analogy
+Imagine you're waiting for 5 people to arrive one after another for a meeting. They’re supposed to come at 1-minute intervals:
+If they arrive like: 1:00, 1:01, 1:02, 1:03, 1:04 → No jitter.
+But if they arrive: 1:00, 1:05, 1:02, 1:10, 1:01 → High jitter.
+That fluctuation in arrival time is jitter.
+
+
+
+⚠️ Why High Jitter is Bad
+High jitter affects:
+
+📦 Data Packets
+Packets may arrive out of order, or get dropped.
+Systems try to reassemble or re-request them, adding delay.
+
+💬 Real-time Services
+VoIP Calls: Choppy audio
+Video Calls: Freezes or lag
+Gaming: Rubber-banding or delay
+Checkout pages: Connection drops or delayed payment processing
+
+
+| Jitter Range | Network Quality |
+| ------------ | --------------- |
+| 0–1 ms       | Excellent       |
+| 1–3 ms       | Acceptable      |
+| >3 ms        | Poor (unstable) |
+
+
+
+# Alert condition
+
+| Metric    | Alert Threshold Example         |
+| --------- | ------------------------------- |
+| Latency   | > 30 ms                         |
+| Jitter    | > 3 ms                          |
+| Hop Count | > 15 hops                       |
+| AS Count  | > 4 (too many networks)         |
+| MTU       | ≠ expected (fragmentation risk) |
+
+
+Hop Count = The number of routers or network devices data passes through from the source (monitoring location) to your server.
+
+
+
+📊 What is AS Count?
+AS Count is the number of different autonomous systems your network traffic passes through from the user (client) to the destination server.
+More AS hops = more potential points of failure, delay, or instability.
+
+🛍️ Example – E-Commerce Customer Journey
+Let’s say a customer in Kolkata is trying to access your e-commerce site:
+
+User Device (Kolkata)
+↓
+ISP (Airtel) → AS45678
+↓
+National Backbone Router → AS9587
+↓
+International Exchange Point → AS3356
+↓
+Cloud Provider (e.g., AWS) → AS16509
+↓
+Your Application Load Balancer → AS65999
+
+🧮 Total AS Count = 5
+This is already a bit high. If Site24x7 reports:
+
+AS Count > 4 = Warning
+
+It means the data is crossing through too many independently managed networks, which can cause:
+
+Increased latency
+Higher jitter
+Possible packet loss
+Troubleshooting complexity (hard to isolate faults)

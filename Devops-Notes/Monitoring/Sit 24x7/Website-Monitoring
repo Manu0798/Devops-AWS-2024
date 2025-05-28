@@ -1,0 +1,148 @@
+1. DNS Response Time (ms)
+What it is:
+How much Time taken to translate the domain name (e.g., example.com) into its IP address.
+
+Example:
+The user types https://example.com in the browser. The system checks which IP address corresponds to example.com.
+
+If this takes 11 ms, then DNS Response Time = 11 ms.
+
+🛎️ Alert Example:
+
+⚠️ Alert: DNS Response Time exceeds 100 ms from location: Bengaluru
+❗ Potential DNS slowness or unresponsive DNS provider
+
+
+2. Connection Time (ms)     TCP (Transmission Control Protocol) 
+What it is:
+ How much time taken to establish connection between client or customer and server once the IP is known.
+
+Example:
+After the IP is known, the browser tries to "shake hands" with the server to open a connection.
+
+If this step takes 13 ms, then Connection Time = 13 ms.
+
+🛎️ Alert Example:
+
+⚠️ Alert: Connection time above threshold (200 ms) — possible server or network congestion.
+
+
+🔄 This is how TCP works: The "3-Way Handshake"
+To establish a connection between client and server, TCP uses a 3-step process called the 3-way handshake.
+
+👇 Steps:
+SYN (Synchronize)
+
+Your computer says: “Hi server, I want to talk to you!”
+
+SYN-ACK (Synchronize-Acknowledge)
+
+Server replies: “Okay, I hear you. I'm ready!”
+
+ACK (Acknowledge)
+
+Your computer: “Cool! Let’s start the communication.”
+
+✅ Now the TCP connection is ready, and the browser can send an HTTP request to load the web page.
+
+
+
+3. SSL Handshake Time (ms)
+What it is:
+Time to establish a secure (HTTPS) connection using SSL/TLS certificates.
+
+Example:
+The browser and server exchange encryption keys to make the connection secure.
+
+If this takes 17 ms, then SSL Handshake Time = 17 ms.
+
+🛎️ Alert Example:
+
+⚠️ SSL Handshake taking longer than 100 ms — check certificate size or server crypto config.
+
+
+
+4. First Byte Time (ms)  (How much time has taken to give First responce of sever from then send request to server)
+What it is:
+👉 From when your browser sends a request
+👉 Until it receives the very first byte of data back from the server.
+
+Example:
+After connection and SSL setup, the browser sends a request like:
+GET /home.
+The server processes this and starts sending a response.
+
+If the first byte comes after 12 ms, then First Byte Time = 12 ms.
+
+
+🛎️ Alert Example:
+
+⚠️ First Byte Time > 500 ms — Possible backend performance issue or database slowness.
+
+
+🧾 Real Example (E-Commerce App)
+Scenario:
+Raj clicks "Add to Cart" on a product on www.shopnow.com.
+
+His browser sends a request to the server like:
+
+pgsql
+Copy
+Edit
+GET /add-to-cart?item_id=123
+What Happens:
+✅ The request reaches the server.
+
+🧠 The server:
+
+Checks Raj's login session.
+
+Queries the database.
+
+Updates his cart.
+
+Prepares the response (HTML/JSON).
+
+📦 The first byte of that response is finally sent back to Raj’s browser.
+
+
+Note:- It measures how quickly the server starts responding — not how long it takes to load the full page, just the start of the response.
+
+
+
+5. Download Time (ms)
+What it is:
+Time to download the entire server response (like HTML, CSS, JS, etc).
+
+Example:
+After the first byte arrives, the browser downloads the full HTML page.
+
+If this takes 165 ms, then Download Time = 165 ms.
+
+🛎️ Alert Example:
+
+⚠️ Download Time exceeds 1500 ms — Check image optimization or CDN usage.
+
+
+
+
+6. Response Time (ms)
+What it is:
+Total time from start (DNS) to end (download complete)
+
+
+
+
+| Metric          | Affects                     | Business Risk                             |
+| --------------- | --------------------------- | ----------------------------------------- |
+| DNS             | Initial reachability        | Website may feel “stuck” before loading   |
+| Connection      | Network quality             | Poor mobile data may fail to load site    |
+| SSL Handshake   | Secure communication        | Can cause login/cart to hang on HTTPS     |
+| First Byte Time | Server/database performance | Cart page may seem frozen                 |
+| Download Time   | Page asset optimization     | Slow loading images = poor UX             |
+| Response Time   | Total site experience       | Raj may abandon cart if >3 sec total time |
+
+
+
+
+

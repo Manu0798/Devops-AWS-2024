@@ -582,6 +582,63 @@ sudo systemctl status mongo-listener --no-pager
 
 
 # How to automatically delete older files in an S3 bucket only when the file count exceeds 10
+-> sudo vi /usr/local/bin/s3_backup_cleanup.sh
+
+#!/bin/bash
+
+# Cleanup old backups from S3 — Keep only the latest 10 folders
+echo "Cleaning up old backups from S3..."
+S3_BUCKET="s3://frissly-prod-mongodb-backup-1"
+
+# Loop to continuously run the cleanup process
+while true; do
+    FOLDERS=$(aws s3 ls "$S3_BUCKET/" | awk '{print $2}' | sort -r)
+    COUNT=0
+
+    for FOLDER in $FOLDERS; do
+        COUNT=$((COUNT + 1))
+        if [ $COUNT -gt 10 ]; then
+            echo "Deleting old backup folder: $FOLDER"
+            aws s3 rm "${S3_BUCKET}/${FOLDER}" --recursive
+        fi
+    done
+
+    # Sleep for 60 seconds before the next iteration
+    sleep 60
+done
+
+
+-> sudo chmod +x /usr/local/bin/s3_backup_cleanup.sh
+-> sudo vi /etc/systemd/system/s3-backup-cleanup.service
+
+[Unit]
+Description=S3 Backup Cleanup Service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/s3_backup_cleanup.sh
+Restart=always
+RestartSec=10
+User=ubuntu
+Environment=AWS_PROFILE=default
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=s3-backup-cleanup
+
+[Install]
+WantedBy=multi-user.target
+
+
+-> sudo systemctl daemon-reexec
+-> sudo systemctl daemon-reload
+-> sudo systemctl enable s3-backup-cleanup.service
+-> sudo systemctl start s3-backup-cleanup.service
+-> sudo systemctl status s3-backup-cleanup.service
+
+
+
+
+# How to automatically delete older files in an S3 bucket only when the file count exceeds 10
 -> vi cleanup_s3.sh
 
 #!/bin/bash

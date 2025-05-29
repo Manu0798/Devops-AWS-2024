@@ -355,3 +355,106 @@ sudo systemctl enable cron
 sudo systemctl restart cron
 
 echo "✅ MongoDB backup cron job setup completed!"
+
+
+
+
+
+
+
+
+
+# How to automatically delete older files in an S3 bucket only when the file count exceeds 10
+-> vi cleanup_s3.sh
+
+#!/bin/bash
+
+# Cleanup old backups from S3 — Keep only the latest 10 folders
+echo "Cleaning up old backups from S3..."
+S3_BUCKET="s3://frissly-prod-mongodb-backup-1"
+
+# Loop to continuously run the cleanup process
+while true; do
+    FOLDERS=$(aws s3 ls "$S3_BUCKET/" | awk '{print $2}' | sort -r)
+    COUNT=0
+
+    for FOLDER in $FOLDERS; do
+        COUNT=$((COUNT + 1))
+        if [ $COUNT -gt 10 ]; then
+            echo "Deleting old backup folder: $FOLDER"
+            aws s3 rm "${S3_BUCKET}/${FOLDER}" --recursive
+        fi
+    done
+
+    # Sleep for 60 seconds before the next iteration (adjust the sleep time as needed)
+    sleep 60
+done
+
+
+-> chmod 775 cleanup_s3.sh
+-> nohup /home/ubuntu/cleanup_s3.sh >> /home/ubuntu/cleanup_s3.log 2>&1 &
+-> ps aux | grep cleanup_s3.sh
+
+# if you want to kill
+-> pgrep -af cleanup_s3.sh
+
+
+
+
+# cleanup your system’s memory and CPU usage after MongoDB backup to S3.
+-> vi optimize_memory_cpu.sh
+
+#!/bin/bash
+
+# =========================================
+# CONFIGURATION
+# =========================================
+LOG_FILE="/var/log/mongo_memory_cleanup.log"
+INTERVAL=60  # Interval in seconds between checks
+
+# Ensure log file exists
+sudo touch "$LOG_FILE"
+sudo chmod 644 "$LOG_FILE"
+
+# =========================================
+# INFINITE LOOP TO MONITOR AND OPTIMIZE
+# =========================================
+echo "Starting continuous memory/CPU optimization every $INTERVAL seconds..."
+while true; do
+  TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+  echo -e "\n==== Optimization Run @ $TIMESTAMP ====" >> "$LOG_FILE"
+
+  echo "[*] Syncing and clearing cache..." >> "$LOG_FILE"
+  sync
+  echo 3 | sudo tee /proc/sys/vm/drop_caches >> "$LOG_FILE" 2>&1
+
+  echo "[*] Logging top 10 memory consuming processes..." >> "$LOG_FILE"
+  ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 11 >> "$LOG_FILE"
+
+  echo "[*] Checking for zombie (defunct) processes..." >> "$LOG_FILE"
+  ZOMBIES=$(ps -eo stat,ppid | grep -w Z | wc -l)
+  echo "Zombie processes: $ZOMBIES" >> "$LOG_FILE"
+
+  if [ "$ZOMBIES" -gt 0 ]; then
+    echo "[!] Attempting to clean zombie processes..." >> "$LOG_FILE"
+    ZOMBIE_PIDS=$(ps -eo stat,pid,ppid | awk '$1 ~ /Z/ { print $3 }' | sort -u)
+    for ppid in $ZOMBIE_PIDS; do
+      echo "Killing parent process: $ppid" >> "$LOG_FILE"
+      sudo kill -9 "$ppid" >> "$LOG_FILE" 2>&1
+    done
+  fi
+
+  echo "[*] Memory Usage:" >> "$LOG_FILE"
+  free -h >> "$LOG_FILE"
+
+  echo "[*] CPU Load:" >> "$LOG_FILE"
+  top -b -n1 | head -n 10 >> "$LOG_FILE"
+
+  sleep "$INTERVAL"
+done
+
+
+
+-> chmod 775 optimize_memory_cpu.sh
+-> nohup /home/ubuntu/optimize_memory_cpu.sh >> /home/ubuntu/optimize_memory_cpu.log 2>&1 &
+-> ps aux | grep optimize_memory_cpu.sh

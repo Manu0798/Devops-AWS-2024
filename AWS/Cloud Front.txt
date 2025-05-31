@@ -83,3 +83,38 @@ https://youtu.be/yhieOhvHz6Q?si=J0l3ztEjiKc5yPHr
 How CDN Works
 Caching Content: CDNs cache copies of your web application's assets, such as images, videos, stylesheets, JavaScript, and HTML pages, at various edge servers.
 Serving Content Locally: When a user accesses your application, the CDN serves the cached content from the server closest to their geographic location. This reduces latency and speeds up loading time.
+
+
+
+
+# How to deploy the static website with the help of S3 bucket and cloudfront
+-> First you have to upload the repository source code into s3 bucket, We can upload using manually or using below command
+    aws s3 sync . s3://bucket-stattic-08 --delete
+-> We have to click permission and uncheck the Block all public access, we have to update below policy in Bucket policy to keep it public
+
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "Statement1",
+			"Principal": "*",
+			"Effect": "Allow",
+			"Action": "s3:*",
+			"Resource": "arn:aws:s3:::manoj-3058/*"
+		}
+	]
+}
+
+-> After update the policy, Go to properties and enable static website
+-> later you will create the cloud front to follow the steps
+-> go to origin access 
+-> click s3 bucket
+-> Click Origin access control settings [if you select this option only you can access over cloud front URL you cant access othet URLS)
+-> Click create control setting and give some name and create
+-> Click Do not enable security protections
+-> Go settings and see
+-> Give the index.html in Default root object - optional    
+-> Create distribution 
+-> After create copy the Policy. later go s3 bucket and go to bucket policy and delete the all previous policy and give this cloud front policy there
+-> Go cloud front and copy the Distribution domain name and paste in browser
+

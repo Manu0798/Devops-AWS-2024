@@ -1,5 +1,5 @@
 # What is Web-hook
-Web-hook is basically method of communication that allow the users to subscribe to events happening in a software system.
+Web-hook is created in github or bitbucket to notify CI/CD tools when changes occur in repository to automatically build the updated code
 
 # How a Web-hook work
 Web-hook can be trigger whenever specific event occur on github.

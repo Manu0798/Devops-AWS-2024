@@ -19,6 +19,10 @@ eksctl version
 echo "eksctl installation complete."
 
 
+-> You will execute the below command to create EKS fargate cluster after you execute the above tools
+-> eksctl create cluster --name demo-cluster --region us-east-1 --fargate  
+
+
 
 # Install Kubectl
 echo "===== Installing kubectl ====="

@@ -28,8 +28,9 @@ Ansible
 -> Service Principals
 
 
-# Providers [Providers is used to interact with cloud providers]
--> Terraform relies on plugins called providers to interact with cloud providers, SaaS providers, and other APIs.
+# Providers 
+-> Providers is used to help us to interact with our cloud platform
+
 Ex:-
 provider "aws" {
   region     = var.region
@@ -37,8 +38,81 @@ provider "aws" {
   secret_key = var.secret_key
 }
 
+# How to setup the infrastructure in Multi region and Multi cloud platforms
+# Multi Region provides
+-> We have to create two providers blocks, within provides blocks we should use alias keyword to implement multi region infrastructure setup in terraform.
 
-# Resources [To create infrastructure in cloud or AWS we deploy the resource]
+Ex:-
+provider "aws" {
+  alias = "us-east-1"
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias = "us-west-2"
+  region = "us-west-2"
+}
+
+resource "aws_instance" "example" {
+  ami = "ami-0123456789abcdef0"
+  instance_type = "t2.micro"
+  provider = "aws.us-east-1"
+}
+
+resource "aws_instance" "example2" {
+  ami = "ami-0123456789abcdef0"
+  instance_type = "t2.micro"
+  provider = "aws.us-west-2"
+}
+
+# Multi Cloud provides
+-> In the providers.tf file, define the AWS and Azure providers. we should create the resources for both AWS and Azure according their resources types.
+
+Ex:-
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+provider "azurerm" {
+  subscription_id = "your-azure-subscription-id"
+  client_id = "your-azure-client-id"
+  client_secret = "your-azure-client-secret"
+  tenant_id = "your-azure-tenant-id"
+}
+
+resource "aws_instance" "example" {
+  ami = "ami-0123456789abcdef0"
+  instance_type = "t2.micro"
+}
+
+resource "azurerm_virtual_machine" "example" {
+  name = "example-vm"
+  location = "eastus"
+  size = "Standard_A1"
+}
+
+
+# Required Provides
+-> The Required Provides It allows us to specify the provider name, source, and version constraints
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 2.0, < 3.0"
+    }
+  }
+}
+
+
+
+# Resources 
+-> Resources it help us to create infrastructure in cloud or AWS we deploy the resource
 -> Resource are the most important element in the Terraform language.
 -> Each resource block describes one or more infrastructure objects, such as virtual networks and compute instances.
 Ex:-
@@ -52,20 +126,54 @@ resource "aws_vpc" "vpc" {
 }
 
 
-# Variables
+# Variables 
 -> Using variables in terraform configuration makes our deployment more dynamic.
+-> We use varibles instaed of writing the hardcoded values in terraform
+-> We have two types of varibles 
+    Input variable  --> It pass the information to terraform
+     Ex:-
+        variable "region" {
+          type    = string
+          default = "ap-south-1"
+        }
+      
+    Output variable  --> It Print the particular value
+    Ex:-
+      output "public_ip" {
+      description = "Public IP address of the EC2 instance"
+      value       = aws_instance.example_instance.public_ip
+      }
 -> A separate file with name variables.tf needs to be created in the working directory to store all variables for our used in main.tf configuration file.
+
+
+
+# Modules  
+-> It allows us to create group resources and reuse them across different projects or environments
+-> Using modules we can deploy the code into multiple environments
+
+🎯 Why use modules? or Advantages
+Reusability: Write once, use in multiple places.
+Organization: Clean, modular code.
+Consistency: Same setup across environments (dev, prod, etc.)
+Team collaboration: Easier for teams to work on specific parts.
+
 Ex:-
-variable "region" {
-  type    = string
-  default = "ap-south-1"
+module "module_test" {
+  source = "./module"
 }
 
 
-# Statefile [It compare the current state with desired state]
--> After the deployment is finished terraform creates a state file to keep track of current state of the infrastructure.
--> It will use this file to compare when you deploy/destroy resource in other words it compares current state with desired state using this is file.
--> A file with a name of terraform.tfstate will be created in your working directory
+
+# Statefile
+-> Statefile is the heart of terraform. Terraform will store the information about our infrastructure that it has created
+-> It compare the current state with desired state
+-> terraform.tfstate file will create after you apply the terraform apply command
+
+-> Disadvantages of Statefile
+   -> It is sensitive file, it will store the even sensitive information about our infrastruture that it has created like access key, secreat keys
+
+-> terraform show   --> This is command is use to show our statefile
+
 
 -> How to restore the terraform.tfstate file
 terraform import aws_vpc.vpc vpc-0108ace4a127ec01e
@@ -79,8 +187,9 @@ terraform import aws_instance.example_instance i-0a039441365591418
 
 
 
-# Backup and Restore the terraform.tfstate
--> Multiple people work on same terraform code using terraform.tfstate but another persons wont work when one person working on code because it have lock
+# Backend and Restore the terraform.tfstate
+-> The Backend block is use to work multiple people on same terraform code using terraform.tfstate file
+-> If we use dynamodb state lock another persons wont able to work when one person working on code because it has locked
 Ex:-
 terraform {
   backend "s3" {
@@ -88,28 +197,67 @@ terraform {
     key            = "global/mystate/terraform.tfstate"
     region         = "ap-south-1"
     encrypt        = true
-    dynamodb_table = "state-lock"
+    dynamodb_table = "terraform-lock"
   }
 }
 
 
-# Modules [Using modules you can deploy the code into multiple environments]
--> If you want to perform a template-based deployment you can follow modularized approach
--> A module defines a set of parameters which will be passed as key value pairs to actual deployment
--> With this approach you can create multiple environments in a very easy way
-Ex:-
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.30"
-    }
+resource "aws_dynamodb_table" "terraform_lock" {
+  name           = "terraform-lock"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
   }
 }
 
-module "module_test" {
-  source = "./module"
-}
+
+# Provisioners
+-> Provisioners are used to execute and implemenent the actions during the infrastructure creation
+-> we have three types of provisioners
+   -> file Provisioner:- The file provisioner is used to copy files or directories from the local machine to a remote machine
+      Ex:-
+       provisioner "file" {
+        source      = "local/path/to/localfile.txt"
+        destination = "/path/on/remote/instance/file.txt"
+        connection {
+          type     = "ssh"
+          user     = "ec2-user"
+          private_key = file("~/.ssh/id_rsa")
+        }
+      }
+
+   -> remote-exec Provisioner:- The remote-exec provisioner is used to run scripts or commands on a remote machine over SSH or WinRM connections
+      Ex:-
+       provisioner "remote-exec" {
+          inline = [
+            "sudo yum update -y",
+            "sudo yum install -y httpd",
+            "sudo systemctl start httpd",
+          ]
+        
+          connection {
+            type        = "ssh"
+            user        = "ec2-user"
+            private_key = file("~/.ssh/id_rsa")
+            host        = aws_instance.example.public_ip
+          }
+        }
+
+    -> local-exec Provisioner:- The local-exec provisioner is used to run scripts or commands locally on the machine where Terraform is executed
+     Ex:-
+      resource "null_resource" "example" {
+        triggers = {
+          always_run = "${timestamp()}"
+        }
+      
+        provisioner "local-exec" {
+          command = "echo 'This is a local command'"
+        }
+      }
+
 
 
 
@@ -199,7 +347,8 @@ output "vpc_name1" {
 You can see below link to know properly
 https://youtu.be/_B7gtqwzKuc?si=sqI34qnTAZVnPnFy  
   
-   
+-> Terraform installation website
+https://developer.hashicorp.com/terraform/install#linux
 
 # How to install the terraform
 sudo yum update -y

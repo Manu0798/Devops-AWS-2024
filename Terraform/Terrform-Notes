@@ -20,9 +20,9 @@ Ansible
 -> Providers
 -> Resources
 -> Variables
+-> Modules
 -> Statefile
 -> Backends
--> Modules
 -> Provisioners
 -> Data Source
 -> Service Principals

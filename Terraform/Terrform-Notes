@@ -175,7 +175,9 @@ module "module_test" {
 -> terraform show   --> This is command is use to show our statefile
 
 
+
 -> How to restore the terraform.tfstate file
+-> Terraform migration ( using import and then running terraform import command which will create a state file).
 terraform import aws_vpc.vpc vpc-0108ace4a127ec01e
 terraform import aws_subnet.public_1 subnet-055a4f5f5a08dda26
 terraform import aws_subnet.public_2 subnet-04a6eb7ff81dbcd1b
@@ -260,17 +262,6 @@ resource "aws_dynamodb_table" "terraform_lock" {
 
 
 
-# Terraform workspace (or) multiple env
--> when we use the workspace we can save our terraform.tfstate file in different env
--> Suppose you have two env one is dev env and another one is prod env
--> You should create dev workspaec before you deploy the dev env
-     terraform workspace list   -> To show workspaces
-     terraform workspace new dev  -> To create the dev workspace
-     terraform workspace select dev  -> To switch the dev env
-     terraform workspace show       -> To have the in which workspace you would being
-     terraform apply -var-file dev.tfvars   -> To deploy the dev env
-
-
 
 
 # Data Source [you will use data source to get existing resource]
@@ -285,6 +276,19 @@ data "aws_vpc" "vpc" {
     Name = "vpc01"
   }
 }
+
+
+# Terraform workspace (or) multiple env
+-> when we use the workspace we can save our terraform.tfstate file in different env
+-> Suppose you have two env one is dev env and another one is prod env
+-> You should create dev workspaec before you deploy the dev env
+     terraform workspace list   -> To show workspaces
+     terraform workspace new dev  -> To create the dev workspace
+     terraform workspace select dev  -> To switch the dev env
+     terraform workspace show       -> To have the in which workspace you would being
+     terraform apply -var-file dev.tfvars   -> To deploy the dev env
+
+
 
 # Terraform locals
 -> when we have local type resources it will the reducer length of reference ids
@@ -311,11 +315,27 @@ output "vpc_name1" {
 }
 
 
-# what is the difference between variable and local
--> we cant use expression in variable
--> we can pass variables from command prompt
--> we cant pass the input from command prompt
+# Terraform vault
+-> Vault is a tool for managing secrets and sensitive data (like passwords, API keys, certificates, etc.). It allows you to store and access secrets securely, and manage access through policies.
 
+-> There are a few ways to manage sensitive information in Terraform files. Here are some of the most common methods:
+   -> sensitive attribute
+   -> Secret management system
+   -> Remote Backend
+   -> Environment Variables
+
+
+ 2. Terraform drift detection ( if some one manually changed any settings for any resource, then detecting that change is called drift detection).
+
+# There are 2 ways to detect it.
+
+Scenario 1: Use terraform refresh using a cron job. ( terraform refresh, refershes the recents changes which was done manually to the statefile and keeps it updated.
+
+Scenario 2: 
+
+- A) Use audit/activity logs to see who made changes, if its changed by user and resources is managed by TF, then send an alert using lambda/azure functions and notify.
+
+- B) Apply strict IAM rules so that no one can login to console.
 
 
 
@@ -350,6 +370,8 @@ terraform plan   -> It compare the code with current state and desired state
 terraform apply
 terraform apply -auto-apporve
 terraform destroy
+terraform show   --> It will print the terraform.tfstate file in our terminal
+terraform refresh  --> refershes the recents changes which was done manually to the statefile and keeps it updated.
 
 
 # How to install terraform in windows

@@ -260,6 +260,18 @@ resource "aws_dynamodb_table" "terraform_lock" {
 
 
 
+# Terraform workspace (or) multiple env
+-> when we use the workspace we can save our terraform.tfstate file in different env
+-> Suppose you have two env one is dev env and another one is prod env
+-> You should create dev workspaec before you deploy the dev env
+     terraform workspace list   -> To show workspaces
+     terraform workspace new dev  -> To create the dev workspace
+     terraform workspace select dev  -> To switch the dev env
+     terraform workspace show       -> To have the in which workspace you would being
+     terraform apply -var-file dev.tfvars   -> To deploy the dev env
+
+
+
 
 # Data Source [you will use data source to get existing resource]
 -> If you deploy your resource out of terraform and use them in your terraform code the way you use them through "Data Source"
@@ -304,45 +316,9 @@ output "vpc_name1" {
 -> we can pass variables from command prompt
 -> we cant pass the input from command prompt
 
-# Terrafrom provisions
--> We have three types of provisions
-  1) File  -> It will execute the script in file when we run the code
-     user_data                   = filebase64("./file123.sh")
-
-  2) Local-exec -> It will execute the commands when we run the code
-      provisioner "local-exec" {
-    command = "echo ${aws_subnet.public_1.id} >> Subnet-Ip"
-  }
-
-  3) Remote-exec -> It shows data in directory when we run the code
-      provisioner "remote-exec" {
-    inline = [ 
-      "ls -al /var",
-      "chmod 600 ./private-key.pem",
-      #"echo 'Starting script'",
-      #"/tmp/terraform_2011452084.sh",
-      #"echo 'Script completed'"
-    ]
-  
-    connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    private_key = file("./private-key.pem")
-    host        = aws_instance.example_instance.public_ip
-    }
-  }
 
 
 
-# Terraform workspace (or) multiple env
--> when we use the workspace we can save our terraform.tfstate file in different env
--> Suppose you have two env one is dev env and another one is prod env
--> You should create dev workspaec before you deploy the dev env
-     terraform workspace list   -> To show workspaces
-     terraform workspace new dev  -> To create the dev workspace
-     terraform workspace select dev  -> To switch the dev env
-     terraform workspace show       -> To have the in which workspace you would being
-     terraform apply -var-file dev.tfvars   -> To deploy the dev env
 
 You can see below link to know properly
 https://youtu.be/_B7gtqwzKuc?si=sqI34qnTAZVnPnFy  

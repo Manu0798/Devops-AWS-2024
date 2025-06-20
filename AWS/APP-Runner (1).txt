@@ -72,3 +72,13 @@ CPU-intensive processing (image processing, AI inference)	1s	2-5
 
  
 
+
+
+# To delete the VPC Connector, you must first detach it from the service.
+-> aws apprunner update-service --service-arn arn:aws:apprunner:ap-south-1:796973481585:service/frissly-prod-backend/ed15d0135d22452db14e12487742eab3 --network-configuration "{""EgressConfiguration"": {""EgressType"": ""DEFAULT""}}"
+
+-> aws apprunner describe-service \
+  --service-arn arn:aws:apprunner:ap-south-1:796973481585:service/frissly-prod-backend/ed15d0135d22452db14e12487742eab3
+
+-> aws apprunner delete-vpc-connector --vpc-connector-arn arn:aws:apprunner:ap-south-1:796973481585:vpcconnector/frissly-prod-vpc_connector/1/b04b646257b34985bf9639841e49eca2
+

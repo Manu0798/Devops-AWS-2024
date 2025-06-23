@@ -1,3 +1,4 @@
+# How to create EKS fargate Cluster manually
 -> Before we create the EKS fargate we have to install below tools
 
 # Install AWS_CLI
@@ -19,11 +20,6 @@ eksctl version
 echo "eksctl installation complete."
 
 
--> You will execute the below command to create EKS fargate cluster after you execute the above tools
--> eksctl create cluster --name demo-cluster --region us-east-1 --fargate  
-
-
-
 # Install Kubectl
 echo "===== Installing kubectl ====="
 KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
@@ -33,9 +29,46 @@ sudo mv kubectl /usr/local/bin/
 kubectl version --client
 echo "kubectl installation complete."
 
-
 # Helm
 echo "===== Installing Helm ====="
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 helm version
 echo "Helm installation complete."
+
+
+-> You will execute the below command to create EKS fargate cluster after you execute the above tools
+-> eksctl create cluster --name demo-cluster --region ap-south-1 --fargate 
+-> aws eks --region ap-south-1 update-kubeconfig --name demo-cluster
+-> eksctl create fargateprofile \
+    --cluster demo-cluster \
+    --region ap-south-1 \
+    --name alb-sample-app \
+    --namespace game-2048
+
+-> Sample application Yaml scripts
+-> kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.5.4/docs/examples/2048/2048_full.yaml
+
+-> eksctl utils associate-iam-oidc-provider --cluster demo-cluster --approve
+
+# Install ALB Controller
+-> curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.11.0/docs/install/iam_policy.json
+
+-> aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam_policy.json
+
+-> eksctl create iamserviceaccount \
+  --cluster=demo-cluster \
+  --namespace=kube-system \
+  --name=aws-load-balancer-controller \
+  --role-name AmazonEKSLoadBalancerControllerRole \
+  --attach-policy-arn=arn:aws:iam::854575156536:policy/AWSLoadBalancerControllerIAMPolicy \
+  --approve
+
+-> helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=demo-cluster --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set region=ap-south-1 --set vpcId=vpc-0f4aaa7cb7f06f489
+-> kubectl get deployment -n kube-system aws-load-balancer-controller
+
+
+
+
+

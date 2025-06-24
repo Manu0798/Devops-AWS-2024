@@ -72,6 +72,7 @@ echo "Helm installation complete."
 
 # Below command is use to delete cluster
 -> eksctl delete cluster --name demo-cluster --region ap-south-1
+-> eksctl create cluster   --name demo-cluster   --region ap-south-1   --fargate   --vpc-private-subnets=subnet-023ee67bc1bd60f63,subnet-073004b80be4e8f8f   --without-nodegroup
 
 
 

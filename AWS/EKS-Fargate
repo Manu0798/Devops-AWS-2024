@@ -70,5 +70,10 @@ echo "Helm installation complete."
 
 
 
+# Below command is use to delete cluster
+-> eksctl delete cluster --name demo-cluster --region ap-south-1
+
+
+
 
 

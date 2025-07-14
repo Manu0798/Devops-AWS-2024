@@ -104,25 +104,52 @@ Distributed VCS → "Everyone has a full brain!"
 -> git stash apply stash@{enter stash number}   --> it will take particular files from git stash
 -> git stash -u    --> It moved the file into untracked stage from git stash
 -> git stash branch <branch name>   --> if you want to create to separate branch with git stash files
--> git reset   --> To take the stagged file to untracked stage
--> git reset --soft HEAD~1   --> To take the commit files to untracked stage
+
 -> git diff           --> View the difference between changes made to file
 -> git clone  --> Download the remote repository on your local machine
 -> git pull  --> It pull the data from remote repository to local repository
 -> git pull <repo Url> <branch name>  --> It pull the particular branch data from remote repo to local repo
 -> git clean -f <file>   --> To remove the file from untracked stage
--> git revert  -> undoing changes to repository commit history.
--> git restore -> Remove the files from the staging area
--> IF you want to go to the previous version or to see the previous data in file
-   git reset --hard "give commit id"
-https://youtu.be/fIMySI_gZJU?si=4T8ZmDa9rsBELi11  [28:25]
+
+# Git revert and resert
+# revert
+-> It is used to undo changes introduce by specific commit while preserving the commit history
+-> git revert <commit id>
+-> git revert HEAD   --> It will take first commit in commit history
+-> git revert HEAD~<number> 
+        Ex:-
+             git revert HEAD~1  --> It will take second commit in commit history because first HEAD it count from after HEAD
+-> git revert <commit id> --no-edit   --> It will commit without open any editor
+Note:- All Above revert commands will work same 
+
+
+# reset
+-> It is used to move the HEAD ponit to specific commit, It modifies the commit history by adjusting the HEAD pointer.
+-> git reset <commit id>  --> All the above commit history will delete from pointed commit and changes move to working directory  [Git mixed resert]
+-> git reset --soft <commit id>  --> All the above commit history will delete from pointed commit and changes move to stagging area
+-> git reset --hard <commit id>  --> All the above commit history will delete from pointed commit and files will delete
+-> git reset HEAD~<number> 
+        Ex:-
+             git reset HEAD~1  --> It will take second commit in commit history because first HEAD it count from after HEAD
+
 
 # To get more details about git revert and git resert. you will watch below link
   https://youtu.be/mTNWyyMbxmU?si=6uudwsD2FowavO2M
 
+
+# Git restore
+-> git restore command is used to undo changes in your working directory or staging area (index) in Git.
+-> git restore <filename>  --> Remove the data in working directory
+-> git restore --staged <filename>   --> It take the file from stage area to working directory
+
+
 # What is the difference between git fetch and git pull
 git fetch: Downloads updates from the remote repository without merging them into your local branch.
 git pull: Downloads updates from the remote repository and directly merges them into your local branch.
+
+# What is the difference between FORk and CLONE
+-> FROK will create the copy of repository on remote server
+-> CLONE will download the remote repository in local
 
 # What are the files and folders would be in .git folder
 .git will track our entire repository
@@ -134,9 +161,7 @@ git pull: Downloads updates from the remote repository and directly merges them 
 -> objects(dir) --> This directory stores all the content of your repository, including commits, trees (directories), and blobs (file contents). Each object is stored as a file with a name based on its hash.
 -> refs(dir) --> This directory contains references to commit objects, including branches and tags.
 
-# What is the difference between FORk and CLONE
--> FROK will create the copy of repository on remote server
--> CLONE will download the remote repository in local
+
 
 # To merge the data from one branch to another branch we have three ways to merge the data.
 -> merge [you would be keep in destination place and use the git merge command] 

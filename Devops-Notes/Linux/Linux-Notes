@@ -7,12 +7,12 @@
 
 # What is the difference between Linux and windows
 # Linux
--> you will installed linux with free license
+-> We will installed linux with free license
 -> In linux we have so many distributors. you can choose whichever you want (Ubuntu, redhat, centos etc)
 -> It is more secure than windows because viruses cant easily break the kernal
 
 # Windows
--> You should purchase the license to install windows
+-> We should purchase the license to install windows
 -> Not many customization options available
 -> We need powerful antiviruses software to overcome the viruses problems
 
@@ -86,6 +86,7 @@ after understand the binary language it will return back the result to shell. sh
 -> mv oldname newname  --> To change the file name (or) To move the files from one place to another place
 -> mkdir dirname  --> To create the dir
 -> find / -name filename    --> To search files
+-> sudo find / -type d -name "dir name"    --> To search the directory
 -> find / -inum enterinode number  --> To search files based on inode number
 -> find / -type l   --> To search file based on type ex link(l) block(b) character(c) normal(-)
 -> find / -user username    --> Seach the files based on user
@@ -100,7 +101,14 @@ after understand the binary language it will return back the result to shell. sh
 -> sudo su -  --> To login into the root user
 -> sudo su username  --> To enter into the particular user without asking password
 -> su username  --> To enter into the particular user
--> vi /etc/ssh/sshd_config  --> To enable authentication option and change the ssh port number
+-> vi /etc/ssh/sshd_config  --> To enable authentication option and change the ssh port number   [The main configuration file for the SSH daemon (sshd), which controls how your Linux machine accepts SSH connections.]
+      [ Remove the # and change the number. For example: Port 2222]
+      [PasswordAuthentication yes     Remove the # and Login the use with password, if we no we can login without asking password]
+
+-> sudo vim /etc/sudoers  --> To give the root permission to users and groups
+      manoj ALL=(ALL) NOPASSWD:ALL     --> for user
+      %developers ALL=(ALL) ALL        --> This lets all users in the developers group use sudo
+  
 
 # To open the files
 -> head (To see the first 10 lines)
@@ -122,10 +130,34 @@ after understand the binary language it will return back the result to shell. sh
    ls -l | grep filename
    ls -l | grep ^b  -> cap will consider the first letter of the file
    ls -l | grep t$  -> dollar will consider the last letter of the file
--> more(To see page by page)
+-> more
    more filename
--> less(To see line by line)
+-> less
    less filename
+
+-> What is the difference between More and less
+
+| Feature                       | `more`                              | `less`                                     |
+| ----------------------------- | ----------------------------------- | ------------------------------------------ |
+| 📄 **Basic Purpose**          | View text one screen at a time      | View text one screen at a time             |
+| 🔁 **Scroll Back**            | ❌ Only forward                      | ✅ Forward **and backward**                 |
+| 🔍 **Search**                 | Basic (forward only `/pattern`)     | Advanced (forward `/`, back `?`)           |
+| 📦 **Load Behavior**          | Loads the entire file at once       | Loads on-demand (faster for big files)     |
+| ⌨️ **Navigation**             | Space = next page, q = quit         | `j` = down, `k` = up, `G` = end, `g` = top |
+| 🧠 **Usage Comfort**          | Very basic                          | Powerful and user-friendly                 |
+| 🚀 **Speed with large files** | Slower                              | Faster and efficient                       |
+| 🛠️ **Custom Features**       | No line editing or advanced options | Many features, better for scripting        |
+
+
+| Metaphor                                                                                                 | Meaning |
+| -------------------------------------------------------------------------------------------------------- | ------- |
+| `more` is like **scrolling down a printed book** — you can't go back.                                    |         |
+| `less` is like **opening a digital PDF reader** — you can go up/down, search, jump to top/bottom easily. |         |
+
+
+🎯 Final Verdict:
+✅ Use less for better navigation, especially for large files or log files.
+🆗 Use more if you're on a very minimal system or only need simple forward scrolling.
 
 # File types
 -> - (normal files)
@@ -156,45 +188,70 @@ after install you have to update your data base so that you have to execute belo
 sudo updatedb  --> To update database
 locate filename  --> To find files
 which echo  -->  It give the path of the command
+
 # we have to use below command before use whatis
 sudo mandb  --> To update database
 whatis ls --> To see that command properties
 
 # What is vim
 -> vim stands for improved version of vi text editor
-# vim modes
--> command mode ( When we open the vi editor it will be command mode)
--> insert mode  (When we press the i it will goes to the insert mode)
--> visual mode  (After esc the insert mode it will be visual mode)
 
-# command mode
--> A -> It will place the cursor end of the sentence
--> I -> It will place the cursor staring of the sentence
--> o -> It will get the space below the sentences
--> O -> It will get the space above sentences
--> a -> It will shift the cursor from one letter to another letter
--> gg -> It will place the cursor staring of the line
--> G -> It will place the cursor end of the line
--> w -> It will shift the cursor word by word inforword direction
--> U -> It will remove the entire line
--> yy -> Copy the line but be cursor before the line
+# Vim Has Multiple Modes.
+1. 📝 Normal Mode (default after opening a file)
+      -> Used for navigation, copying, pasting, deleting, searching, etc.
+      -> You cannot insert text in this mode.
+      -> Press Esc to return to Normal Mode from any other mode.
 
-# Insert mode
--> i  -> Insert 
+      📌 Examples:
+         dd – delete a line
+         yy – copy a line
+         p – paste below
+         u – undo
+         U - Undo all changes on the current line since you entered it
+         gg - It will place the cursor starting
+         G - It will place the cursor end of the line
+         w - It will shift the cursor word by word inforword direction
+      
 
-# Command line mode
--> wq  -> save and quit
--> q -> quit without save
--> / -> To search the words
--> :s/hello/hi  -> To replace the word
--> :%s/hello/hi  -> To replace the all the words
--> : se nu  -> It giving the serial numbers
--> :4 -> it will place the cursor at 4th place
--> :X -> To set the password to the file
--> :X enter, enter -> To remove the passoword to the file
+2. ⌨️ Insert Mode
+      Used to insert or edit text.
+      Enter this mode from Normal Mode by pressing:
+      
+      i – insert before cursor
+      a – append after cursor
+      o – open new line below the sentences
+      O - open new line above the sentences
+      
+      
+      Return to Normal Mode with Esc
 
-# Visual mode
--> To see the data
+3. 🔎 Visual Mode
+      Used to select text.
+      Enter from Normal Mode:
+      
+      v – character-wise selection
+      V – line-wise selection
+      Ctrl+v – block (column) selection
+      
+      After selecting, you can copy (y), delete (d), etc.
+
+4. 🛠️ Command-Line Mode (also called Ex Mode)
+Used to run vim commands like save, quit, search, or replace.
+Enter it from Normal Mode by typing : (colon).
+
+Example commands:
+:w – write (save)
+:q – quit
+:wq – save and quit
+:q! – force quit without saving
+:/ -> To search the words
+:s/hello/hi  -> To replace the word
+:%s/hello/hi  -> To replace the all the words
+: se nu  -> It giving the serial numbers
+:4 -> it will place the cursor at 4th place
+:X -> To set the password to the file
+:X enter, enter -> To remove the passoword to the file
+
 
 
 # User Management
@@ -215,10 +272,13 @@ GI -> It having collection people (group ID)
 -> sudo passwd username    --> To create passwd to username
 -> sudo userdel username   --> To delete the username
 -> sudo passwd -d username --> To delete the passwd to user
--> sudo passwd -S username --> To see passwd status to user
+-> sudo passwd -S username --> To see passwd status of user
+      L → Locked
+      P → Password set
+      NP → No password
 -> sudo usermod -l newuser olduser  --> To change the username
 -> sudo usermod -u idnumber username  --> To change the userid number
--> sudo usermod -L username --> To lock the user
+-> sudo usermod -L username --> To lock the user   [If we lock the user. User could not able to login]
 -> sudo usermod -U username --> To unlock the user
 -> cat /etc/passwd  --> To see the user
 -> sudo cat /etc/shadow  -->  To see passwds to the users
@@ -231,8 +291,9 @@ GI -> It having collection people (group ID)
 -> sudo groupmod -n newname oldname --> To change the group name
 -> sudo groupmod -g groudidnum groupname  --> To change the groupid
 -> sudo useradd -G groupname username    --> To add new user to the group
--> sudo usermod -G groupname username   --> To add user to the group
+-> sudo usermod -aG groupname username   --> To add user to the group
 -> sudo gpasswd -d username groupname    -->  To delete user from group
+-> groups username   --> Verify the user are added in group or not
 -> cat /etc/group  --> To see the groups
 -> sudo cat /etc/gshadow  --> To see the group passwd
 
@@ -242,7 +303,7 @@ GI -> It having collection people (group ID)
 
 -> Primary group: Primary group will add automatically when we create the user                
 -> Secondary group: Secondary group will not add automatically when we create the user. We should create seperately
--> we can assign 16 groups to user in linux. ptimary group would be within 16 groups. we can assign 15 groups to the user
+-> we can assign 16 groups to user in linux. primary group would be within 16 groups. we can assign 15 groups to the user
 
 # Permissions to the files and directories
 -> sudo chmod 775 filename  --> To give permission to the files
@@ -250,7 +311,7 @@ read permission=4
 write permission=2
 execute permission=1
 no permission=0
--> sudo chown username filename  --> To add user to the file
+-> sudo chown username filename  --> To add user to the file  [If we want to remove the user to that file just we Change ownership of the file from one user to another use no option is the to delete] 
 -> sudo chgrp groupname filename  --> To add group to the file 
 -> sudo chown -R username filename  --> To add user to the directory
 -> sudo chgrp -R groupname filename  --> To add group to the directory
@@ -272,9 +333,16 @@ umask 023
 # umask permanent change
 vi /etc/bashrc
 
+-rwxrwxr-x
+│ │  │  └─ Others (everyone else): r-x → can read and execute
+│ │  └──── Group:                 rwx → can read, write, execute
+│ └─────── Owner (user):          rwx → can read, write, execute
+└───────── File type:             -   → regular file
+
 # To assign ACL permission to the files and directory
--> setfacl filename   -> To assign ACL permission
--> getfacl filename   -> To check the ACL permission
+setfacl is used to set Access Control Lists (ACLs) on files and directories, allowing more fine-grained permissions than traditional chmod.
+This lets you give specific users or groups custom access to files, beyond owner/group/others.
+
 -> setfacl -m u:username:rwx filename  -> To set user and permission to the file
 -> setfacl -m g:groupname:rwx filename  -> To set group and permission to the file
 -> setfacl -m o::rwx filename  -> To set other and permission to the file
@@ -284,6 +352,7 @@ vi /etc/bashrc
 -> setfacl -x u:username:rwx filename  -> To delete the user acl permission to file
 -> setfacl -x g:groupname:rwx filename  -> To delete the group acl permission to file
 -> setfacl -b filename  -> To remove the all permission
+-> getfacl filename   -> To check the ACL permission
 
 # Booting Process
 -> Bios
@@ -294,76 +363,121 @@ vi /etc/bashrc
 -> Run levels
 
 -> When we power on the system that all the devices is called Bios post process
--> Then we called Bios. Bios stands for Basic input output system here choose "Root disk"
--> Then we called MBR. MBR stands for master boot record it is located to "first sector on disk"
--> Then we called Grab. Grab stands for ground unified boot it is located to /boot/grab/grab.conf
--> Then we called kernal. kernal loads the all kernal modules on kernel will execute the init process
--> init process goes to the /etc/initlab  [To change the init process to permentaly vi /etc/initlab]
--> Here choose the runlevels based on Runlevels
 
-# Runlevels
--> How to check the run level
- who -R [To check the run level]
--> Total run levels '6'
-1) init 0 -> Shutdown
-2) init 1 -> single user
-3) init 2 -> mulituser without NFS
-4) init 3 -> mulituser with NFS and CLI
-5) init 4 -> reserved
-6) init 5 -> mulituser with NFS and GUI
-7) init 6 -> reboot 
+-> Full Form: Basic Input Output System
+-> It checks hardware: keyboard, RAM, hard disk — this is called POST (Power-On Self Test).
+-> Then, it looks for a bootable disk where the OS (Linux) is installed.
 
-# uname
--> uname -s -> To see all kernal name
--> uname -n -> To see host name
--> uname -r -> To see the kernal version
--> uname -v -> To see released date
--> uname -m -> To see the mission code
--> uname -p -> To see the processer code
--> uname -o -> To see the operating system
--> uname -n -> To see the hostaname
+-> Full Form: Master Boot Record
+-> MBR is located in the first sector (512 bytes) of the bootable disk.
+-> MBR loads and passes control to GRUB (or another bootloader).
+
+-> Full Form: GRand Unified Bootloader
+-> GRUB is responsible for Loading the selected OS kernel
+
+-> Kernel initializes hardware drivers and mounts the root filesystem.
+-> Then it starts the init system (like init or systemd).
+
+-> Old systems used init (based on /etc/inittab)
+-> Modern systems use systemd (based on targets)
+-> Systemd replaces traditional runlevels with targets
+
+| Runlevel | Command  | Description                                   |
+| -------- | -------- | --------------------------------------------- |
+| 0        | `init 0` | 🔻 **Shutdown** the system safely             |
+| 1        | `init 1` | 👤 **Single-user mode** (for maintenance)     |
+| 2        | `init 2` | 👥 Multi-user (no networking like NFS)        |
+| 3        | `init 3` | 🌐 Multi-user with **network**, no GUI        |
+| 4        | `init 4` | 🔒 **Unused/Custom** – Reserved for admins    |
+| 5        | `init 5` | 🖥️ Multi-user with **GUI (graphical login)** |
+| 6        | `init 6` | 🔁 **Reboot** the system                      |
+
+
+
+
+| Command    | What It Shows                              | Example Output        |
+| ---------- | ------------------------------------------ | --------------------- |
+| `uname`    | Just the **kernel name**                   | `Linux`               |
+| `uname -s` | **Kernel name**                            | `Linux`               |
+| `uname -n` | **Hostname** of the system                 | `ubuntu-server`       |
+| `uname -r` | **Kernel release version**                 | `5.15.0-105-generic`  |
+| `uname -v` | **Kernel version/build date**              | `#115-Ubuntu SMP...`  |
+| `uname -m` | **Machine hardware name** (architecture)   | `x86_64`              |
+| `uname -p` | **Processor type** (may show `unknown`)    | `x86_64` or `unknown` |
+| `uname -i` | **Hardware platform** (may show `unknown`) | `x86_64` or `unknown` |
+| `uname -o` | **Operating system name**                  | `GNU/Linux`           |
+
 
 
 Top Linux commands that are commonly used in DevOps: ♾
 
-1. ls: List directory contents
-2. cd: Change directory
-3. pwd: Print working directory
-4. mkdir: Create a directory
-5. touch: Create a file
-6. cp: Copy files and directories
-7. mv: Move or rename files and directories
-8. rm: Remove files and directories
-9. find: Search for files and directories
-10. grep: Search for patterns in files
-11. cat: Concatenate and display files
-12. less: View file contents page by page
-13.head: Display the first lines of a file
-14. tail: Display the last lines of a file
-15. vi/vim: Text editor
-16. nano: Text editor
-17. tar: Archive and compress files
-18. gzip: Compress files
-19. gunzip: Decompress files
-20. wget: Download files from the web
-21. curl: Transfer data to or from a server
-22. ssh: Secure shell remote login
-23. scp: Securely copy files between hosts
-24. chmod: Change file permissions
-25. chown: Change file ownership
-26. chgrp: Change group ownership
-27. ps: Display information about running processes
-28. top: Monitor system resources and processes
-29. kill: Terminate processes
-30. df: Display disk space usage
-31. du: Estimate file and directory space usage
-32. free: Display memory usage
-33. uname: Print system information
-34. ifconfig: Configure network interfaces
-35. ping: Test network connectivity
-36. netstat: Network statistics
-37. iptables: Firewall administration
-38. systemctl: Manage system services
-39. journalctl: Query the system journal
-40. crontab: Schedule cron jobs
-41. lsblk: Display the infomation about block devices.
+| #  | Command      | Description                          | Example                                       |
+| -- | ------------ | ------------------------------------ | --------------------------------------------- |
+| 1  | `ls`         | List directory contents              | `ls -l` → Long list with details              |
+| 2  | `cd`         | Change directory                     | `cd /home/user`                               |
+| 3  | `pwd`        | Print current working directory      | `pwd` → `/home/user`                          |
+| 4  | `mkdir`      | Create a new directory               | `mkdir myfolder`                              |
+| 5  | `touch`      | Create an empty file                 | `touch file.txt`                              |
+| 6  | `cp`         | Copy files or folders                | `cp file.txt backup.txt`                      |
+| 7  | `mv`         | Move or rename files or folders      | `mv file.txt folder/` or `mv old.txt new.txt` |
+| 8  | `rm`         | Remove files or folders              | `rm file.txt` or `rm -r folder/`              |
+| 9  | `find`       | Search for files                     | `find / -name file.txt`                       |
+| 10 | `grep`       | Search for text inside files         | `grep "hello" file.txt`                       |
+| 11 | `cat`        | Show file content                    | `cat file.txt`                                |
+| 12 | `less`       | View large files page by page        | `less file.txt` (press `q` to quit)           |
+| 13 | `head`       | Show first 10 lines of a file        | `head file.txt`                               |
+| 14 | `tail`       | Show last 10 lines of a file         | `tail file.txt`                               |
+| 15 | `vi` / `vim` | Open file in text editor             | `vim file.txt`                                |
+| 16 | `nano`       | Easy text editor                     | `nano file.txt`                               |
+| 17 | `tar`        | Archive files                        | `tar -cvf archive.tar myfolder/`              |
+| 18 | `gzip`       | Compress a file                      | `gzip file.txt` → creates `file.txt.gz`       |
+| 19 | `gunzip`     | Decompress a `.gz` file              | `gunzip file.txt.gz`                          |
+| 20 | `wget`       | Download a file from the internet    | `wget https://example.com/file.txt`           |
+| 21 | `curl`       | Download or send data                | `curl -O https://example.com/file.txt`        |
+| 22 | `ssh`        | Login to remote server               | `ssh user@192.168.1.1`                        |
+| 23 | `scp`        | Securely copy files between systems  | `scp file.txt user@host:/path/`               |
+| 24 | `chmod`      | Change file permissions              | `chmod 755 script.sh`                         |
+| 25 | `chown`      | Change file owner                    | `chown user:group file.txt`                   |
+| 26 | `chgrp`      | Change group ownership               | `chgrp developers file.txt`                   |
+| 27 | `ps`         | Show running processes               | `ps aux`                                      |
+| 28 | `top`        | Live view of CPU, memory, processes  | `top` (press `q` to quit)                     |
+| 29 | `kill`       | Terminate a process                  | `kill 1234` (where 1234 is the PID)           |
+| 30 | `df`         | Show disk space usage                | `df -h` (human readable)                      |
+| 31 | `du`         | Show folder size                     | `du -sh myfolder/`                            |
+| 32 | `free`       | Show memory usage                    | `free -h`                                     |
+| 33 | `uname`      | Show system info                     | `uname -a`                                    |
+| 34 | `ifconfig`   | Show IP and network info             | `ifconfig` (older systems)                    |
+| 35 | `ping`       | Test connection to a server          | `ping google.com`                             |
+| 36 | `netstat`    | Show network connections             | `netstat -tuln`                               |
+| 37 | `iptables`   | Manage firewall rules                | `iptables -L`                                 |
+| 38 | `systemctl`  | Manage services (start, stop, etc.)  | `systemctl restart nginx`                     |
+| 39 | `journalctl` | View system logs                     | `journalctl -xe`                              |
+| 40 | `crontab`    | Schedule tasks                       | `crontab -e`                                  |
+| 41 | `lsblk`      | Show block device info (disks, USBs) | `lsblk`                                       |
+
+-> uptime  --> To check the load average  [Checking load average helps you understand how much work (load) your Linux system is handling over time ]
+-> sudo systemctl reboot    --> Reboot the server
+
+**lsblk** = What disks and partitions exist
+**df -h** = How much space is used/available
+
+
+-> Example of How to add cron jobs
+🔧 How to Add the Cron Job
+Open crontab:
+crontab -e
+
+Add your line (example):
+
+* * * * * echo "Updated at $(date)" >> /home/user/manoj.txt
+
+Save and exit (:wq for vi, Ctrl+O + Ctrl+X for nano)
+
+
+| Command                 | What it does                     |
+| ----------------------- | -------------------------------- |
+| `crontab -e`            | Edit your cron jobs              |
+| `crontab -l`            | List your current cron jobs      |
+| `crontab -r`            | Remove your cron jobs            |
+| `sudo crontab -e`       | Edit cron jobs for root user     |
+| `systemctl status cron` | Check if cron service is running |

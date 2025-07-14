@@ -139,7 +139,7 @@ Note:- All Above revert commands will work same
 
 # Git restore
 -> git restore command is used to undo changes in your working directory or staging area (index) in Git.
--> git restore <filename>  --> Remove the data in working directory
+-> git restore <filename>  --> Remove the content in files at working directory
 -> git restore --staged <filename>   --> It take the file from stage area to working directory
 
 

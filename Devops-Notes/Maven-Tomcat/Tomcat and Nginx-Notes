@@ -48,8 +48,12 @@ After login upload your war file manually and deploy
 
 
 # What is Nginx
- It is a web server that accept request via HTTP/s and respond to display website content through storing,
-processing and delivering web pages to users
+NGINX (pronounced "engine-x") is a high-performance, open-source web server that can also be used as:
+
+✅ Reverse proxy
+✅ Load balancer
+✅ Content cache
+✅ API gateway
 
 How to install Nginx
 sudo yum update

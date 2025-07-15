@@ -46,18 +46,93 @@ Registry
 -> When you create the container with custom network then you will go into isolated state
 
 # What is the multi stage build in docker
--> Multi stage build allow you to build your docker container in multiple stages allowing you to copy the artifacts from one to another stage.
--> Multi stages build are used to reduced the size of image [800%]
+A multi-stage build in Docker is a technique that allows you to use multiple FROM statements in a single Dockerfile to separate build-time and run-time environments.
+It helps you:
+✅ Reduce image size
+✅ Improve security (by not including build tools or secrets in final image)
+✅ Separate concerns (build tools vs runtime environment)
+
+# ---------- Stage 1: Build Stage ----------
+FROM node:16 AS builder
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the app code and build it
+COPY . .
+RUN npm run build
+
+# ---------- Stage 2: Production Stage ----------
+FROM node:16-slim
+
+# Set working directory
+WORKDIR /app
+
+# Only copy the necessary files from the build stage
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/server.js ./server.js  # assuming server.js serves the React build
+
+# Install only production dependencies
+RUN npm install --only=production
+
+# Expose the app port
+EXPOSE 3000
+
+# Start the Node.js server
+ENTRYPOINT ["npm", "start"]
+
 
 # What are distro less images in docker
--> Distroless images contain only your application and it's runtime dependencies with very minimum operating system libraries
--> They are very small and light weight images
+Distroless images are Docker images that do not include an operating system package manager or standard Linux distribution tools like:
+bash
+apt / yum
+sh, curl, vi, etc.
+-> It contain only the application and its runtime dependencies
+
+# Stage 1: Build
+FROM node:16 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2: Distroless runtime
+FROM gcr.io/distroless/nodejs:16
+WORKDIR /app
+COPY --from=builder /app .
+CMD ["server.js"]
+
+-> We use distroless images in production to minimize our container attack surface. Since they contain only the runtime, they’re much smaller and more secure than traditional images
+
 
 # Real time challenges with docker
 -> Docker is single daemon process. which can cause the single point of failure. if the docker daemon goes down for some reason all the application are down.
+-> Container Networking Issues
+      Port conflicts on the host
+-> Large Image Sizes
+      ⚠️ Problems: Slower build, push, and pull times
+      🛠️ Solution: Use smaller base images like alpine or distroless
+-> Security Vulnerabilities
+      ⚠️ Problems: Using outdated base images
+      🛠️ Solution: Use tools like Trivy, Docker Scout, or Clair to scan images
+-> Persistent Data Handling
+       ⚠️ Problems: Containers are ephemeral — data is lost if not stored externally
+       🛠️ Solution: Use Docker volumes or bind mounts correctly
 
 # What stpes would you take to secure your container
 -> Ensure that the networking configured properly. This is the one of the most comman reasons for security issues. If required configure custom network and assign them to isolated containers.
+✅ Use official or trusted images from Docker Hub or verified registries.
+✅ Use minimal base images like alpine or distroless to reduce attack surface.
+✅ Scan images regularly for vulnerabilities using tools like:
+Trivy
+Docker Scout
+Clair
 
 # What is the difference between CMD and ENTRYPOINT
 Use CMD when you want a default command that can be easily overridden.

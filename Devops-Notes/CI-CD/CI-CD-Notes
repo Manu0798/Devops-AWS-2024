@@ -15,8 +15,8 @@
                                                                   manual   
 
 # What is continuous Deployment
--> Continuous deployment is the process in CI/CD. Continous deployment is a process of deploying your
-   application or software or kubernetes cluster. it can be deployed automatically whenever developer change the code in git repo.
+-> Continuous deployment is the process in CI/CD. Continous deployment is a process of deploying the
+   application or software automatically whenever developer change the code in git repo.
 -> The final production deployment will be automatically.
   Build -> unit -> merge -> acceptence test -> Deploy to staging -> Deploy production
                                                                 automatically

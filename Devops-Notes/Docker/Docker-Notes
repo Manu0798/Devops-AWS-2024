@@ -35,6 +35,9 @@ Virtualization is a technology that allows a single physical computer (referred 
 # Understanding Virtual Machines (VMs)
 -> A virtual machine (VM) is a software-based computer that uses the physical resources of the host. Each VM operates independently, with its own OS and applications.
 
+# you will watch below video to understand difference between VM and Sever
+-> https://youtu.be/ksDAQX6MbeE?si=FM_VAD9ZLenNs_Fm
+
 # What are the difference between Docker and  virtualization
    Docker                  virtualization           
 1) Size is small         1) Size is big

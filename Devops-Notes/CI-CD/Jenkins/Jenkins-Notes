@@ -1,10 +1,8 @@
 # What is jenkins
-jenkins is a open source automation tool for CI/CD process
-CI = Continuous Integration
-CD = Continuos Deployment
-jenkins is developed using java
-jenkins is a slef containered open source automation server which can be used to automate the all tasks
-related to building,testing,deploying and delivering the software
+-> Jenkins is an open-source automation tool written in Java. It is mainly used for
+  Continuous Integration (CI) and Continuous Delivery/Deployment (CD) — often referred to as CI/CD.
+ -> Jenkins will automate the all tasks related to building, testing, deploying and delivering the software
+
 
 # How to install jenkins
 -> Install java
@@ -77,8 +75,8 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 -> After Install the Java plugins again you go to manage jenkins and go to tools and install java JDK8 and JDK11 and maven.         
 -> later on you create one job
 -> In Build Triggers we have two main options 
-  -> Build perdically [It will build the job based on the crontab eventhough there are no changes in the github repository]
-  -> POLL SCM [It will build the job whenever changes detect in our ghithub repo based on cronjob]
+  -> Build perdically [It will build the job based on the crontab no matter with changes in the github repository]
+  -> POLL SCM [It will build the job whenever changes detect in our ghithub repo]
        * minute[0-59] 
        * hour[1-23]             
        * day of month [1-31]
@@ -249,6 +247,7 @@ How to create master and slave configurion
 
 # In Above we work on master and slave  
 -> Now mostly used docker as a agent instaed of slave nodes in jenkins project setup because in terms of cost, efficiency and spining up and tearing the down the docker containers.
+-> Jenkins can now run builds inside Docker containers
 
 # How to follow the process
 -> First you will create one ubuntu instance
@@ -284,7 +283,7 @@ https://youtu.be/zZfhAXfBvVA?si=hS04cnv5wp_QwKVm
 # What is jenkins pipeline
 -> jenkins pipeline is a automation solution that lets you create simple or complex pipeline
 -> jenkins pipeline is a combination of plugins which automates number of tasks and makes the CI/CD pipeline efficient,
- high in quality and reliable.
+ high quality and reliable.
 
 # Jenkins provides two types of pipeline
 1) Scripted pipeline [it starts with node]
@@ -292,7 +291,7 @@ https://youtu.be/zZfhAXfBvVA?si=hS04cnv5wp_QwKVm
 
 # What is jenkins file
 -> jenkins file is nothing but a simple text file which is used to write jenkins pipeline 
- and automates the continuous integration process
+ and automates the continuous integration and continuos deployment process
 
 
 # Do you want to deploy your files into sonar-qube
@@ -604,7 +603,7 @@ ssh 'jenkins@172.31.1.150'
 -> Source Code managenment
 	1) Git
 -> Build Triggers
-	1) Build perdically [It will build the job whichever time you want]
+	1) Build perdically [It will build the job based on cron job time]
 	2) POLL SCM [It will build the job whenever developer change code in github]
 	3) Build after other projects are build
 -> Build Environment

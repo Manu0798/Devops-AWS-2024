@@ -1,47 +1,97 @@
 1) Can you explain the CICD process in your current project ? or Can you talk about any CICD process that you have implemented ?
-In My current project we are using jenkins for implement the CI/CD process.  Jenkins is chosen for its ability to automate and streamline our build, test, and deployment workflows. When a developer makes changes in the source code, a webhook automatically triggers the declarative pipeline script, which then runs multiple stages sequentially.
+-> Sure! In my current project, I’ve implemented a full CI/CD pipeline using Jenkins Pipelines to automate the build, test, security scan, manual approval, and deployment workflows from source code to production.
+-> We use GitHub as our version control system and Amazon EKS (Elastic Kubernetes Service) as our deployment platform.  
+-> The pipeline consists of multiple stages, each focused on a specific area of quality, security, or deployment. Here's a breakdown of each stage:
 
-We use GitHub as our source code repository and Kubernetes as our deployment platform. 
-Now i am going the explain the stages 
-Coming to the stages
 Stage-1:- (Checkout) It will clone the source code from github repository
 Stage-2:- (Install Package Dependencies) Install the required dependencies needed for the application to run
-Stage-3:- (Unit Test) Unit test case will help us to find out our application running the same which ois suppose to work
+Stage-3:- (Unit Test) Runs unit tests to ensure application logic works as expected
 Stage-4:- (Trivy file system scan) Trivy it will run the mulitple stages. First one it will scan the files and folders means it will scan the manifeast files, yaml file, terraform fiels and other files to detect the vulnerabilities. AS well as if we keep any password and tokens in that files and folder it will let us know to make sure dont expose
 Stage-5:- (OWASP Scan) It will check the dependencies in our dependencies in files like package.json
 Stage-6:- (Code Scan) Scan the source code using SonarQube to identify bugs, vulnerabilities, and code smells.
 Stage-7:- (Build) Build the docker image based on docker file
 Stage-8:- (Image Scan) We are using trivy to scan the docker image to decect the vulnerabilities
-Stage-9:- (Push) Push the docker image into dockerhub where we are using our docker images
+Stage-9:- (Push) Push the docker image into dockerhub where we are Storing our docker images
 Stage-10:- (Update the manifeastfiles)  Update the Docker image reference in the Kubernetes manifest file stored in the repository.
-Stage-11:- (Deploy to EKS) Deploy the updated manifest file to the Amazon EKS (Elastic Kubernetes Service) cluster, ensuring automated deployment to the Kubernetes platform.
+Stage-11:- (Continuous delivery) A manual approval step is configured before deployment 
+          Enables the DevOps or QA team to verify and approve the changes
+Stage-12:- (Deploy to EKS) Deploy the updated manifest file to the Amazon EKS (Elastic Kubernetes Service) cluster kubectl apply, ensuring automated deployment to the Kubernetes platform.
+
+
+# Bitbucket Pipeline
+# Can you explain the CICD process in your current project ? or Can you talk about any CICD process that you have implemented ?
+-> Sure! In my current project, I’ve implemented a full CI/CD pipeline using Bitbucket Pipelines to automate the build, test, security scan, manual approval, and deployment workflows from source code to production.
+We use Bitbucket as our version control system and Amazon EKS (Elastic Kubernetes Service) as our deployment platform.  
+The pipeline consists of multiple stages, each focused on a specific area of quality, security, or deployment. Here's a breakdown of each stage:
+
+Stage-1:- As soon as code is pushed to the release/production branch, the pipeline is triggered and It will install required dependencies and builds the Node.js application using npm
+Stage-2:- (Unit Test) Runs unit tests to ensure application logic works as expected
+Stage-3:- (Trivy file system scan) Trivy it will run the mulitple stages. First one it will scan the files and folders means it will scan the manifeast files, yaml file, terraform fiels and other files to detect the vulnerabilities. AS well as if we keep any password and tokens in that files and folder it will let us know to make sure dont expose
+Stage-4:- (Code Scan) Scan the source code using SonarQube to identify bugs, vulnerabilities, and code smells.
+Stage-5:- (Build) Build the docker image based on docker file
+Stage-6:- (Image Scan) We are using trivy to scan the docker image to decect the vulnerabilities
+Stage-7:- (Continuous delivery) A manual approval step is configured before deployment 
+          Enables the DevOps or QA team to verify and approve the changes.
+Stage-8:- (Push) The approved Docker image is pushed to Amazon ECR
+
+AWS App Runner is configured to automatically pull and deploy the latest image from ECR
+This ensures zero-downtime, scalable deployment of the backend service.
 
 2) What are the different ways to trigger jenkins pipelines ?
 We can trigger the pipeline in differnet ways
 
-  - Poll SCM: Jenkins can periodically check the repository for changes and automatically build if changes are detected. 
-              This can be configured in the "Build Triggers" section of a job.
+  - Poll SCM: Jenkins checks your Git repo accrding cron job time. If there are new commits, it builds. If not, it skips.
+
               
-  - Build Triggers: Jenkins can be configured to use the Git plugin, which allows you to specify a Git repository and branch to build. 
-              The plugin can be configured to automatically build when changes are pushed to the repository.
+  - Build Triggers: Jenkins will build accrding cron job time even if there are no code changes.
               
-  - Webhooks: A webhook can be created in GitHub to notify Jenkins when changes are pushed to the repository. 
-              Jenkins can then automatically build the updated code. This can be set up in the "Build Triggers" section of a job and in the GitHub repository settings.
+  - Webhooks: Webhook will trigger the pipeline when specific even occur in github repo.
 
 
 3) How to backup Jenkins ?
-there are multiple default and configured files and folders in Jenkins that you might want to backup.
-We are using rsync tool to take backup
-rsync menas copy the file from one palce and another but i will the copy only updatefiles not being existing files
-  - Configuration: The `~/.jenkins` folder. To backup the entire directory to another location.
-  
-    - Plugins: Backup the plugins installed in Jenkins by copying the plugins directory located in JENKINS_HOME/plugins to another location.
-    
-    - Jobs: Backup the Jenkins jobs by copying the jobs directory located in JENKINS_HOME/jobs to another location.
-    
-    - User Content: If you have added any custom content, such as build artifacts, scripts, or job configurations, to the Jenkins environment, make sure to backup those as well.
-    
-    - Database Backup: If you are using a database to store information such as build results, you will need to backup the database separately. This typically involves using a database backup tool, such as mysqldump for MySQL, to export the data to another location.
+-> Taking a backup of Jenkins is critical to protect our build configurations, job data, plugins, and credentials.
+-> but it's very easy to back it up manually or with scripts.
+
+-> We mainly need to back up the Jenkins home directory — it contains everything:
+    /var/lib/jenkins/   ← Default Jenkins home
+
+| Folder/File       | What it contains                             |
+| ----------------- | -------------------------------------------- |
+| `jobs/`           | All job configs, history, workspace          |
+| `config.xml`      | Global Jenkins settings                      |
+| `plugins/`        | Installed plugins                            |
+| `users/`          | User accounts                                |
+| `secrets/`        | Credentials and encrypted secrets            |
+| `credentials.xml` | Secure credential storage                    |
+| `nodes/`          | Agent (node) configuration                   |
+| `workspace/`      | Job working directories (can skip if needed) |
+
+# Manually Backup
+-> First we have to stop the server before we are going to take backup
+sudo systemctl stop jenkins    # Stop Jenkins to ensure consistency
+sudo cp -r /var/lib/jenkins /var/backups/jenkins-backup-$(date +%F)
+sudo systemctl start jenkins   # Restart Jenkins after backup
+
+# Automated Backup with a Script
+#!/bin/bash
+
+BACKUP_DIR="/var/backups/jenkins"
+JENKINS_HOME="/var/lib/jenkins"
+DATE=$(date +%F)
+mkdir -p $BACKUP_DIR
+
+tar -czf $BACKUP_DIR/jenkins-backup-$DATE.tar.gz $JENKINS_HOME
+
+-> crontab -e
+-> 0 2 * * * /path/to/jenkins_backup.sh
+
+# How to restore the Jenkins Backup
+-> sudo systemctl stop jenkins
+-> sudo rm -rf /var/lib/jenkins/*
+-> sudo cp -r /path/to/jenkins-backup/* /var/lib/jenkins/
+-> sudo chown -R jenkins:jenkins /var/lib/jenkins
+-> sudo systemctl start jenkins
+
 
 4) How do you store/secure/handle secrets in Jenkins
  There are multiple ways to achieve this, Let me give you a brief explanation of all the posible options.
@@ -56,19 +106,14 @@ rsync menas copy the file from one palce and another but i will the copy only up
 5) What is latest version of Jenkins or which version of Jenkins are you using 
 
 6) What is shared modules in Jenkins ?
-Shared modules in Jenkins refer to a collection of reusable code and resources that can be shared across multiple Jenkins jobs. This allows for easier maintenance, reduced duplication, and improved consistency across multiple build processes. For example, shared modules can be used in cases like:
-        - Libraries: Custom Java libraries, shell scripts, and other resources that can be reused across multiple jobs.
-        
-        - Jenkinsfile: A shared Jenkinsfile can be used to define the build process for multiple jobs, reducing duplication and making it easier to manage the build process for multiple projects.
-        
-        - Plugins: Common plugins can be installed once as a shared module and reused across multiple jobs, reducing the overhead of managing plugins on individual jobs.
-        
-        - Global Variables: Shared global variables can be defined and used across multiple jobs, making it easier to manage common build parameters such as version numbers, artifact repositories, and environment variables.
+-> Shared Modules usually refer to Shared Libraries — a way to reuse pipeline code across multiple Jenkins pipelines or jobs.
+✅ What it does:
+-> Keeps your pipeline logic clean and DRY (Don’t Repeat Yourself)
+-> Lets you write common code (functions, stages, tools) once and reuse it across jobs
+-> Supports versioning, branches, and testing
 
 7) can you use Jenkins to build applications with multiple programming languages using different agents in different stages ?
-Yes, Jenkins can be used to build applications with multiple programming languages by using different build agents in different stages of the build process.
-
-Jenkins supports multiple build agents, which can be used to run build jobs on different platforms and with different configurations. By using different agents in different stages of the build process, you can build applications with multiple programming languages and ensure that the appropriate tools and libraries are available for each language.
+-> Absolutely, YES — Jenkins is perfectly suited to build applications with multiple programming languages using different agents in different stages of a pipeline.
 
 
 8) How to setup auto-scaling group for Jenkins in AWS 
@@ -86,8 +131,10 @@ Click on the "Manage Jenkins" link in the left-side menu.
 Click on the "Manage Plugins" link.
 
 11) What is JNLP and why is it used in Jenkins ?
-In Jenkins, JNLP is used to allow agents (also known as "slave nodes") to be launched and managed remotely by the Jenkins master instance. This allows Jenkins to distribute build tasks to multiple agents, providing scalability and improving performance.
-   Java Network Launch Protocol.
+JNLP stands for Java Network Launch Protocol.
+It’s a protocol used to launch Java applications over a network.
+In Jenkins, JNLP is used to connect agents (slaves) to the Jenkins controller (master).
+
 
 12) What are some of the common plugins that you use in Jenkins
 -> JDK Plugins
@@ -101,19 +148,42 @@ In Jenkins, JNLP is used to allow agents (also known as "slave nodes") to be lau
 -> Scripted pipeline does not have more flexibility compare to declarative pipeline.
 -> Using Declarative pipeline we can easily collaborate with people and everyone can easily understand
 
+| Feature     | Declarative Pipeline         | Scripted Pipeline                        |
+| ----------- | ---------------------------- | ---------------------------------------- |
+| Syntax      | Easy, structured             | Flexible, but more complex (Groovy code) |
+| Readability | Beginner-friendly            | Requires Groovy knowledge                |
+| Use case    | Most CI/CD use cases         | Complex logic, dynamic stages            |
+| Example     | `pipeline { stages { ... }}` | `node { stage('Build') { ... } }`        |
+
+
 14) How do you handle the issues if your worknode is down and not responce
--> I will log into the worker node and try to understand the problems.
--> I will try lookinto the worknode the health. In case CPU and RAM going out of limit or CPU and RAM full you will write python or shell script to send alert then you will take the immediate action and implement the autoscaling to that ec2 instances.
+Go to: Jenkins Dashboard → Manage Jenkins → Manage Nodes
+Look for red 🔴 status or "offline" message
+Hover or click the agent to see offline reason
+
+| Problem                    | Fix                                                       |
+| -------------------------- | --------------------------------------------------------- |
+| ❌ Node is shut down        | Restart the EC2, VM, or container                         |
+| 🔌 Lost network connection | Check network/firewall rules                              |
+| 🔐 SSH/JNLP auth failure   | Reverify credentials, keys, or secrets                    |
+| 🐘 Disk full               | Clear space on the agent machine                          |
+| 🛑 Agent service stopped   | Restart the Jenkins agent process (`java -jar agent.jar`) |
+
 
 15) There is developer who has commit the change in git repo how deos your jenkins notify ?
 -> Using webhooks
 
 16) What type of agnet are you using in jenkins
--> Docker agent because it is light weight and dont need do lots of installization like maven and other tools which we require.
+-> Docker agent because it is light weight and dont need do lots of installization
+
+# What is the difference between Quality Profile and Quality Gate
+-> A Quality Profile in SonarQube defines the set of rules for analyzing code quality, 
+-> while a Quality Gate defines the criteria that a project must meet to pass a quality check.
 
 17) What are some common challenges in CI/CD, and how have you resolved them?
 
 Common challenges include:
+
 - Ensuring consistent environments across development, testing, and production.
 - Managing dependencies and versioning.
 - Handling failed builds or deployments.
@@ -123,9 +193,11 @@ I have resolved these challenges by:
 - Implementing dependency management tools (e.g., Maven, npm).
 - Configuring automated rollbacks and notifications for failed builds or deployments.
 
-# What is the difference between Quality Profile and Quality Gate
--> A Quality Profile in SonarQube defines the set of rules for analyzing code quality, 
--> while a Quality Gate defines the criteria that a project must meet to pass a quality check.
+“While Implemeted CI/CD with Jenkins, we faced real-world challenges like slow pipelines, secret leakage, and flaky tests. 
+We tackled these by optimizing build time using parallel stages, securing secrets using AWS Secrets Manager, and improving code quality with feedback loops in SonarQube. 
+Each issue helped us fine-tune the pipeline for better performance, security, and reliability.”
+
+
 
 
 # 3 tier project link

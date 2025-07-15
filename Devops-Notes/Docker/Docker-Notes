@@ -109,8 +109,8 @@ If it is not work once you will exit from instance and again you will login
 
 # what docker file
 Docker file contains instruction to create an images
-Dockerfile is a file where you provide the steps to build your Docker Image.
-It contains Domain specific language keywords to build the image
+Dockerfile is a file where you provide the steps to build our Docker Image.
+It contains Domain specific language keywords to build our Docker image
 
 # How to create Docker file [Default file name is Dockerfile]
 
@@ -211,7 +211,13 @@ docker volume prune -->  It will delete all unused volumes
 
 # what is the difference between bind mount and volume in docker
 -> Bind Mount [A bind mount is another type of mount, which lets you share a directory from the host's filesystem into the container. When working on an application, you can use a bind mount to mount source code into the container]
+      docker run -v /home/user/data:/app/data nginx
+      Maps your local /home/user/data directory to /app/data in the container
 -> Volume [A volume mount is a great choice when you need somewhere persistent to store your application data]
+        docker volume create mydata
+        docker run -v mydata:/app/data nginx
+        Docker stores mydata under /var/lib/docker/volumes/mydata/_data
+        Safe and controlled by Docker
 
 we will transfer volumes in two ways
 1) Container to Container
@@ -237,7 +243,7 @@ when we installed the docker software by defaultly three networks drivers will a
 3) None driver [No network access to the container]
 above three are defaultly
 4) overlay driver [we will use overlay driver when we have docker swaram]
-5) Macvlan Driver [When we the macvlan driver we will use get mac address]
+5) Macvlan Driver [We will use macvlan driver When we want mac address]
 
 whenever we create the container defaultly it conncet to the bridge driver
 

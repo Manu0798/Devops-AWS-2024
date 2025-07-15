@@ -3,8 +3,8 @@
    automate software delivery by automating tasks like build, Test and deploy
 
 # What is continuous integration
--> Whenever developer changes the code it will automatically build code the with all dependencies and libraries 
-   and automatically test the code
+-> It will automatically build code the with all dependencies and libraries Whenever developer changes the code 
+   and automatically test the code.
   Build -> unit -> merge
 
 # What is continuous Delivery  [Prepod]

@@ -64,5 +64,5 @@ you will enter into containter even below below
 
 
 
-docker stats
+docker stats  --> check if the container used too much CPU, memory, or hit OOM (Out Of Memory):
 docker ps -s

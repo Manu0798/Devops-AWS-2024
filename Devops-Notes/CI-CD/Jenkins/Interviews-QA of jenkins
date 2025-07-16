@@ -37,6 +37,32 @@ Stage-8:- (Push) The approved Docker image is pushed to Amazon ECR
 AWS App Runner is configured to automatically pull and deploy the latest image from ECR
 This ensures zero-downtime, scalable deployment of the backend service.
 
+
+# I have faced some Challenges while i am deploying the backend application in Apprunner services
+-> At Starting stage App Runner used to failed to deploy due to Dockerfile or image issues from ECR 
+   for that we should run the docker image build in our local before push into ECR.
+
+-> Health check used to become failed due to passing incorrect port number and variables.
+    we should make sure weather we are passing correct port number or not before deploy the application into apprunner
+
+-> During high load, App Runner services struggled to scale efficiently then Deployment will fail.
+-> we have to go concurrency settings and increased CPU/memory allocation.
+
+
+I have faced some Challenges while i am deploying the frontend application in amplify services
+Mostly Initial deployments failed due to incorrect build configurations and missing environment variables in the amplify.yml file.
+we should make sure before deploy
+
+Amplify sometimes used cached builds, which led to outdated files being served.
+Cleared build cache manually in Amplify Console and adjusted cache settings in amplify.yml
+
+Frontend failed to connect to backend due to misconfigured endpoints.
+we should make sure to passing backend URL before deploy
+
+Taking time to linking custom domains and automatic SSL provisioning 
+we should ensured DNS records were correctly pointed or not
+
+
 2) What are the different ways to trigger jenkins pipelines ?
 We can trigger the pipeline in differnet ways
 

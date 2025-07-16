@@ -59,7 +59,7 @@ Security	               Higher security (strong isolation)	        Lower securit
 Docker is a cloud based repository where we can share and store images. its like a market place for conatainer
 
 
-# How to install Docker
+# How to install Docker in redhat
 1.sudo yum update -y
 2.sudo yum install docker -y
 3.sudo service docker start
@@ -70,6 +70,31 @@ Docker is a cloud based repository where we can share and store images. its like
 8.sudo service docker status
 9.docker info
 If it is not work once you will exit from instance and again you will login
+
+# How to install using ubuntu
+-> Install Docker using Below script
+# Install Docker
+# Add Docker's official GPG key
+sudo apt-get update -y
+sudo apt-get install ca-certificates curl -y
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo chmod 666 /var/run/docker.sock
+sudo usermod -aG docker jenkins
+sudo usermod -aG docker ubuntu
+sudo systemctl enable docker
+sudo systemctl start docker
+echo "Docker installation complete."
 
 # Docker Terminolory
 1) Docker file 
@@ -148,6 +173,7 @@ docket build -t imagename .  --> To build the image
 docker build -f dockerfilename -t imagename .  --> To build the image file would be in other loaction[pending]
 docker rmi imagename  --> To delete the docker image 
 docker rmi $(docker images -q)  --> To delete all the images
+docker build --no-cache -t myapp:latest .
 
 # What is Docker container
 Docker conatainer is runnable instance of docker image
@@ -168,6 +194,31 @@ docker attach containername
 docker rm containername  --> To delete the container
 docker kill containername  --> To delete forcefully
 docker rm -f $(docker ps -aq) --> To remove all container at a time
+docker stats  --> The docker stats command shows real-time performance metrics (CPU, memory, network, etc.) of running containers
+
+docker ps -s   --> List running containers along with the size of their writable laye
+🧪 Example Output:
+CONTAINER ID   IMAGE        COMMAND       ...   SIZE
+abc123         nginx        "nginx -g…"   ...   1.2MB (virtual 23.5MB)
+1.2MB → Changes made since container started (writable layer)
+23.5MB → Total size including base image
+
+docker ps -as --> check even to stopped container also
+docker top containerID  --> The docker top command shows you the running processes inside a container
+
+-> sudo dmesg | grep -i oom   --> This command searches your system logs for Out Of Memory (OOM) errors using dmesg
+
+🧪 Example Output:
+If your container was killed by OOM, you'd see something like:
+
+Out of memory: Kill process 1234 (node) score 987 or sacrifice child
+Killed process 1234 (node) total-vm:123456kB, anon-rss:65432kB
+This tells you the kernel killed a process (maybe a Docker container) due to low memory.
+
+📌 Tip: To prevent OOM kills in Docker
+Set memory limits when running your containers:
+
+docker run --memory=512m --memory-swap=512m myapp
 
 # what is Docker registry
 Docker registry is a place where we can store our docker images
@@ -297,12 +348,22 @@ docker log containername
 
 # Restart policies
 we have four types of restart policies in container
--> no
--> always
--> unless-stopped
--> on-failure
+-> no  --> Docker won’t restart the container automatically.
+-> always   -->  Always restarts the container, even if you manually stop it.
+-> unless-stopped --> automatically restarts if it crashes — unless you manually stop it.
+-> on-failure  --> Docker to restart a container only when it exits with a non-zero exit code
 
-docker run -d --name containername --restart always imagename sleep 10  -> it will restart the container eveny 10 sece because you have montion always in policy
+✅ What does "non-zero exit code" mean?
+In Linux (and Docker), processes return exit codes when they finish.
+0 means success
+1, 2, 137, etc. mean failure
+
+So:
+If your container exits cleanly (exit code 0): Docker will NOT restart it.
+If your container crashes (exit code ≠ 0): Docker WILL restart it.
+
+docker run -d --name containername --restart always imagename sleep 10  -> it will restart the container eveny 10 sece Always restarts the container, even if you manually stop it.
+docker run -d --name containername --restart unless-stopped imagename  --> It will automatically restart the conatiner if it crashes — unless you manually stop it.
 
 
 

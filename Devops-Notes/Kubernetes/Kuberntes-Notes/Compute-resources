@@ -20,17 +20,82 @@
 -> Not compressible
 -> Terminates
 
+"We have two options under resources in Kubernetes:
+requests – This defines the minimum amount of CPU and memory the container needs. Kubernetes uses this to decide where to schedule the pod. If a node doesn’t have enough available resources as per the requests, the pod won’t be scheduled on that node.
+limits – This defines the maximum amount of CPU and memory the container is allowed to use. If the container tries to use more than this limit:
+For CPU, it gets throttled.
+For memory, it can be killed (OOMKilled)."
 
--> We have two options in resources 
-  1. requersts  [it will schedule the pods in nodes based on how much CPU and memory you have mentioned in requersts if node does not have that CPU and memory it wont schedule the pods]
-  2. limits    [Your container can use only that amount of CPU and memory which you mention in limits]
+✅ In Short:
+Requests = Minimum guaranteed. Used for scheduling.
+Limits = Maximum allowed. Enforced during execution.
+→ You can use more than requests only if the node has spare resources and you're within your limits.
 
-# What is requests
--> Allow you to define an amount of resources(CPU,Memory) you expect your container to use.
--> Next kubernetes schedular will use these resource to aviod scheduling pods on the nodes that does not have enough available resources.
+# Example
+You're running a Node.js application in a pod with the following resource configuration:
 
-# What is Limits
--> Provides the way for us to limit the amount of resources a container can use
+resources:
+  requests:
+    cpu: "200m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+This means:
+The pod requires:
+200 millicores (0.2 CPU cores)
+128 Mi of RAM
+
+The pod is allowed to use up to:
+500 millicores (0.5 CPU cores)
+256 Mi of RAM
+
+💡 Real-Time Behavior:
+➤ Step 1: Pod Scheduling
+Kubernetes checks which node has at least 200m CPU + 128Mi RAM free.
+It schedules the pod on that node.
+The pod is created and starts running.
+
+➤ Step 2: Pod is Idle (Uses 50m CPU + 60Mi RAM)
+Everything is fine — it’s using less than the request.
+It has guaranteed access to 200m CPU and 128Mi RAM even if the node gets crowded.
+
+➤ Step 3: Traffic Increases (Uses 400m CPU + 200Mi RAM)
+Pod is now using more than it requested, but still under the limit.
+It works fine — no throttling or killing.
+This is possible because the node has enough free resources at runtime.
+
+➤ Step 4: Pod Exceeds Limit (Uses 600m CPU or 300Mi RAM)
+Kubernetes enforces limits:
+CPU: Container is throttled — it slows down.
+Memory: Container is killed (OOMKilled) — pod may restart.
+
+📌 Observing It in Action
+You can try this yourself using a test pod and the stress tool:
+
+1. Create a test pod:
+kubectl run stress-pod --image=alpine --restart=Never -it -- \
+  sh -c "apk add --no-cache stress && stress --cpu 2 --vm 1 --vm-bytes 300M --timeout 30s"
+
+2. Apply a resource limit (or in a deployment YAML):
+resources:
+  requests:
+    memory: "100Mi"
+    cpu: "100m"
+  limits:
+    memory: "200Mi"
+    cpu: "300m"
+
+3. Check what happens:
+It will likely be OOMKilled, because it's asking for 300M RAM but limit is only 200Mi.
+
+4. Watch with:
+kubectl get pods
+kubectl describe pod stress-pod
+
+
+
 
 CPU measures in cores
   250m -> 250 milliCPus  -> 0.25 core

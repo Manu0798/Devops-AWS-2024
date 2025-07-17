@@ -120,7 +120,7 @@ Kubernets Architecture
 -> Schedular will schedule the pods to workernode with the help of Kubelet
 
 # What is Control manager
--> The Controller Manager monitors the current state of your cluster through the API Server and makes appropriate changes to keep the application running by ensuring sufficient Pods are in a healthy state.
+-> The Controller Manager monitors the current state of your cluster through the API Server and Makes sure the desired state is maintained
 we have servel comtrollers in k8s
 -> Node Controller
 -> Replication Controller
@@ -309,7 +309,6 @@ Api server stores this info in etcd
 -> After execute the manifest file that request will go to API server
 -> API server validate the request and store that pod request in ETCD
 -> Scheduler will find the unschedule pods in ETCD and schedule that pods to a suitable Node according to the resources
--> Controller Manager Ensures the system moves towards the desired state. Detects if additional actions are needed (e.g., create ReplicaSets, replace failed Pods).
 -> Once the Scheduler assigns a Pod to a specific Node, that Pod's specification (its details) is stored in the Kubernetes API Server with the assigned Node name.
 -> kubelet
      Pulls the Pod spec from the API Server.
@@ -323,6 +322,8 @@ Api server stores this info in etcd
 -> Kubeproxy
    Maintains network connectivity and load balancing.
    Ensures the Pod can send/receive traffic through Kubernetes Services.
+
+-> Controller Manager Ensures the system moves towards the desired state. Detects if additional actions are needed (e.g., create ReplicaSets, replace failed Pods).
 
 after the containers are successfully started, the Kubelet sends a status update back to the API Server, and that’s how you see the final result when you check your Pod’s status.
 he Kubelet continuously reports back to the API Server with the Pod’s current status (e.g., Pending, Running, CrashLoopBackOff, etc.).
@@ -392,7 +393,7 @@ we have three types of Services
 -> If we use cluster ip type in service manifest file. We can access only within cluster
 
 # Nodeport Ip
--> If we use Nodeport type in service manifest file. we can access inside and outside of the cluster
+-> If we use Nodeport type in service manifest file. we can access the pod inside and outside of the cluster with static port
 -> We can access our service using workernode public Ip and port number
 -> When we execute the service manifest file using Nodeport then we will get one random port number
 -> [Port number range in K8S is 30000 to 32767]

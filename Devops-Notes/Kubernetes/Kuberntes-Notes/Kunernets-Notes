@@ -406,12 +406,37 @@ we have three types of Services
 NodePort exposes a service on a static port on each node's IP, allowing external access to the service, while LoadBalancer automatically provisions an external load balancer to distribute traffic across multiple nodes or pods, providing a more robust and scalable solution for external access.
 
 # ExternalName Service
--> This type of service maps a service to an external DNS name. 
--> It allows you access the Kubernetes pods outside of the cluster using a DNS name.
+An ExternalName service allows a Kubernetes service to act as an alias to an external DNS name (e.g., an external database, API, or third-party service).
+it returns a CNAME record pointing to the external host.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-mysql
+spec:
+  type: ExternalName
+  externalName: mydb.production.example.com  # 👈 External DNS
+
 
 # Headless Service
--> This type of service is used when you don't need a single, stable IP address for accessing the service. 
--> It returns the IP addresses of individual pods backing the service instead of a single cluster IP.
+->  Headless service (clusterIP: None) is needed so each pod gets a stable DNS name, 
+    e.g., mongo-0.mongo.default.svc.cluster.local
+-> It is mostly used for stateful application, where the clients need to connect directly to specific pods.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  clusterIP: None  # headless
+  selector:
+    app: mongo
+  ports:
+  - port: 27017
+    targetPort: 27017
+
+
+
 
 # What are the difference between pod manifest file and service manifest file
 Pod manifest file having lables

@@ -1,4 +1,4 @@
-# Kubernetes network polic
+# Kubernetes network police
 -> A NetworkPolicy in Kubernetes is a security rule that controls how pods communicate with each other and with external endpoints over the network.
 -> It works like a firewall for pods — defining which pod can talk to which, on which port, and using which protocol (TCP/UDP).
 

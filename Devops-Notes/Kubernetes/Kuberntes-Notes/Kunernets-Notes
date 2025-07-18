@@ -684,3 +684,16 @@ suppose if you want to install metric beat to see the metric of application then
 -> helm install metricbeat elastic/metricbeat -n efk  --> To install metric beat
 -> If you want to see the logs in terminal you will use the below commands
 -> kubelet logs pod <podname>  --> To see logs on pod name
+
+
+# Kubernetes Workload Types
+
+| Workload Type   | Description                                                                | Use Case Example                          |
+| --------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
+| **Pod**         | The basic unit. A group of one or more containers.                         | Not used alone in production (no restart) |
+| **Deployment**  | Manages **stateless** applications. Ensures the desired number of pods.    | Web servers, APIs                         |
+| **ReplicaSet**  | Ensures a specific number of pod replicas. Used internally by Deployments. | Rarely used directly                      |
+| **StatefulSet** | Manages **stateful** applications. Gives pods stable identity & storage.   | Databases, Kafka, Zookeeper               |
+| **DaemonSet**   | Ensures a pod runs **on all (or selected) nodes**.                         | Log agents, monitoring agents             |
+| **Job**         | Creates pods that run **once until success**, then stop.                   | Data processing, backups, one-time tasks  |
+| **CronJob**     | Runs jobs on a **schedule** (like Linux `cron`).                           | Scheduled reports, periodic cleanups      |

@@ -1,10 +1,123 @@
 # What is kubernetes Statefulset
--> StatefulSet is the workload API object used to manage stateful applications.
-->  StatefulSets are particularly useful for applications that require unique network identifiers, stable storage, and ordered deployment and scaling.
--> When you delete the pod in statefulset then it will delete the whichever pod cretead latestly
--> If you want to host the database in kubernetes then you will use statefulset
--> We have to give clusterIP to statefulset because we cant expose our database to everyone
+-> A StatefulSet is a Kubernetes workload API object used to manage stateful applications — that is, applications that require:
+-> Stable, unique network identities
+-> Stable storage (persistent volumes)
+-> Ordered deployment, scaling, and deletion
 
+
+🔁 Difference Between StatefulSet and Deployment
+
+| Feature          | Deployment                 | StatefulSet                            |
+| ---------------- | -------------------------- | -------------------------------------- |
+| Pod Name         | Random (`pod-xyz-abc`)     | Stable and predictable (`pod-name-0`)  |
+| Storage          | Shared or Ephemeral        | Stable and Persistent (via PVCs)       |
+| Pod Identity     | Not guaranteed             | Stable network identity (`pod-name-0`) |
+| Start/Stop Order | Not guaranteed             | Ordered start/stop                     |
+| Use Case         | Stateless apps (e.g., web) | Stateful apps (e.g., databases)        |
+
+
+🧠 Key Features of StatefulSet
+Stable Pod Names:
+Pods are created with predictable names like:
+mysql-0, mysql-1, mysql-2
+
+Stable Storage:
+Each pod gets its own PersistentVolumeClaim (PVC), and that volume sticks even if the pod is deleted or rescheduled.
+
+Ordered Deployment & Scaling:
+Pods are created, updated, and deleted one at a time in a defined order.
+
+Sticky Identity:
+The pod’s DNS and storage identity does not change across restarts.
+
+
+
+
+🧪 Real-World Example: MongoDB StatefulSet on AWS (with EBS)
+
+1. StorageClass for EBS
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp3
+  fsType: ext4
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+
+2. Headless Service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  clusterIP: None  # headless
+  selector:
+    app: mongo
+  ports:
+  - port: 27017
+    targetPort: 27017
+
+🔹 Headless service (clusterIP: None) is needed so each pod gets a stable DNS name, e.g., mongo-0.mongo.default.svc.cluster.local
+
+3. StatefulSet for MongoDB
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+spec:
+  serviceName: "mongo"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:4.4
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: ebs-sc
+      resources:
+        requests:
+          storage: 10Gi
+
+
+Note:
+✅ Correct! When using a StorageClass with a StatefulSet in Kubernetes, you do NOT need to manually create PV or PVC.
+
+🔄 Here's why:
+The volumeClaimTemplates section in the StatefulSet automatically creates a PersistentVolumeClaim (PVC) for each pod.
+
+The PVC is dynamically provisioned using the specified StorageClass, which in turn creates the PersistentVolume (PV) using your cloud provider’s backend (like AWS EBS).
+
+kubectl apply -f storageclass.yaml
+kubectl apply -f mongo-headless-svc.yaml
+kubectl apply -f mongo-statefulset.yaml
+
+
+
+
+
+# Extract Data
 what are the difference between stateful and deployment
 statefulset
 -> When we delete the pod in statefulset then another pod will create on same name

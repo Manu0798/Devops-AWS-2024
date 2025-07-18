@@ -1,3 +1,86 @@
+# Kubernetes network polic
+-> A NetworkPolicy in Kubernetes is a security rule that controls how pods communicate with each other and with external endpoints over the network.
+-> It works like a firewall for pods — defining which pod can talk to which, on which port, and using which protocol (TCP/UDP).
+
+
+📦 Why Use NetworkPolicy?
+By default in Kubernetes:
+All pods can talk to each other (no restrictions).
+
+With NetworkPolicy:
+You can restrict traffic between pods based on:
+Pod labels
+Namespaces
+IP blocks
+Ports and protocols
+
+📘 Example: Only allow traffic to app: web from app: backend
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-web
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: web    # Target pods
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: backend    # Only allow these pods
+    ports:
+    - protocol: TCP
+      port: 80
+  policyTypes:
+  - Ingress
+
+📌 This means:
+Only pods with label app: backend can send incoming traffic to app: web pods on port 80.
+All other traffic is denied.
+
+
+
+📁 YAML: Backend pod can only talk to MongoDB on port 27017
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-egress-to-mongodb
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: backend       # Select backend pods
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: mongodb   # Only allow to pods with this label
+    ports:
+    - protocol: TCP
+      port: 27017        # MongoDB default port
+
+
+This file allows only the backend pod to send outgoing traffic to MongoDB on port 27017 (MongoDB's default port), and blocks all other outgoing traffic from the backend pod
+
+
+🧠 Key Concepts
+
+| Term                | Description                                                       |
+| ------------------- | ----------------------------------------------------------------- |
+| `podSelector`       | Selects **which pods the policy applies to** (target pods).       |
+| `ingress`           | Controls **incoming traffic** to the selected pods.               |
+| `egress`            | Controls **outgoing traffic** from the selected pods.             |
+| `namespaceSelector` | Allows filtering traffic based on **namespaces**.                 |
+| `policyTypes`       | Specifies whether the policy is for `Ingress`, `Egress`, or both. |
+
+
+
+
+
 # Kubernetes network policy
 -> Network Policies are a feature that allows you to control the traffic flow between different pods and services within your cluster. 
 -> They provide a way to specify how groups of pods are allowed to communicate with each other and with other network endpoints.

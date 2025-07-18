@@ -1,4 +1,127 @@
 # What is ingress
+-> Ingress is an API object that provides external access to service within cluster - typically HTTP and HTTPS traffic.
+-> Purpose: Routes traffic from outside the cluster to internal services based on rules (host, path, etc.).
+
+
+✅ Why Do We Use Ingress?
+Without Ingress:
+You expose each service with a NodePort or LoadBalancer, which is costly and not scalable.
+
+With Ingress:
+You can expose multiple services over a single IP/domain with different paths or subdomains.
+
+
+🧱 Ingress Architecture
+-> Ingress Resource: Defines routing rules (e.g., /app1 → Service A, /app2 → Service B).
+-> Ingress Controller: A pod running inside the cluster that reads the Ingress rules and configures a reverse proxy (like NGINX or ALB) to handle the traffic.
+
+🔁 How Ingress Works (Simplified Flow)
+-> Usersends request to https://yourdomain.com/app1.
+-> The request hits the Ingress Controller (e.g., NGINX, AWS ALB).
+-> Controller checks the Ingress rules.
+-> Forwards the request to the correct Kubernetes Service, which forwards to the right Pod.
+
+
+| Ingress Controller | Description                                       |
+| ------------------ | ------------------------------------------------- |
+| **NGINX**          | Most popular, flexible, and easy to use           |
+| **AWS ALB**        | AWS native, works with ALB Ingress                |
+| **Traefik**        | Dynamic configuration, suitable for microservices |
+| **HAProxy**        | High performance, advanced features               |
+
+
+💡 Real-Time Use Case
+You host:
+/ → website frontend (React app)
+/api → Node.js backend service
+/admin → Admin dashboard
+👉 You use Ingress to route them all via one domain (mycompany.com) with clean URLs.
+
+
+
+🧭 Difference Between Path-Based and Host-Based Routing
+
+| Feature             | **Path-Based Routing**                                           | **Host-Based Routing**                                                 |
+| ------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **What it checks?** | The **URL path** after the domain name                           | The **host/domain name** in the request (e.g., `Host` header)          |
+| **Routing Example** | `example.com/app1` → Service A<br>`example.com/app2` → Service B | `app1.example.com` → Service A<br>`app2.example.com` → Service B       |
+| **When to use?**    | When using **a single domain** to serve multiple apps            | When using **different subdomains** for different apps                 |
+| **Ingress Rule**    | Uses `path:` key under `http:`                                   | Uses `host:` key at the rule level                                     |
+| **DNS Setup**       | Only one domain (e.g., `example.com`) is required                | Each subdomain (e.g., `app1.example.com`) must be mapped to ingress IP |
+
+
+
+📌 Path-Based Routing – Example
+rules:
+- host: example.com
+  http:
+    paths:
+    - path: /app1
+      pathType: Prefix
+      backend:
+        service:
+          name: app1-service
+          port:
+            number: 80
+    - path: /app2
+      pathType: Prefix
+      backend:
+        service:
+          name: app2-service
+          port:
+            number: 80
+
+📥 Requests:
+example.com/app1 → app1-service
+example.com/app2 → app2-service
+
+
+
+📌 Host-Based Routing – Example
+
+rules:
+- host: app1.example.com
+  http:
+    paths:
+    - path: /
+      pathType: Prefix
+      backend:
+        service:
+          name: app1-service
+          port:
+            number: 80
+- host: app2.example.com
+  http:
+    paths:
+    - path: /
+      pathType: Prefix
+      backend:
+        service:
+          name: app2-service
+          port:
+            number: 80
+
+📥 Requests:
+app1.example.com → app1-service
+app2.example.com → app2-service
+
+
+✅ Summary
+
+| Use Case                        | Use Path-Based Routing | Use Host-Based Routing      |
+| ------------------------------- | ---------------------- | --------------------------- |
+| Want to use **one domain** only | ✅ Yes                  | ❌ Not ideal                 |
+| Want to use **subdomains**      | ❌ Not needed           | ✅ Yes                       |
+| DNS flexibility not available   | ✅ Yes                  | ❌ Needs subdomain DNS setup |
+
+
+
+
+
+
+
+# Extract data if you need you can read
+# What is ingress
 -> Ingress is an API object that provides external access to service within cluster.
 -> Purpose: Routes traffic from outside the cluster to internal services based on rules (host, path, etc.).
 -> It acts as a layer 7 (application layer) load balancer, allowing external traffic to be routed to different services based on HTTP/HTTPS routes and rules

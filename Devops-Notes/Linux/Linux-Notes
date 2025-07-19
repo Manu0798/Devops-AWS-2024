@@ -439,8 +439,9 @@ Top Linux commands that are commonly used in DevOps: ♾
 | 24 | `chmod`      | Change file permissions              | `chmod 755 script.sh`                         |
 | 25 | `chown`      | Change file owner                    | `chown user:group file.txt`                   |
 | 26 | `chgrp`      | Change group ownership               | `chgrp developers file.txt`                   |
-| 27 | `ps`         | Show running processes               | `ps aux`                                      |
-| 28 | `top`        | Live view of CPU, memory, processes  | `top` (press `q` to quit)                     |
+| 27 | `ps`         | Show running processes               | `ps aux`    --> It shows current running process, dont show update                                  |
+| 28 | `top`        | Live view of CPU, memory, processes  | `top` (press `q` to quit)  --> Shows real-time updating view of system processes, sort cpu, memory
+|       htop        Uses colors, shows bars for CPU, memory, and swap
 | 29 | `kill`       | Terminate a process                  | `kill 1234` (where 1234 is the PID)           |
 | 30 | `df`         | Show disk space usage                | `df -h` (human readable)                      |
 | 31 | `du`         | Show folder size                     | `du -sh myfolder/`                            |
@@ -481,3 +482,33 @@ Save and exit (:wq for vi, Ctrl+O + Ctrl+X for nano)
 | `crontab -r`            | Remove your cron jobs            |
 | `sudo crontab -e`       | Edit cron jobs for root user     |
 | `systemctl status cron` | Check if cron service is running |
+
+
+To schedule a cron job to run every 15 minutes, you can add the following line to your crontab file:
+
+crontab -e
+
+*/15 * * * * echo "Updated at $(date)" >> /home/user/manoj.txt
+
+🔍 Explanation:
+*/15  -> Every 15 minutes (0, 15, 30, 45)
+*     -> Every hour
+*     -> Every day of the month
+*     -> Every month
+*     -> Every day of the week
+
+
+🕒 What does it mean?
+This will run the command once every hour at 10 minutes past the hour.
+
+✅ Example:
+10 * * * * /home/ubuntu/script.sh
+
+This will run at:
+01:10
+02:10
+03:10
+...
+23:10
+
+

@@ -605,3 +605,53 @@ Bind it to a ServiceAccount and role using RoleBinding (or ClusterRoleBinding).
 
 # What are StorageClasses in Kubernetes?
 -> A StorageClass in Kubernetes defines how storage is provisioned dynamically for PersistentVolumeClaims (PVCs).
+
+# A pod is CrashLoopBackOff. How do you troubleshoot?
+-> I do run the kubectl describe pod <pod-name> -n <namespace> to idenitfy the error, mostly we get this CrashLoopBackOff due to 
+   Non-zero exit code
+   Image pulling issues
+   Probe failures
+   Volume mount or permission errors
+
+
+# Your deployment is not scaling. What might be the reasons?
+-> Resource limits on the nodes
+-> Insufficient CPU/memory
+-> Misconfigured HPA
+
+
+# Network connectivity between pods is failing. How do you debug?
+-> Check CNI plugin status
+-> Ensure all pods are in same network space
+-> Try to Ping or Curl Between Pods
+   -> kubectl exec -it <source-pod> -n <namespace> -- ping <destination-pod-IP>
+   -> kubectl exec -it <source-pod> -n <namespace> -- curl http://<destination-pod-IP>:<port>
+
+#  Application is slow in Kubernetes. What areas do you check?
+-> Pod resource limits and usage
+-> Node health (kubectl get nodes)
+-> Network latency (Istio, Cilium metrics)
+-> Persistent storage I/O
+-> Liveness/Readiness probes delaying traffic
+
+
+# How would you implement blue-green deployment in Kubernetes?
+Answer: Deploy both versions (blue and green) and use Services or Ingress to switch traffic. Can also use labels and selectors dynamically.
+
+# How do you upgrade a Kubernetes cluster?
+-> Monitor the logs and health post-upgrade
+-> Use kubeadm upgrade plan (if using kubeadm)
+-> Upgrade control plane first
+-> Upgrade worker nodes one-by-one
+
+# ETCD is unhealthy, and API server is timing out. Steps to recover?
+-> Check etcd logs
+-> Verify disk/storage health
+-> Restore from etcd backup (etcdctl snapshot restore)
+-> Restart control plane components
+
+# You see high CPU usage in kubelet. What could be wrong?
+-> Too many pods on a node
+-> Frequent log rotation
+-> Heavy resource metrics scraping (Prometheus)
+-> Check logs, garbage collection, and kubelet flags

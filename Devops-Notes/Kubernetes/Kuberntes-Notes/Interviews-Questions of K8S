@@ -1,8 +1,5 @@
 # What is kubernetes
--> k8s is an container orchestration platform
--> k8s is an opensource software
--> k8s is manage the docker container
--> k8s will take care of container deployment, scalling, descalling and container load balancer
+-> Kubernetes is a powerful open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications.
 -> k8s is not replacemt of docker
 -> k8s is replacement of docker-swarm
 -> k8s is developed by google and donted CNCF in 2014 
@@ -183,11 +180,12 @@ Note: we can consider namespace as a java package
 NodePort exposes a service on a static port on each node's IP, allowing external access to the service, while LoadBalancer automatically provisions an external load balancer to distribute traffic across multiple nodes or pods, providing a more robust and scalable solution for external access.
 
 # What is ExternalName Service
--> If we use ExternalName Service we can access the pod outside of the cluster by using DNS name
+-> If we use ExternalName Service we can access the pod outside of the cluster by using External DNS name
 
 # What is Headless Service
--> This type service is used when you dont need single, stable Ip address for access the service.
--> It returns the IP address of individual pods backing the service insted of single cluster Ip.
+->  Headless service (clusterIP: None) is needed so each pod gets a stable DNS name, 
+    e.g., mongo-0.mongo.default.svc.cluster.local
+-> It is mostly used for stateful application, where the clients need to connect directly to specific pods.
 
 # What are the difference between pod manifest file and service manifest file
 -> Pod manifest file having lables
@@ -199,6 +197,7 @@ NodePort exposes a service on a static port on each node's IP, allowing external
 -> We can create the mulitple pods
 -> We can achive high availablity using replication controller
    Note:High avaliablity means always our application should be accessable
+-> kubectl scale deployment my-deployment --replicas=3
 
 # What is Replication Set
 -> It is next generation of Replication controller
@@ -347,28 +346,33 @@ Note:Prometheus will collect the data and Prometheus will give the data to grafa
 
 # What is ingress
 -> Ingress is an API object that provides external access to service within cluster.
--> It acts as a layer 7 (application layer) load balancer, allowing external traffic to be routed to different services based on HTTP/HTTPS routes and rules
+-> It route the traffic from outside of cluster to internal service based on path and host
 
+-> Path base routing  --> we use single domain name to server the multiple apps
+-> Host base routing  --> we use different sub-domain names to server the multiple apps
 
 # what is the difference between job and cronjob in kubernetes
 While Jobs are designed for running one-time or on-demand tasks, CronJobs are used for executing tasks at regular intervals
 
 
 # What is network policy in k8s
--> Network Policies are a feature that allows you to control the traffic flow between different pods and services within your cluster. 
--> They provide a way to specify how groups of pods are allowed to communicate with each other and with other network endpoints.
--> Pods become isolated by using network policy
+-> Network policy in kubeentes is the security rule that controls how the pods can communicate with each other
+-> It works as firewall of pod define the which pod to take to which on which port and usgin which protocal (TCP/UDP)
 
-# How many types of network policies
--> We have two types of network policies
-   -> Ingress network policy
-   -> Egress network policy
+📦 Why Use NetworkPolicy?
+By default in Kubernetes:
+All pods can talk to each other (no restrictions).
 
-# What is Ingress network policy  [It works like a inbound rule]
--> Ingress is a API object that helps developers expose their application and manage external access by providing https routing rules to the service within cluster.
+With NetworkPolicy:
+You can restrict traffic between pods based on:
+Pod labels
+Namespaces
+IP blocks
+Ports and protocols
 
-# What is Egress network policy  [It works like a outbound rule]
--> Egress refers to the process of traffic leaving the kubernets cluster and going to an external destination.
+-> Ingress  --> It control the internal traffic to selected pods
+-> Egress   --> It control the external traffic from selected pods
+
 
 
 # What is RBAC
@@ -383,105 +387,151 @@ While Jobs are designed for running one-time or on-demand tasks, CronJobs are us
 
 
 # What is volumes in Kubernets
-A volume's lifecycle is tied to the pod, not the individual containers. This means if a container crashes and is restarted, the volume will still retain its data.
+A volume's lifecycle is tied to the pod, not the individual containers. This means even if a container crashes and is restarted, the volume will still retain its data.
 
 # Types of Volumes:
-Kubernetes supports various types of volumes, each with its own use cases, including:
--> emptyDir: A temporary directory that shares storage among containers in a pod.
--> hostPath: Mounts a file or directory from the host node’s filesystem into a pod.
--> persistentVolumeClaim (PVC): A request for storage that dynamically provisions a persistent volume (PV) from a storage class.
--> nfs, awsElasticBlockStore, gcePersistentDisk, etc.: Integrate with external storage systems.
+-> emptydir  --> emptyDir creates a temporary storage shared across containers in the same Pod.
+-> Host      --> It mount the file and folder from host into pod
+-> Persistance volume claim  --> Use persistance volume to request the storage from external system resource like EBS, EFS
+-> NFS  --> Connect the NFS storage to share the data between pods
+-> Config/Secret  --> Mount the config and secret as a file in container
 
-# What emptydir
--> When we use the emptydir volume type even if we restart and delete the pod we will lose the data assositate with pod.
--> We cant persistence and share data to multiple nodes    not recommand
+What is emptydir
+-> When we use emptydir we can store the data temporary across the container in pod
+-> If pod will kill or crash we will deprived the data
+-> It won't the support the persistence volume and share the data between across pods
 
-# What hostpath
--> When we use the hostpath volume type even if we restart and delete the pod we will retrive the data assositate with pod. [means data will store in node whereever pod is running]
--> We cant persistence and share data to multiple nodes [It will save data in single node if that node will delete we will lose the data]  not recommand
+What is Host
+-> When use the Host we can mount the file and folder from host into pod
+-> we can ratain the data even if pod delete and restaed because it will store in node
+-> It won't the support the persistence volume and share the data between across pods
 
-Note: So far we dicussed above volume are ephemeral because if pod or nodes gets deleted or restared the data assosiate with pods those volumes gets deleted.
+Above Two volume are epmerial it is only used for temporary purpose
 
-# What Persistene volumes
--> When we use the PVC volume type even if we restart and delete the pod we will retrive the data assositate with pod. [means data will store in node whereever pod is running]
--> We can persistence and share data to multiple nodes   [It will save data in multiple node if that node will delete we will retrive the data from another node]  recommand
+What is persistence volume claim
+-> The persistence volume claim is used to store the data in persistence block like EBS, EFS
+-> we can abale to retain the data even if pod or node restarted and crash
+-> It support to persist the data and share the data across the multiple pods 
 
+We have components in persistence
+-> persistence volume
+-> persistence volume claim
+-> Storage Class
 
-# Kuberbets offers three components to persistence the data
--> Persistence volumes
--> Persistence volume claims
--> Storage class
+What is persistence volume
+-> A PersistentVolume is a piece of storage in the Kubernetes cluster, It has been provisined by administator or dynamically provisioned using stoage class
 
-# What is Persistence volumes(PV)
--> A PersistentVolume is a piece of storage in the Kubernetes cluster that has been provisioned by an administrator or dynamically provisioned using stoage class
+What is persistence volume claim
+-> The persistence volume claim is the request for storage by user or developer
 
-# What is Persistence volume claims
--> A PersistentVolumeClaim is a request for storage by a user or developer.
--> It is a resource object in the Kubernetes API that allows a Pod to access a piece of storage from a PersistentVolume (PV).
+What is Storage class
+-> A StorageClass in Kubernetes defines how storage is provisioned dynamically for PersistentVolume(PV).
+-> Automatically creates PVs when PVCs are requested.
 
-# In persistence volume claim we have different access modes
--> ReadWriteMany   -> Which means this volume can be mounted as read write by many nodes  [If you are running in different node this is best option for you]
--> ReadWriteOnce   -> Which means all your pods are running in single node This is the best option [But you are pods running in different nodes they cant use this volumes
--> ReadOnlyOnce   ->  when use both ReadOnlyOnc and ReadOnlyMany you cant write the data in persistence volumes [it is just read only mode]
--> ReadOnlyMany   -> 
--> ReadWriteOncePod  -> When we use this access mode this volume can be mounted as read write once by single pod [ we will this mode to ensure only one pod accross the whole cluster can read or write]
+In Persistent Volume Claims (PVC), Kubernetes Supports These Access Modes:
+ReadWriteOnce (RWO) 
+-> It mount the volume as read, write by single node
+-> Pod should always running in same node, we cant access if pod is running at different node
+-> Most AWS EBS volumes use this access mode.
 
-# What is storage class 
--> How the pvs should be created dynamically
+ReadWriteMany (RWX)
+-> It mount the voume as read, write by mulitple node at sane time
+-> We can share the data accross the mulitple pods on different node
+-> Most AWS EFS, NFS volumes use this access mode.
 
-# Persistence  Volumes we can create two ways 
--> EBS will support only ReadWriteOnce   
--> EFS will support only ReadWriteMany 
+ReadOnlyMany (ROM)
+-> It mount the volume as read by multiple nodes at same time
+-> We can use to server for static content (like config, images, etc.).
 
-# What is the difference Between EBS and EFS
--> EBS will support only ReadWriteOnce means EBS volume can be mounted by single pod on one node at a time 
--> EFS will support only ReadWriteMany means EFS volume can be mounted by multiple pods across multiple nodes simultaneously
+ReadWriteOncePod (RWO-Pod)
+-> The volume can be mounted as read-write by a single pod only, even if there are multiple pods on the same node.
+✅ Useful for strong isolation — only one pod in the entire cluster can read/write.
 
-# Why Use Volumes?
--> Data Persistence: Store data that needs to persist beyond the lifecycle of a pod.
--> Shared Storage: Enable multiple containers within a pod to share data.
--> Decoupling Storage from Pods: Manage storage independently from the pod lifecycle, making it easier to handle data.
+| **Concept**         | **Option**             | **What It Means**                                                                  |
+| ------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| `volumeBindingMode` | `Immediate`            | PV is bound to PVC **immediately** after PVC creation                              |
+|                     | `WaitForFirstConsumer` | PV is bound **only when a Pod is scheduled** using the PVC                         |
+| `reclaimPolicy`     | `Delete`               | When PVC is deleted, the **PV and storage are also deleted**                       |
+|                     | `Retain`               | When PVC is deleted, the **PV is retained** (you must manually delete or reuse it) |
+
 
 
 # What is kubernetes Statefulset
--> StatefulSet is the workload API object used to manage stateful applications.
--> StatefulSets are particularly useful for applications that require unique network identifiers, stable storage, and ordered deployment and scaling.
--> When you delete the pod in statefulset then it will delete the whichever pod cretead latestly
--> If you want to host the database in kubernetes then you will use statefulset
--> We have to give clusterIP to statefulset because we cant expose our database to everyone
+-> StatefulSet in kubernetes is the workload API object used to manage stateful applications. That application is required
+-> Stable, Unique name and network identities
+-> Stable storage like persistence volume claim
+-> Order deployment, scaling and deletion
 
-# What are the difference between stateful and deployment
-statefulset
--> When we delete the pod in statefulset then another pod will create on same name
--> we need persistance volume and persistance volumeclaim to create the statefulset
-Deployment
--> When we delete the pod in statefulset then another pod will create with another name
--> Persistance volume and persistance volumeclaim It doesnt mandatory to create the statefulset
+# What is the difference between Deployment and Statefulset
+| Feature          | Deployment                 | StatefulSet                            |
+| ---------------- | -------------------------- | -------------------------------------- |
+| Pod Name         | Random (`pod-xyz-abc`)     | Stable and predictable (`pod-name-0`)  |
+| Storage          | Shared or Ephemeral        | Stable and Persistent (via PVCs)       |
+| Pod Identity     | Not guaranteed             | Stable network identity (`pod-name-0`) |
+| Start/Stop Order | Not guaranteed             | Ordered start/stop                     |
+| Use Case         | Stateless apps (e.g., web) | Stateful apps (e.g., databases)        |
+
+
+🧠 Key Features of StatefulSet
+Stable name
+-> We can create pod with predctable name
+
+Persistence volume claim
+-> Pod will get persistence volume claim, volume retaine even if pod restated or delete
+
+Ordered Deployment & Scaling:
+-> Pod will create, update and delete one at a time in a defined order.
+
 
 # What is Calico network 
--> Calico implements the Kubernetes Container Network Interface (CNI) as a plug-in and provides agents for Kubernetes to provide networking for containers and pods.
+-> Calico is an open-source networking and network security solution for containers, virtual machines, and native host-based workloads.
+
+In Kubernetes, Calico is commonly used as a CNI (Container Network Interface) plugin to provide:
+-> Networking: Pod-to-pod communication (Assigns unique IPs to pods and handles their communication across nodes)
+-> Network Policies: Fine-grained access control (who can talk to whom) (Implements Kubernetes NetworkPolicy for traffic control)
+-> IP-in-IP or BGP based routing for performance and scalability
+
+
 
 # How does two conatier can communicate in single node
--> Two Container can communicate easily inside the pod using local host and port 
+In Kubernetes, when two containers run in the same Pod (on the same node), they communicate with each other using localhost (127.0.0.1)` because they share the same network namespace.
+
+| Case                             | Can Use `localhost`? | How They Communicate        |
+| -------------------------------- | -------------------- | --------------------------- |
+| Containers in same **Pod**       | ✅ Yes                | `localhost:<port>`          |   curl http://localhost:8080
+| Containers in different **Pods** | ❌ No                 | Pod IP or Service DNS       |  curl http://<pod-ip>:<port>
+| Pods on same **Node**            | ❌ No                 | Still use Pod IP or Service |      # or
+| Pods on different **Nodes**      | ❌ No                 | Via CNI, Pod IP or Service  |   curl http://<service-name>:<port>
+
+
+To allow a pod on one node to communicate with a pod on another node, you don't need a special command—Kubernetes handles it automatically through the CNI plugin (like Calico, Flannel, Cilium, etc.).
+But to test or manually check communication, you can use commands like:
+
+✅ 1. Get Pod IP of the Target Pod
+kubectl get pod <target-pod-name> -n <namespace> -o wide
+🔹 This will show the IP address and which node the pod is on.
+
+✅ 2. Exec into Source Pod and Curl Target Pod
+kubectl exec -it <source-pod-name> -n <namespace> -- /bin/sh
+Then inside the pod:
+curl http://<target-pod-ip>:<port>
+
 
 # How Does it happen to communicate two container inside the pod
--> Kubernets will use the pause container for sharing the network within the container in the same pod
+
+| Shared Resource       | Behavior                                                                         |
+| --------------------- | -------------------------------------------------------------------------------- |
+| **Network Namespace** | Both containers share the **same IP address** and **localhost**                  |
+| **Volumes**           | Can share files using shared **emptyDir** or mounted volumes                     |
+| **Process Namespace** | (Not shared by default) Each has its own process tree unless configured to share |
+
 
 
 # How Pod-to-Pod Communication within the Same Node
--> Each pod in Kubernetes gets its own unique IP address within the cluster, even if it’s running on the same node as 
-   another pod. This allows pods to communicate directly with each other using these IP addresses, without any need for port 
-   forwarding or special routing.
--> If a pod in Node A needs to communicate with another pod (on the same node), it can directly use the IP of the other pod. 
-   The Kubernetes network model ensures that pods on the same node can communicate directly via their IP addresses.
-   Note: Pods on the same node can communicate directly via IP addresses or DNS names.
+When two pods are scheduled on the same Kubernetes node, they can communicate with each other via their Pod IPs because each pod gets its own network namespace and unique IP address.
 
 # How Pod-to-Pod Communication across Nodes
--> Each pod in Kubernetes is assigned a unique IP address. This IP is unique within the cluster, regardless of whether the 
-   pod is on the same node as another pod or on a different node.
--> This unique IP addressing allows pods to communicate with each other using their IPs, even across nodes.
--> When a pod on Node-A wants to communicate with a pod on Node-B, the traffic is routed through the Kubernetes network 
-   (using the CNI plugin) such as Calico, Flannel, or Cilium. 
+In Kubernetes, Pod-to-Pod communication across different nodes is fully supported and happens seamlessly via the Container Network Interface (CNI) plugin.
 
 # How to describe the kubernetes security
 -> Enable Role-Based-Access-Contro;
@@ -561,6 +611,7 @@ A **Pod Security Policy (PSP)** in Kubernetes is a cluster-level resource that d
 	The same volume mounts
 	The same networking setup
 
+
 # How do you configure log file sharing when one container writes logs and another container accesses them in the same pod?
 
 ✅ Use Case
@@ -604,7 +655,7 @@ Bind it to a ServiceAccount and role using RoleBinding (or ClusterRoleBinding).
 -> kubectl delete pods --all -n <namespace>
 
 # What are StorageClasses in Kubernetes?
--> A StorageClass in Kubernetes defines how storage is provisioned dynamically for PersistentVolumeClaims (PVCs).
+-> A StorageClass in Kubernetes defines how storage is provisioned dynamically for PersistentVolume(PV).
 
 # A pod is CrashLoopBackOff. How do you troubleshoot?
 -> I do run the kubectl describe pod <pod-name> -n <namespace> to idenitfy the error, mostly we get this CrashLoopBackOff due to 

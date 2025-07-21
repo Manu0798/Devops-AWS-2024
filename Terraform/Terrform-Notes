@@ -338,6 +338,16 @@ Scenario 2:
 - B) Apply strict IAM rules so that no one can login to console.
 
 
+3. How do you manage state locking and concurrent modifications in Terraform?
+-> Terraform supports state locking by default when using backends resources
+
+💡 How It Works (Example: AWS S3 + DynamoDB)
+-> The state file is stored in an S3 bucket.
+-> A DynamoDB table is used for state locking.
+-> When a Terraform operation begins (plan, apply), it acquires a lock in DynamoDB.
+-> Other operations must wait until the lock is released.
+
+
 
 
 You can see below link to know properly

@@ -467,7 +467,7 @@ Note: When we are attach the NAT gateway to the private subnet it will work only
 -> VPC peering connection allows you to connect one vpc to another vpc. Instances in these vpc behave as if they are in same network.
 
 # To establish the peering connection between two VPC what conditions must be met
--> CICD block should not overlap between VPC setting up peering connection.
+-> CIDR block should not overlap between VPC setting up peering connection.
 -> peering connection is allowed within a region, across region, across different account.
 
 # what is VPC endpoint service
@@ -510,7 +510,8 @@ VPN is a virtual private  network.
 VPN is a secure connection over the. internet protect data .
 
 # What is DHCP
-DHCP stands for Dynamic Host Configuration Protocol. It is a network protocol used to automatically assign IP addresses and other network configuration parameters to devices (such as computers, smartphones, printers, etc.) on a network. This eliminates the need for administrators to manually assign IP addresses to each device. Port Number is 67 and 68
+DHCP stands for Dynamic Host Configuration Protocol. It is a network management protocol used to automatically assign IP addresses and other network configuration settings (like subnet mask, gateway, DNS) to devices on a network. 
+-> Port Number is 67 and 68
 
 
 

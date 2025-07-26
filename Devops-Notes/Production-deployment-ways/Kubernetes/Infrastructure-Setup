@@ -1,5 +1,6 @@
 -> First We have to setup the Ec2, EKS, VPC infrastructure using terraform. The Script would be available this Github URL ()
 -> We have to create Service Account and Roles in our EKS Cluster. Those manifest files should be available in this Github URL (https://github.com/manoj7894/Devops-AWS-2024/tree/master/Devops-Notes/Production-deployment-ways/Kubernetes/Service-Account-Files)
+    (account.yml, role.yml, role-binding.yml, persistence-role.yml, persistence-role-binding.yml, manoj-cluster-admin.yaml, secret.yml)
 
 # If you want to use docker private repo to store docker images in docker hub you should execute below command in server
 -> kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=manoj3003 --docker-password=Varma_3003 --namespace=frissly

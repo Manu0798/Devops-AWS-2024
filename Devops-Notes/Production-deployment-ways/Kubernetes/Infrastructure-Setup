@@ -381,3 +381,7 @@ pipeline {
     }
 }
 
+
+
+-> we should apply ingress after above pipeline
+-> kubectl apply -f ingress.yml -n frissly

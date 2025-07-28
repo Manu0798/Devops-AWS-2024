@@ -154,6 +154,31 @@ frontend:
       - node_modules/**/*
 
 
+# Delete cache before build 
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Clearing node_modules cache..."
+        - rm -rf node_modules
+        - echo "Installing dependencies..."
+        - npm install
+    build:
+      commands:
+        - echo "Running build..."
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
+
+
+
 
 
 # Delivery app
@@ -217,3 +242,24 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+
+
+# Static page
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci --cache .npm --prefer-offline
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: build
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .npm/**/*
+

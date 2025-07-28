@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: static-ebs-pv
+spec:
+  capacity:
+    storage: 15Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  awsElasticBlockStore:
+    volumeID: vol-0de7c7d2e4de28194  # <-- Replace with your actual volume ID
+    fsType: ext4

@@ -586,9 +586,31 @@ a Docker container is an isolated environment for running a single application, 
 -> It provides the separate lifecycle for the initialization so that it enables the separation of concens in the application
 
 # What Pod Disruption Budget
--> Pod disruption budget handles the voluntary disruption 
--> Pod disruption budget specisy the number replicas that an application can tolerate.
-	you have deployment manifeast with 5 replica. you have deployed but PDB allow the only 4 at a time then it eviction API allow the voluntary disruption of one pod at a time.
+A PodDisruptionBudget (PDB) in Kubernetes is a resource that ensures high availability of your application during voluntary disruptions like:
+
+Node drains (e.g., during upgrades)
+Cluster maintenance
+Rolling updates
+
+# Example
+Let’s say your app is running on 4 pods in Kubernetes:
+
+[ Pod-1 ]  [ Pod-2 ]  [ Pod-3 ]  [ Pod-4 ]
+
+Now imagine:
+Your cloud provider is upgrading a node (maintenance).
+Kubernetes will evict (delete) the pods on that node.
+If 2 or more pods go down at once, your app might crash or become slow.
+
+😬 This is risky, right?
+
+✅ What is the Solution?
+You can tell Kubernetes:
+
+“⚠️ Hey! Never allow more than 1 pod to go down. Keep at least 3 pods running at all times.”
+
+This is exactly what PodDisruptionBudget (PDB) does
+
 
 # What is Pod security policy in kubernetes
 A **Pod Security Policy (PSP)** in Kubernetes is a cluster-level resource that defines security rules to control the behavior and configuration of pods, enforcing security best practices.

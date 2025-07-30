@@ -5,6 +5,76 @@
 # If you want to use docker private repo to store docker images in docker hub you should execute below command in server
 -> kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=manoj3003 --docker-password=Varma_3003 --namespace=frissly
 
+# How ✅ Install AWS Load Balancer Controller
+
+            # Prerequisites:
+            eksctl utils associate-iam-oidc-provider \
+              --region us-east-1 \
+              --cluster secure-eks \
+              --approve
+            
+            # Create IAM policy
+            curl -o iam_policy.json \
+              https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+            
+            aws iam create-policy \
+              --policy-name AWSLoadBalancerControllerIAMPolicy \
+              --policy-document file://iam_policy.json
+            
+            # Create service account for controller
+            eksctl create iamserviceaccount \
+              --cluster secure-eks \
+              --namespace kube-system \
+              --name aws-load-balancer-controller \
+              --attach-policy-arn arn:aws:iam::<your_account_id>:policy/AWSLoadBalancerControllerIAMPolicy \
+              --approve
+            
+            # Install CRDs + Controller via Helm
+            helm repo add eks https://aws.github.io/eks-charts
+            helm repo update
+            
+            helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+              -n kube-system \
+              --set clusterName=secure-eks \
+              --set serviceAccount.create=false \
+              --set region=us-east-1 \
+              --set vpcId=<your_vpc_id> \
+              --set serviceAccount.name=aws-load-balancer-controller
+
+
+
+
+✅ Recommended Approach: Use a StorageClass with volumeBindingMode: WaitForFirstConsumer
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc
+provisioner: kubernetes.io/aws-ebs
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp3
+  fsType: ext4
+
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ebs-sc
+  resources:
+    requests:
+      storage: 10Gi
+
+
+# If you want to attach manual EBS volumes you should follow below steps(But Production it is not recommend) because
+-> your worker nodes are in multiple Availability Zones (AZs) — ap-south-1b and ap-south-1c — you need to design EBS volumes carefully, because:
+🔒 Amazon EBS volumes are AZ-specific — you cannot attach an EBS volume created in ap-south-1b to a node in ap-south-1c.
+
 # For Attach EBS to persistence Volumes
 -> Go to volumes in AWS, create EBS volume with same AZ wherever workernodes at located
 -> After create the volume, you will keep that volumeID in your persistence volumes

@@ -585,7 +585,7 @@ a Docker container is an isolated environment for running a single application, 
 -> Init container are the container that should run and complete befor the startup the main container in the pod
 -> It provides the separate lifecycle for the initialization so that it enables the separation of concens in the application
 
-# What Pod Disruption Budget
+# What Pod Disruption Budget  (Prevents too many pods from going down)
 A PodDisruptionBudget (PDB) in Kubernetes is a resource that ensures high availability of your application during voluntary disruptions like:
 
 Node drains (e.g., during upgrades)

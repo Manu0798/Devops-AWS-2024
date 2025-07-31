@@ -43,8 +43,57 @@
 
 
 
+-> helm list -n kube-system
+-> kubectl get pods -n kube-system | grep aws-load-balancer-controller
+-> kubectl get pods -n kube-system | grep aws-load      --> Verify AWS Load Balancer Controller is installed
 
+-> kubectl logs -n kube-system deployment/aws-load-balancer-controller
+-> kubectl describe pod <pod-name> -n kube-system
+-> kubectl logs <pod-name> -n kube-system
+
+#✅ Tag the public subnet (for the ALB):
+Use this if you want the ALB to be publicly accessible (internet-facing):
+-> aws ec2 create-tags --resources subnet-036e280494be0ae15 subnet-07f35c51190df9a92   --tags Key=kubernetes.io/role/elb,Value=1          Key=kubernetes.io/cluster/frissly-stag-eks-cluster,Value=owned
+# Tag the private subnets (for worker nodes + internal traffic):
+-> aws ec2 create-tags --resources subnet-08945387cfad57851 subnet-07ec8a824ee6b07a2   --tags Key=kubernetes.io/role/internal-elb,Value=1          Key=kubernetes.io/cluster/frissly-stag-eks-cluster,Value=owned   
+-> aws ec2 describe-subnets   --filters "Name=tag:kubernetes.io/cluster/<your-cluster-name>,Values=owned"   --query "Subnets[*].Tags"
+-> aws ec2 describe-subnets --filters "Name=tag:kubernetes.io/cluster/<your-cluster-name>,Values=owned"
+
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: swigy-frontend-ingress
+  namespace: frissly
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: swigy-frontend-service
+                port:
+                  number: 80
+
+
+
+
+# For dynamic persistance volume
 ✅ Recommended Approach: Use a StorageClass with volumeBindingMode: WaitForFirstConsumer
+
+-> eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster <give clustername> --approve
+-> eksctl create iamserviceaccount   --region us-east-2   --name ebs-csi-controller-sa   --namespace kube-system   --cluster eks-1   --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy   --approve   --override-existing-serviceaccounts
+-> After execute above it will in cloud formation
+-> kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
+
 
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -71,18 +120,15 @@ spec:
       storage: 10Gi
 
 
+# Note for manual EBS
 # If you want to attach manual EBS volumes you should follow below steps(But Production it is not recommend) because
 -> your worker nodes are in multiple Availability Zones (AZs) — ap-south-1b and ap-south-1c — you need to design EBS volumes carefully, because:
 🔒 Amazon EBS volumes are AZ-specific — you cannot attach an EBS volume created in ap-south-1b to a node in ap-south-1c.
-
 # For Attach EBS to persistence Volumes
 -> Go to volumes in AWS, create EBS volume with same AZ wherever workernodes at located
 -> After create the volume, you will keep that volumeID in your persistence volumes
 -> We have to Install below commands for EBS volume to attache the persistence volume
--> eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster <give clustername> --approve
--> eksctl create iamserviceaccount   --region us-east-2   --name ebs-csi-controller-sa   --namespace kube-system   --cluster eks-1   --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy   --approve   --override-existing-serviceaccounts
--> After execute above it will in cloud formation
--> kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
+
 
 
 ->  After complete the infrastructure setup you will access Jenkins and sonarqube with the help of service public IP and those port numbers 
@@ -474,27 +520,36 @@ pipeline {
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: my-app-ingress
+  name: swigy-frontend-ingress
+  namespace: frissly
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
 spec:
-  ingressClassName: nginx
+  ingressClassName: alb
   rules:
-    - host: ingress.frissly.com      # replace withyour hostname
+    - host: ingress.frissly.com   # Replace this with your actual domain (CNAME should point to ALB)
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: my-app-service    # Replace with your service
+                name: swigy-frontend-service
                 port:
                   number: 80
+
 
 -> kubectl apply -f ingress.yml
 -> kubectl get ingress
 
 
+# If you not get address in ingress you will attach the below policy
+aws iam attach-role-policy \
+  --role-name eksctl-frissly-stag-eks-cluster-addon-iamserv-Role1-14mSFTmHuWs4 \
+  --policy-arn arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
 
 
 
@@ -790,4 +845,3 @@ pipeline {
         }
     }
 }
-

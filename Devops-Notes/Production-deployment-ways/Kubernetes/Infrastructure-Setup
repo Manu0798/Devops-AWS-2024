@@ -120,7 +120,7 @@ spec:
       storage: 10Gi
 
 
-# Note for manual EBS
+# Note:- for manual EBS [Not recommend]
 # If you want to attach manual EBS volumes you should follow below steps(But Production it is not recommend) because
 -> your worker nodes are in multiple Availability Zones (AZs) — ap-south-1b and ap-south-1c — you need to design EBS volumes carefully, because:
 🔒 Amazon EBS volumes are AZ-specific — you cannot attach an EBS volume created in ap-south-1b to a node in ap-south-1c.
@@ -362,32 +362,6 @@ pipeline {
                                 git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                                 git push -f https://$BIT_USERNAME:$BIT_PASSWORD@bitbucket.org/manojvarmapotthuri/frissly-backend.git ${BRANCH}
                             fi
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Install Ingress Controller') {
-            steps {
-                script {
-                    withKubeConfig(
-                        caCertificate: '',
-                        clusterName: 'eks-1',
-                        contextName: '',
-                        credentialsId: 'k8s_token',
-                        namespace: 'frissly',
-                        restrictKubeConfigAccess: false,
-                        serverUrl: 'https://BE39E8F32738D1A0762681AC6A754500.gr7.us-east-2.eks.amazonaws.com'
-                    ) {
-                        sh '''
-                            if ! kubectl get namespace ingress-nginx; then
-                                kubectl create namespace ingress-nginx
-                            else
-                                echo "Namespace 'ingress-nginx' already exists."
-                            fi
-
-                            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml --namespace ingress-nginx
                         '''
                     }
                 }
@@ -714,32 +688,6 @@ pipeline {
                                 git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                                 git push -f https://${GIT_USER}:${GIT_TOKEN}@github.com/${GIT_USER}/${GIT_REPO_NAME}.git ${BRANCH}
                             fi
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Install Ingress Controller') {
-            steps {
-                script {
-                    withKubeConfig(
-                        caCertificate: '',
-                        clusterName: 'eks-1',
-                        contextName: '',
-                        credentialsId: 'k8s_token',
-                        namespace: 'frissly',
-                        restrictKubeConfigAccess: false,
-                        serverUrl: 'https://893E5B8F2690F81B3FF2A73EE369E17B.yl4.us-east-2.eks.amazonaws.com'
-                    ) {
-                        sh '''
-                            if ! kubectl get namespace ingress-nginx; then
-                                kubectl create namespace ingress-nginx
-                            else
-                                echo "Namespace 'ingress-nginx' already exists."
-                            fi
-
-                            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml --namespace ingress-nginx
                         '''
                     }
                 }

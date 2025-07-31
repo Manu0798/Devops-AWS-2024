@@ -129,6 +129,38 @@ spec:
 -> After create the volume, you will keep that volumeID in your persistence volumes
 -> We have to Install below commands for EBS volume to attache the persistence volume
 
+pv.yml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: static-ebs-pv-1
+spec:
+  capacity:
+    storage: 15Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  awsElasticBlockStore:
+    volumeID: vol-0b1dcb0b12abfb14e  # <-- Replace with your actual volume ID
+    fsType: ext4
+
+pvc.yml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ebs-pvc-1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: manual
+
 
 
 ->  After complete the infrastructure setup you will access Jenkins and sonarqube with the help of service public IP and those port numbers 

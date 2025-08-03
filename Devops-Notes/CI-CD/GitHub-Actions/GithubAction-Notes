@@ -1,10 +1,44 @@
 # What is GitHub Actions
--> GitHub action is a CI/CD pipeline.
--> GitHub action platform to automate the developers workflow.
+GitHub Actions is a feature built into GitHub that lets you automate workflows like building, testing, and deploying code. It’s commonly used for CI/CD (Continuous Integration / Continuous Deployment).
+
+
+🧱 Basic Concepts
+1. Workflow
+A set of instructions in a YAML file triggered by an event. Defined in .github/workflows/.
+
+Example: .github/workflows/ci.yml
+
+2. Events
+Trigger the workflow. Common examples:
+push
+pull_request
+workflow_dispatch (manual trigger)
+schedule (cron)
+
+3. Jobs
+A workflow is made up of one or more jobs. Each job runs in its own runner.
+
+4. Steps
+A job has multiple steps. Each step runs a script or an action.
+
+5. Runner
+A GitHub-hosted or self-hosted VM where jobs run.
+
+
+🧩 Useful Marketplace Actions
+GitHub has a Marketplace with 1000s of ready-to-use actions:
+actions/checkout — Checks out your code
+actions/setup-node — Set up Node.js
+docker/build-push-action — Build and push Docker images
+aws-actions/configure-aws-credentials — Set AWS credentials
+
+
 
 # We have two types of runners in GitHub actions
 -> self-hosted runners
 -> GitHub-hosted runners
+
+
 
 # What is the difference between Self-hosted runners and GitHub-hosted runners
 -> Self-hosted runner: Self-hosted runners are machines (physical, virtual, or in a container) that you manage and maintain yourself. This means you have full control over the environment and software installed on these runners.

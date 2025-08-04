@@ -74,11 +74,15 @@ CPU-intensive processing (image processing, AI inference)	1s	2-5
 
 
 
-# To delete the VPC Connector, you must first detach it from the service.
--> aws apprunner update-service --service-arn arn:aws:apprunner:ap-south-1:796973481585:service/frissly-prod-backend/ed15d0135d22452db14e12487742eab3 --network-configuration "{""EgressConfiguration"": {""EgressType"": ""DEFAULT""}}"
+# To delete the VPC Connector, you must first detach it from the service. we have to execute below command in cmd to connect with aws account
+-> aws apprunner update-service --cli-input-json "{ \"ServiceArn\": \"arn:aws:apprunner:ap-south-1:854575156536:service/onroute-uat-backend/c85ba28764d34117982f3c4df57b44e0\", \"NetworkConfiguration\": { \"EgressConfiguration\": { \"EgressType\": \"DEFAULT\" } } }"
 
--> aws apprunner describe-service \
-  --service-arn arn:aws:apprunner:ap-south-1:796973481585:service/frissly-prod-backend/ed15d0135d22452db14e12487742eab3
+-> Wait for the service to finish updating — you can track this by running:
+
 
 -> aws apprunner delete-vpc-connector --vpc-connector-arn arn:aws:apprunner:ap-south-1:796973481585:vpcconnector/frissly-prod-vpc_connector/1/b04b646257b34985bf9639841e49eca2
+
+if it could not delete by above command you will manually
+
+
 

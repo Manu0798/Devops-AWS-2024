@@ -79,9 +79,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: swigy-frontend
+                name: swigy-frontend-service
                 port:
-                  number: 3000   # <- MUST match container port
+                  number: 80
 
 
 
@@ -543,9 +543,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: swigy-frontend
+                name: swigy-frontend-service
                 port:
-                  number: 3000   # <- MUST match container port
+                  number: 80
 
 
 

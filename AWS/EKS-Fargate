@@ -54,6 +54,23 @@ echo "Helm installation complete."
 -> helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller   -n kube-system   --set clusterName=fargate-cluster   --set serviceAccount.create=false   --set serviceAccount.name=aws-load-balancer-controller   --set region=ap-south-1   --set vpcId=<your-vpc-id>   --set ingressClass=alb
 
 
+-> helm list -n kube-system
+-> kubectl get pods -n kube-system | grep aws-load-balancer-controller
+-> kubectl get pods -n kube-system | grep aws-load      --> Verify AWS Load Balancer Controller is installed
+
+-> kubectl logs -n kube-system deployment/aws-load-balancer-controller
+-> kubectl describe pod <pod-name> -n kube-system
+-> kubectl logs <pod-name> -n kube-system
+
+#✅ Tag the public subnet (for the ALB):
+Use this if you want the ALB to be publicly accessible (internet-facing):
+-> aws ec2 create-tags --resources subnet-036e280494be0ae15 subnet-07f35c51190df9a92   --tags Key=kubernetes.io/role/elb,Value=1          Key=kubernetes.io/cluster/frissly-stag-eks-cluster,Value=owned
+# Tag the private subnets (for worker nodes + internal traffic):
+-> aws ec2 create-tags --resources subnet-08945387cfad57851 subnet-07ec8a824ee6b07a2   --tags Key=kubernetes.io/role/internal-elb,Value=1          Key=kubernetes.io/cluster/frissly-stag-eks-cluster,Value=owned   
+-> aws ec2 describe-subnets   --filters "Name=tag:kubernetes.io/cluster/<your-cluster-name>,Values=owned"   --query "Subnets[*].Tags"
+-> aws ec2 describe-subnets --filters "Name=tag:kubernetes.io/cluster/<your-cluster-name>,Values=owned"
+
+
 -> eksctl create fargateprofile \
   --cluster fargate-cluster \
   --name app-profile \
@@ -62,10 +79,46 @@ echo "Helm installation complete."
 
 
 
+# To Install the EFS CSI Driver 
+-> kubectl apply -k "github.com/kubernetes-sigs/aws-efs-csi-driver/deploy/kubernetes/overlays/stable/ecr"
+
+# pv.yml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: efs-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany  # Allows multiple pods to access the volume
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-0ba7e1f0d3bb627f3  # Replace with your EFS file system ID
+
+pvc.yml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: efs-sc
+
+
+
+
 # Below command is use to delete cluster
 -> eksctl delete cluster --name demo-cluster --region ap-south-1
 -> eksctl create cluster   --name demo-cluster   --region ap-south-1   --fargate   --vpc-private-subnets=subnet-023ee67bc1bd60f63,subnet-073004b80be4e8f8f   --without-nodegroup
-
 
 
 

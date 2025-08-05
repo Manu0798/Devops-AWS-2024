@@ -36,37 +36,51 @@ helm version
 echo "Helm installation complete."
 
 
--> You will execute the below command to create EKS fargate cluster after you execute the above tools
--> eksctl create cluster --name demo-cluster --region ap-south-1 --fargate 
--> aws eks --region ap-south-1 update-kubeconfig --name demo-cluster
--> eksctl create fargateprofile \
-    --cluster demo-cluster \
-    --region ap-south-1 \
-    --name alb-sample-app \
-    --namespace game-2048
+-> You will execute the below command to create EKS fargate cluster within private subnetes after you execute the above tools
+-> eksctl create cluster \
+  --name fargate-cluster \
+  --version 1.29 \
+  --region ap-south-1 \
+  --vpc-private-subnets=subnet-0bf0b4e49098d1b5b,subnet-00df212d046e24bac \
+  --fargate \
+  --without-nodegroup
 
--> Sample application Yaml scripts
--> kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.5.4/docs/examples/2048/2048_full.yaml
-
--> eksctl utils associate-iam-oidc-provider --cluster demo-cluster --approve
-
-# Install ALB Controller
--> curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.11.0/docs/install/iam_policy.json
-
--> aws iam create-policy \
-    --policy-name AWSLoadBalancerControllerIAMPolicy \
-    --policy-document file://iam_policy.json
-
--> eksctl create iamserviceaccount \
-  --cluster=demo-cluster \
-  --namespace=kube-system \
-  --name=aws-load-balancer-controller \
-  --role-name AmazonEKSLoadBalancerControllerRole \
-  --attach-policy-arn=arn:aws:iam::854575156536:policy/AWSLoadBalancerControllerIAMPolicy \
+# Install AWS Load Balancer Controller
+-> eksctl utils associate-iam-oidc-provider \
+  --region ap-south-1 \
+  --cluster fargate-cluster \
   --approve
 
--> helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=demo-cluster --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set region=ap-south-1 --set vpcId=vpc-0f4aaa7cb7f06f489
--> kubectl get deployment -n kube-system aws-load-balancer-controller
+-> curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+
+-> aws iam create-policy \
+  --policy-name AWSLoadBalancerControllerIAMPolicy \
+  --policy-document file://iam_policy.json
+
+-> eksctl create iamserviceaccount \
+  --cluster fargate-cluster \
+  --namespace kube-system \
+  --name aws-load-balancer-controller \
+  --attach-policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/AWSLoadBalancerControllerIAMPolicy \
+  --approve
+
+-> helm repo add eks https://aws.github.io/eks-charts
+-> helm repo update
+
+-> helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=fargate-cluster \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --set region=ap-south-1 \
+  --set vpcId=<your-vpc-id> \
+  --set ingressClass=alb
+
+-> eksctl create fargateprofile \
+  --cluster fargate-cluster \
+  --name app-profile \
+  --namespace app \
+  --region ap-south-1
 
 
 

@@ -761,6 +761,7 @@ pipeline {
                         sh 'kubectl apply -f ${DEPLOYMENT_FILE_PATH} -n frissly'
                         sh 'kubectl apply -f Kubernetes/service.yml -n frissly'
                         sh 'kubectl apply -f Kubernetes/autoscaling.yml -n frissly'
+                        sh 'kubectl apply -f Kubernetes/ingress.yml -n frissly'
                         sleep 20
                     }
                 }
@@ -785,6 +786,7 @@ pipeline {
                             kubectl get pv -n frissly
                             kubectl get pvc -n frissly
                             kubectl get hpa -n frissly
+                            kubectl get ingress -n frissly
                         '''
                     }
                 }

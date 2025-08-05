@@ -66,12 +66,12 @@ metadata:
   name: swigy-frontend-ingress
   namespace: frissly
   annotations:
+    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/backend-protocol: HTTP
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 spec:
-  ingressClassName: alb
   rules:
     - http:
         paths:
@@ -79,9 +79,10 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: swigy-frontend-service
+                name: swigy-frontend
                 port:
-                  number: 80
+                  number: 3000   # <- MUST match container port
+
 
 
 
@@ -529,23 +530,23 @@ metadata:
   name: swigy-frontend-ingress
   namespace: frissly
   annotations:
+    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/backend-protocol: HTTP
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 spec:
-  ingressClassName: alb
   rules:
-    - host: ingress.frissly.com   # Replace this with your actual domain (CNAME should point to ALB)
-      http:
+    - http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: swigy-frontend-service
+                name: swigy-frontend
                 port:
-                  number: 80
+                  number: 3000   # <- MUST match container port
+
 
 
 -> kubectl apply -f ingress.yml

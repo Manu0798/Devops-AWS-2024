@@ -188,3 +188,8 @@ jobs:
         run: |
           echo "Cleaning up entire workspace to save disk space..."
           rm -rf *
+
+
+
+
+# latest Script for approval wise but it will ask the approval permission when we are using git enterprice version. it will work in normal github also but it will deploy automatically without asking any approval.

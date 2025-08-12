@@ -193,3 +193,183 @@ jobs:
 
 
 # latest Script for approval wise but it will ask the approval permission when we are using git enterprice version. it will work in normal github also but it will deploy automatically without asking any approval.
+
+
+
+name: Node.js Docker Image Deploy into ECR
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    name: 1️⃣ Build and Scan Docker Image
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_IMAGE_NAME: onroute-backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the app (if applicable)
+        run: npm run build --if-present
+
+      - name: Run tests (only if not placeholder)
+        run: |
+          actual_script=$(npm pkg get scripts.test | jq -r .)
+          if [[ "$actual_script" == 'echo "Error: no test specified" && exit 1' ]]; then
+            echo "Skipping test: placeholder script."
+          else
+            npm run test
+          fi
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.39.0/trivy_0.39.0_Linux-64bit.deb -o trivy.deb
+          sudo dpkg -i trivy.deb || echo "Trivy install failed"
+
+      - name: Trivy filesystem scan
+        run: trivy fs --format table -o fs-report.html .
+
+      - name: Build Docker image
+        run: docker build -t $DOCKER_IMAGE_NAME .
+
+      - name: Trivy image scan
+        run: |
+          trivy image --format table -o image.html $DOCKER_IMAGE_NAME
+          docker save -o image.tar "$DOCKER_IMAGE_NAME:latest"
+
+      - name: Upload Trivy filesystem scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-filesystem-scan-report
+          path: fs-report.html
+
+      - name: Upload Trivy image scan report and tar
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-artifacts
+          path: |
+            image.html
+            image.tar
+
+      - name: Send email notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "🚀 Approval Required: Deploy to production"
+          body: |
+            Hello Team,
+
+            The UAT deployment for branch 'main' is complete.
+
+            ⚠️ Please approve the production deployment:
+            🔗 GitHub Actions: https://github.com/${{ github.repository }}/actions
+
+            Status: ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref }}
+          to: "varmapotthuri4@gmail.com"
+          from: "sender@example.com"
+
+  approval:
+    name: 2️⃣ Manual Approval for Production
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://github.com/${{ github.repository }}/actions
+    steps:
+      - name: Wait for manual approval
+        run: echo "⏳ Waiting for manual approval in GitHub UI..."
+
+  deploy:
+    name: 3️⃣ Deploy to Production
+    needs: approval
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-south-1
+      ECR_REPO_NAME: onroute-uat-docker-repo
+      DOCKER_IMAGE_NAME: onroute-backend
+      IMAGE_TAG: uat
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-artifacts
+          path: ./artifacts
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names $ECR_REPO_NAME || \
+          aws ecr create-repository --repository-name $ECR_REPO_NAME
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      - name: Tag Docker image for ECR
+        run: |
+          docker load -i artifacts/image.tar
+          docker tag $DOCKER_IMAGE_NAME:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG
+
+      - name: Clean up Docker images and volumes
+        run: |
+          docker system prune -af || true
+          docker volume prune -f || true
+
+      - name: Send deployment success email
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "🚀 Production Deployment Complete"
+          body: |
+            Hello Team,
+
+            The production deployment has been completed successfully.
+            🔗 GitHub Actions: https://github.com/${{ github.repository }}/actions
+
+            Status: ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref }}
+          to: "varmapotthuri4@gmail.com"
+          from: "sender@example.com"
+
+      - name: Clean up workspace
+        run: rm -rf *

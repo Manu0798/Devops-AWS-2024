@@ -122,6 +122,8 @@ Distributed VCS → "Everyone has a full brain!"
 -> git revert <commit id> --no-edit   --> It will commit without open any editor
 Note:- All Above revert commands will work same 
 
+-> git update-ref -d HEAD    --> It will take first commit into staging area
+
 
 # reset
 -> It is used to move the HEAD ponit to specific commit, It modifies the commit history by adjusting the HEAD pointer.
@@ -130,7 +132,7 @@ Note:- All Above revert commands will work same
 -> git reset --hard <commit id>  --> All the above commit history will delete from pointed commit and files will delete
 -> git reset HEAD~<number> 
         Ex:-
-             git reset HEAD~1  --> It will take second commit in commit history because first HEAD it count from after HEAD
+             git reset HEAD~1  --> It will take first commit in commit history because first HEAD it count from after HEAD
 
 
 # To get more details about git revert and git resert. you will watch below link
@@ -255,3 +257,9 @@ Delete any stored credentials related to github.com. This will force Git to ask 
 Retry Pushing:
 
 git push -u origin main
+
+
+# 2. Remove inner .git so it's no longer its own repo
+cd ECR-VPC
+Remove-Item -Recurse -Force .git
+cd ..

@@ -1,40 +1,5 @@
 # How to create EKS fargate Cluster manually
--> Before we create the EKS fargate we have to install below tools
-
-# Install AWS_CLI
-sudo apt-get update -y
-sudo apt-get install -y curl unzip
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip -q awscliv2.zip
-sudo ./aws/install
-aws --version
-rm -rf aws awscliv2.zip
-echo "AWS CLI installed."
-
-
-# Install eksctl
-echo "Installing eksctl..."
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-sudo mv /tmp/eksctl /usr/local/bin
-eksctl version
-echo "eksctl installation complete."
-
-
-# Install Kubectl
-echo "===== Installing kubectl ====="
-KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
-kubectl version --client
-echo "kubectl installation complete."
-
-# Helm
-echo "===== Installing Helm ====="
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-helm version
-echo "Helm installation complete."
-
+-> First we should setup the vpc,efs,ec2 and s3 bucket infrastructure using terraform. once we setup we should execute the below commands
 
 -> You will execute the below command to create EKS fargate cluster within private subnetes after you execute the above tools
 -> eksctl create cluster   --name fargate-cluster   --version 1.29   --region ap-south-1   --vpc-private-subnets=subnet-04be94e91560f8286,subnet-06916357d4b0bcaf1   --fargate   --without-nodegroup
@@ -70,7 +35,7 @@ Use this if you want the ALB to be publicly accessible (internet-facing):
 -> aws ec2 describe-subnets   --filters "Name=tag:kubernetes.io/cluster/<your-cluster-name>,Values=owned"   --query "Subnets[*].Tags"
 -> aws ec2 describe-subnets --filters "Name=tag:kubernetes.io/cluster/<your-cluster-name>,Values=owned"
 
-
+-> kubectl get create ns app
 -> eksctl create fargateprofile \
   --cluster fargate-cluster \
   --name app-profile \

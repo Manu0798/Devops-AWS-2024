@@ -520,22 +520,38 @@ kubectl scale deployment my-deployment --replicas=0 --> To scale down the replic
 -> Staggered Deployment
 -> Rollback Deployment
 
-# What is Recreate deployment strategy
-When we use recrete deployment strategy existing pods will delete and new will create
 
-# What is Rolling deployment strategy
-When we use the rolling deployment strategy pod will delete one by one while pod will create one by one 
+1. Recreate Strategy
+Process: Stops all old pods first, then starts all new pods.
+Pros: Simple to implement, ensures a clean slate.
+Cons: Causes downtime because no pods are available during the switch.
+
+2. Rolling Deployment Strategy  (Default in Kubernetes.)
+Process: Replaces pods gradually — old pods are terminated one by one while new ones are added.
+Pros: No downtime, safer than recreate. Easy rollback by restarting old image version.
+Cons: Temporary mix of old and new versions. Risk of incompatibility if versions can’t work together.
+
+3. Blue-Green Approach (an approach, not a built-in strategy)
+Process: Keep two complete environments — Blue (current) and Green (new).
+Traffic is switched from Blue to Green once Green is ready.
+Pros: Instant rollback by switching traffic back.
+Cons: Requires double infrastructure temporarily, higher resource cost.
+
+4. Canary Deployment
+Process: Release new pods to a small percentage of traffic first, then gradually increase if no issues occur.
+        Release the new version to a small subset of users before rolling it out to everyone. 
+Pros: Early detection of problems. Allows safe testing in production with real traffic.
+Cons: More complex routing and monitoring needed.
+
+| Strategy/Approach | Downtime | Resource Usage During Deploy | Traffic Mix   | Rollback Complexity |
+| ----------------- | -------- | ---------------------------- | ------------- | ------------------- |
+| **Recreate**      | High     | Low                          | No            | Medium              |
+| **RollingUpdate** | None\*   | Slightly higher              | Yes           | Low                 |
+| **Blue-Green**    | None     | High                         | No            | Very Low            |
+| **Canary**        | None     | Medium                       | Yes (small %) | Low–Medium          |
 
 
-# What is blue and green approach
--> If you want to deploy your application with Zero down time. you will follw blue and green apporach
--> A blue/green deployment is a deployment strategy in which you create two separate, but identical environments.
--> One environment (blue) is running the current application version and one environment (green) is running the new application version.
--> Blue and green deployment is an application release model
--> It reduces the risk and minimizes the down time
--> It uses two production env
-  1) Blue Env  -> Blue Env is a Old Version
-  2) Green Env -> Green Env is a New Version
+
 
 Advantages of Blue and green approach
 1) Rapid releasing

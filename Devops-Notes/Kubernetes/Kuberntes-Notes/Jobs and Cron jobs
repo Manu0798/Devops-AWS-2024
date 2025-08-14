@@ -1,3 +1,21 @@
+# What is Job
+-> A Job runs a pod (or multiple pods) until the task finishes successfully, then it stops.
+-> It’s used for one-time tasks that need to run to completion.
+
+Example use cases:
+-> Database migration
+-> Data processing batch
+-> Sending a one-time email campaign
+
+# What is Cron-Job
+-> A CronJob runs Jobs on a schedule, similar to a Linux cron job.
+-> It’s used for recurring tasks.
+
+Example use cases:
+-> Backing up a database every night
+-> Sending monthly reports
+-> Cleaning up old logs daily
+
 # what is the difference between job and cronjob in kubernetes
 While Jobs are designed for running one-time or on-demand tasks, CronJobs are used for executing tasks at regular intervals
 

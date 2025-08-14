@@ -1,8 +1,16 @@
 # What is Daemon Set
--> DaemonSet is a Kubernetes feature that lets you run a Kubernetes pod on all cluster nodes that meet certain criteria
--> We create the daemon set for logs collections,monitoring and storage
--> we cant use daemon set for reqular pod creation
--> Scale up and scale down process not applicable in daemon set
+-> A DaemonSet ensures that one (or more) copy of a pod runs on every node in the cluster (or on selected nodes via labels).
+-> It’s usually used for node-level services that must run everywhere.
+
+Common uses:
+Log collectors (e.g., Fluentd, Filebeat)
+Node monitoring agents (e.g., Prometheus Node Exporter)
+Security agents
+
+Example: If you have 5 nodes and create a DaemonSet for a logging agent, Kubernetes will schedule 1 logging pod on each node automatically.
+Example: If you have a Deployment with replicas: 3 in a 5-node cluster, Kubernetes may run all 3 pods on different nodes, or even multiple on one node — placement doesn’t matter, just the count.
+
+
 
 # What is the difference betwenn regular deploymnent and Daemonset
 -> Deployment means:- When we deploy the pod in kubernets pods will run the in nodes based on replica. If new node create in cluster pod wont add in that node.

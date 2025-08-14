@@ -1,0 +1,254 @@
+# What is Kubernetes
+-> Kubernetes is a powerful open source Container Orchestration platform which automates the deployment, autoscaling and managing many containers across multiple machines
+-> Kubernetes works on cluster modules
+-> Kubernetes developed by Google and donted to CNCF at 2014
+     [Cloud Native Computing Foundation]
+
+
+# Why we are using Kubernetes rather than Docker
+-> Docker is mainly for packaging and running a single container.
+-> Docker is single daemon process. which can cause the single point of failure. if the docker daemon goes down for some reason all the application are down.
+-> When we use kubernetes we can overcome above problems because
+-> Kubernetes is a powerful open source Container Orchestration platform which automates the deployment, autoscaling and managing many containers across multiple machines
+-> As well as we can achive below features when we use kubernetes
+   -> Auto Scheduling
+   -> Self Healing Capacity
+   -> Rollout and Rollback
+   -> Autoscaling
+   -> Service Discovery
+   -> Storage Orchestration
+   -> Secret and Configuration Management
+
+# What is Auto Scheduling
+-> Kubernetes will provide the Auto Scheduler Option to launch the containers based on our requirments
+
+# Self Healing Capacity
+-> If containerized app or application goes down, Kubernetes will redeploy it and retain to the desired state
+
+# Rollout and Rollback
+-> If anything goes back, kubernetes will rollback the changes for us
+
+# Autoscaling
+-> Autoscaling allow us to automatically scale up and scale down our application based on CPU and Memory Utilization
+
+# Service Discovery
+-> Kubernetes will take care the everything about network
+
+# Storage Orchestration
+-> Kubernetes will automatically mount the volumes
+
+# Secret and Configuration Management
+-> Deploy and update secrets are not expose within stack environment
+
+
+# What is Docker-Swarm
+-> Docker-Swarm is a Container Orchestration tool for clustring and Scheduling the container
+-> Docker-Swarm is sutiable for deploy the small application
+
+
+# What is the Difference between Docker-Swarm and Kubernetes
+# Docker-Swarm
+-> Docker-Swarm is sutiable for deploy the small application
+-> Docker-Swarm supports the manual autoscaling
+-> Need Third party tool for monitoring like ELK
+
+# Kubernetes
+-> Kubernetes is better sutiable for deploy the large scale application it's offer more scaliablity and networking like policies and huge third party ecosystem support.
+-> Kubernetes will support the autoscaling
+
+
+# What is Kubernetes Architecture.
+-> Kubernetes works on cluster module
+-> Kubernetes having master node and worker nodes
+-> Master nodes will manages the worker nodes
+-> Worker nodes will run tasks assign by master nodes
+-> We have Kubectl to communicate to our kubernetes cluster
+-> kubectl is a command line interface to run the commands on kubernetes cluster
+-> we have components in master nodes and worker node
+-> In master node we have
+    -> API  -> API acts as the gateway for all commands and communications in a Kubernetes cluster.
+    -> ETCD -> ETCD act a database in kubernets. It will store all the cluster information such as desired state, current state, and runtime data 
+    -> Scheduler -> Scheduler will schedule the pods to worker node based node resources with the help of kubelt which in unschedule request in ETCD. 
+    -> Control Manager -> Controller manager continuously monitor the kubernetes cluster through API server. Make Sure desire state maintained
+-> In worknode we have
+     -> kubelet -> kubelet act as a node agent. It will interact with Container runtime
+     -> Container Runtime -> Container Runtime will create and start container inside pod
+     -> Kube proxy -> Kube proxy act as a network proxy. it allow the network rules to communicate our pod inside and outside of the cluster
+     -> pod  -> Pod is a small execution unit. Pod having group of containers it will run single container and multiple containers.
+
+# What are the Kubernetes workload types
+-> Pod
+-> Replica Controller
+-> Replica Set
+-> Deployment
+-> Stateful Set
+-> Daemon Set
+-> Job
+-> Cronjob
+
+
+
+# What is Pod
+-> Pod is a small execution unit. Pod having group of containers it will run single container and multiple containers.
+-> we can create pod in two way
+   -> Interactive 
+   -> Declarative
+-> In Interactive we will create pod using CLI Commands
+   -> kubectl run --name <container name> --image=ashokit/javawebapplication
+-> In Declarative will create pod using menifeast files
+
+-> Pod is ephemeral [It lives short period time]
+-> If pod will delete any reason it won't create another pod
+-> For that, we should use Replica controller and Replica Set to get High availablity [It keep running]
+
+# What is Replica Controller [Self healing capacity]
+-> We can scale up and scale down our pods
+-> We can create Multiple pods
+
+# What is Replica Set
+-> It is the Advance feature of replica controller
+-> We can scale up and scale down our pods
+-> We can create Multiple pods
+
+# What is the difference between Replica Controller and Replica Set
+-> Replica Controller will support the single selector
+-> Replica Set will support the multiple selectors
+
+-> kubectl scale <resource type> <deployment name> --replicas=<number of replicas>
+
+-> If we want rollout and rollback our pod and autoscaling we need deployment
+
+# What is Deployment
+-> By using Deployment we can rollout and rollback our application. We can achive even autoscaling
+
+-> In Deployment we have so many strategies 
+   -> Recreate Deployment
+   -> Rolling Update Deployment
+   -> Blue and Green Deployment [It's a approach not a Deployment starategy]
+   -> Canary Deployment
+
+# What is Recreate Deployment
+-> First it will stop all old pods then it will create new pods
+-> It's a simple deployment but it's leads to downtime because no pods available during traffic switching
+
+# What is Rolling Update Deployment
+-> It will terminate the old pods one by one while it will create the new pods one by one
+-> It is default kubernetes deployment. we can easily the rollback the old image version. 
+-> It will deploy with zero downtime but mixing old version and new vesion images. it would be risk if version not work.
+
+# What is Blue and Green Deployment
+-> We have two environments one is blue (current env) and green(new env)
+-> We can easily switch traffic from blue to green once green ready
+-> we should maintain two infrastructure env it lead to the high cost
+
+# What is Canary Deployment
+-> Release the new version to small subset of users, if it is not occur any error then we will release to everyone
+-> We can easily detect the problems and safely test in production
+-> Monitoring is needed
+
+
+# What is StatefulSet
+-> StatefulSet is a kubernetes workload API object is used to manage stateful applications, that application requires
+    -> Stable Storage
+    -> Unique Network
+    -> Ordered deployment, scaling and deletion
+
+# What is the difference between Deploymet and StatefulSet
+
+| Feature          | Deployment                 | StatefulSet                            |
+| ---------------- | -------------------------- | -------------------------------------- |
+| Pod Name         | Random (`pod-xyz-abc`)     | Stable and predictable (`pod-name-0`)  |
+| Storage          | Shared or Ephemeral(EFS)   | Stable and Persistent (via PVCs) (EBS) |
+| Pod Identity     | Not guaranteed             | Stable network identity (`pod-name-0`) |
+| Start/Stop Order | Not guaranteed             | Ordered start/stop                     |
+| Use Case         | Stateless apps (e.g., web) | Stateful apps (e.g., databases)        |
+
+
+# What Daemon Set
+-> Daemon Set Ensures one or more copy of pods running every workernode in cluster
+-> It is mostly used for log collectors, Node Monitoring agent and security agaent
+
+# What is the difference between Deployment and Daemon Set
+-> In Deployment we deploy the pod based on replica it will run the pods in differnet nodes or even multiple pods in one node
+-> In Daemonset When we use Daemonset it will ensure the pod running every workernode in cluster. If you add any new workernode it will also automatically create the pod in that workernode.
+
+
+# What is Job
+-> It will run pod until task complete then it stops
+-> It is used for onetime task
+-> It will mostly used data migration and send mail at one time
+
+# What is Cronjob
+-> It will run the job on schedule like simalar linux cron jobs
+-> It is mostly used for taking database backups, sending monthly reports
+
+
+# What is Autoscaling
+-> We have two types of Autoscaling 
+    -> Horizontal Pod Autoscaling [HPA]
+    -> Vertical Pod Autoscaling [VPA]
+
+# What is Horizontal Pod Autoscaling
+-> It will increase the pods based on CPU and Menory Utilization when the load increase on pods
+
+# What is Vertical Pod Autoscaling
+-> It will increase the capacity of system means it will increase the CPU and Memory Size when the load increase on pod but it needs to do restart it will leads to down time. That's why it's not recommended
+
+
+
+# What is services
+-> If we want to access our pod inside and outside of the cluster after create pod we need service in kubernets
+-> we have some services in kubernetes
+   -> CLusterIP
+   -> NodePort
+   -> LoadBalancer
+   -> ExternalName
+   -> Headless
+
+# What Cluster Ip
+-> Cluster It will work to access our pod only inside our cluster
+
+# What NodePort
+-> NodePort It will work to access our pod inside and outside of cluster with node Ip and static port of each node
+
+# What LoadBalancer
+-> LoadBalancer it will work to access our pod inside and outside of cluster with automatically provisined load balancer URL
+
+# ExternalName
+-> ExternalName service allow kubernetes service act as a ailas to external DNS Host
+-> It's returns the CNAME Record to external DNS Host
+
+# Headless
+-> Headless service is needed so each pod get specific stable DNS name
+-> It is mostly use in statefulset application where client can directly connect to specific pod
+
+
+
+# What is Compute Resources
+-> CPU and Memory we called Compute Resources
+-> CPU measure in Vcores
+-> Memory Measure in Bytes
+-> We have two options under Compute resource
+   -> request
+   -> limit
+
+# What is request
+-> This defines the minimum amount CPU and Memory container is needed. Kubernetes is use to decide where to schedule the pods, if the node are not enough available resource then it won't schedule the pod.
+
+# What is Limit
+-> This defines the maximum amount CPU and Memory container is allowed to use. If container is tried to use more than limit then CPU throttled and memory killed
+
+
+# What is ConfigMap
+-> ConfigMap are used to store the config data consumed by pod and another resources
+-> It will store the non-sensitive data like username.
+
+# What is Secret
+-> Secret are used to store the sensitive data like password and tokens.
+
+# What are the Types of secrets
+-> Obaque:- It is most commonly used secret. It allow us to store key value pairs
+-> Docker-Registry:- It will store the credentials to authendicate the private Docker registry
+-> TLS:- It will store the Certificates
+-> Service-Account:- It will automatically create the secrets that provide credentials for accessing the kubernetes API
+

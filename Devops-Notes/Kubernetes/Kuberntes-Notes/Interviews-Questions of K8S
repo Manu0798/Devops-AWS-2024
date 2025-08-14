@@ -40,6 +40,10 @@
 -> expernice with production deployment 
 -> Kubernetes is better suited for large organisation
 
+Note:- Docker-swaram it will install all the components like API, ETCD .. in os.
+       Kubernetes it will install all the components as a container
+       If any component goes down in docker swaram entire master will halted. In Kubernetes if it goes it will create new container along with all the components.
+
 # What are the features of K8S
 -> Auto Scheduling
 -> Self healing capacity  [Replication controller]
@@ -74,6 +78,8 @@
 # Kubernets Architecture
 -> k8s works on cluster modules
 -> In k8s cluster we will have masternode and workernode
+   -> Master Node  [Master node will manage the worker node in cluster]
+   -> Worker node  [Worker will run the tasks assign by master node]
 
 # To Communicate with kubernets cluster we have 2 options
 -> UI (user interface)
@@ -82,11 +88,6 @@
 # What is Kubectl
 -> Kubectl is command line interface(CLI) for interacting with Kubernetes clusters
 -> Kubectl is used to run the commands on kubernetes cluster
-
-# How many nodes in k8s
--> We have two nodes in k8s 
-   -> Master Node  [Master node will manage the worker node in cluster]
-   -> Worker node  [Worker will run the tasks assign by master node]
 
 # What are the components in master node
 -> API
@@ -134,16 +135,6 @@
 -> Containers will grouped as a pod in order to increase the intelligence of resources
 -> Pod will run single container and multi container.
 
-# What is Namespace
--> In Kubernetes, a namespace is a virtual cluster within a Kubernetes cluster. 
--> It is used to organize and scope resources within the cluster, providing a way to divide cluster resources between multiple users, teams, or projects. 
--> Namespaces are primarily used to create isolated environments and prevent resource conflicts between different applications or users.
--> kubernets components will be grouped logically using namespaces
-Note: we can consider namespace as a java package
--> we will get 3 namespaces when we setup the kubernets cluster
-1) default -> It doesnt specify any namespace
-2) Kube-system -> It contains K8S Control panal Components
-3) Kube-public  -> It is reserved for k8S system usage
 
 # How types of pods can you create
 -> We can create two types
@@ -180,7 +171,8 @@ Note: we can consider namespace as a java package
 NodePort exposes a service on a static port on each node's IP, allowing external access to the service, while LoadBalancer automatically provisions an external load balancer to distribute traffic across multiple nodes or pods, providing a more robust and scalable solution for external access.
 
 # What is ExternalName Service
--> If we use ExternalName Service we can access the pod outside of the cluster by using External DNS name
+-> ExternalName service allows kubernetes service act as a ailas to external DNS host
+-> it returns a CNAME record pointing to the external host.
 
 # What is Headless Service
 ->  Headless service (clusterIP: None) is needed so each pod gets a stable DNS name, 
@@ -229,32 +221,49 @@ NodePort exposes a service on a static port on each node's IP, allowing external
 -> Rolling deployment strategy
 -> Blue and green apporach [It is not a strategy it is a approach]
 -> Canary Deployment
--> A/B Testing
--> Shadow Deployment
--> Staggered Deployment
--> Rollback Deployment
 
-# What is the Recreate deployment strategy
--> When we using the recreate deployment strategy existing pods will delete and pods will create.
+1. Recreate Strategy
+Process: Stops all old pods first, then starts all new pods.
+Pros: Simple to implement, ensures a clean slate.
+Cons: Causes downtime because no pods are available during the switch.
 
-# What is the Rolling depolyment strategy
--> When we using the rolling deployment strategy exsting pods will delete one by one while new pods will create one by one.
+2. Rolling Deployment Strategy  (Default in Kubernetes.)
+Process: Replaces pods gradually — old pods are terminated one by one while new ones are added.
+Pros: No downtime, safer than recreate. Easy rollback by restarting old image version.
+Cons: Temporary mix of old and new versions. Risk of incompatibility if versions can’t work together.
 
-# What is Blue and Green deployment strategy
--> When we using blue and green deployment strategy we can deploy our application with zero down time.
--> A blue/green deployment is a deployment strategy in which you create two separate, but identical environments.
--> One environment (blue) is running the current application version and one environment (green) is running the new application version.
+3. Blue-Green Approach (an approach, not a built-in strategy)
+Process: Keep two complete environments — Blue (current) and Green (new).
+Traffic is switched from Blue to Green once Green is ready.
+Pros: Instant rollback by switching traffic back.
+Cons: Requires double infrastructure temporarily, higher resource cost.
 
-# Advantages of Blue and green approach
--> Rapid releasing
--> Simple rollbacks
--> Built-in-disaster-recovery
--> Seamless cutomer experience
--> Zero Down time
+4. Canary Deployment
+Process: Release new pods to a small percentage of traffic first, then gradually increase if no issues occur.
+        Release the new version to a small subset of users before rolling it out to everyone. 
+Pros: Early detection of problems. Allows safe testing in production with real traffic.
+Cons: More complex routing and monitoring needed.
 
-# What Canary Deployment
--> Introduce a new version of the application to a subset of users or traffic gradually. 
--> Monitor for issues and progressively increase the rollout if everything goes well, or roll back the changes if issues are detected.
+| Strategy/Approach | Downtime | Resource Usage During Deploy | Traffic Mix   | Rollback Complexity |
+| ----------------- | -------- | ---------------------------- | ------------- | ------------------- |
+| **Recreate**      | High     | Low                          | No            | Medium              |
+| **RollingUpdate** | None\*   | Slightly higher              | Yes           | Low                 |
+| **Blue-Green**    | None     | High                         | No            | Very Low            |
+| **Canary**        | None     | Medium                       | Yes (small %) | Low–Medium          |
+
+
+
+# What is Namespace
+-> In Kubernetes, a namespace is a virtual cluster within a Kubernetes cluster. 
+-> It is used to organize and scope resources within the cluster, providing a way to divide cluster resources between multiple users, teams, or projects. 
+-> Namespaces are primarily used to create isolated environments and prevent resource conflicts between different applications or users.
+-> kubernets components will be grouped logically using namespaces
+Note: we can consider namespace as a java package
+-> we will get 3 namespaces when we setup the kubernets cluster
+1) default -> It doesnt specify any namespace
+2) Kube-system -> It contains K8S Control panal Components
+3) Kube-public  -> It is reserved for k8S system usage
+
 
 # What is Autoscaling
 > Auto Scalling allow to you to automatically scale up and scale down your application based CPU Utilization and Memory Utilization

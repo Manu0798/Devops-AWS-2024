@@ -252,3 +252,49 @@
 -> TLS:- It will store the Certificates
 -> Service-Account:- It will automatically create the secrets that provide credentials for accessing the kubernetes API
 
+
+# What is Ingress
+-> Ingress is a API Object that provides external access to the service within the cluster
+-> It route the traffic from outside the cluster to internal services based on rules
+
+# Why Do We Use Ingress?
+-> With Ingress we can expose the mulitple services over single IP/Host with different path and subdomains
+-> Without Ingress we can expose the service with load balancer and node port which is heavy cost and not scalable
+
+# What is Ingress Controller
+-> The Pod running the inside the cluster that reads the ingress rules and configure the reverse proxy to handle the traffic
+
+# What is ingress resource
+-> Define routing rules
+
+# Types of path based routing and Host based routing
+# Path base routing
+-> We need to single domain
+-> Single DNS record enough
+
+# Host base routing
+-> We need to mulitple domain and subdomain
+-> Need DNS record for each host
+
+
+
+# What is Network Policy
+-> Network Policy in Kubernetes is security rule that controls how pods to communicate to each other and with external endpoint over the internet
+-> It act as firewall for pods, It defines which pod can talk to which, on which port and using which protocal.
+
+# Why we need Network policy
+-> By default in kubernetes, All pods can communicate each other, By using network policy we can restrict the pod communication based on
+     -> lables
+     -> Namespaces
+     -> IP address
+     -> Protocals and ports
+
+
+# What is RBAC
+-> RBAC stands for role base access control 
+-> It defines the different level of permission and access level to different users based on rules
+-> RBAC is the heart of Kubernetes security
+-> We have two types of roles
+   -> Role [It will work on specific namespace]
+   -> Cluster Role [It will work on cluster level. It works on all the namespaces]
+

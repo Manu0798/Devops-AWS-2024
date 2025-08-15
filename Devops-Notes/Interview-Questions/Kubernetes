@@ -223,6 +223,15 @@
 -> It is mostly use in statefulset application where client can directly connect to specific pod
 
 
+# What is Namespace
+-> In Kubernetes namespace is virtul cluster in kubernetes
+-> Namespaces are primarily user for creating the isolated environment and prevent resource conflicts between different applications or users.
+-> We will create some namespace defaultly after setup cluster
+    -> default
+    -> kube-system   --> It container Kubernetes control plane componenets
+    -> Kube-public  -> It is reserved for k8S system usage
+
+
 
 # What is Compute Resources
 -> CPU and Memory we called Compute Resources

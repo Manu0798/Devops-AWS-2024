@@ -298,3 +298,68 @@
    -> Role [It will work on specific namespace]
    -> Cluster Role [It will work on cluster level. It works on all the namespaces]
 
+
+# What is volumes in Kubernetes
+-> Volumes in Kubernetes are tied with pods not with container, that's why even if container crash or restart we won't loss our data as long as pod alive
+
+# What are the types of volumes
+-> Emptydir
+-> Hostpath
+-> Persistence volumes
+-> Config/secret
+-> NFS
+
+# What is Emptydir
+-> It store the data Temporary share between container in pod
+-> We will loss our data if pod crash or kill
+-> It wont support to share data across mulitple pods on different nodes
+
+# What is Hostpath
+-> It mount the files and folder from host node to pod
+-> It store data as long as pod schedule in same node. If its schedule in another node, will lose our data
+-> It wont support to share data across mulitple pods on different nodes
+
+Note: The above two are ephemeral it's not recommend
+
+# What is persistence volume
+-> It will store the data as a persistence backend like [EBS, EFS]
+-> We can retrive the data even if pod crash or kill
+-> It will support the share the data across multiple pods on different node
+-> we have three components in persistence volume
+    -> Persistence Volume
+    -> Persistence Volume Claim
+    -> Storage Class
+
+# What is Persistence Volume
+-> Persistence Volume is a Piece of storage in kubernetes that has beed provisioned by an administrator and dynamically provisioned storage class
+
+# What is Persistence Volume Claim
+-> Persistence Volume Claim is the request for storage By administrator or user
+-> Kubernetes will support some access modes in persistence volume claim
+    -> RWO [Read Write Once]
+    -> RWX [Read Write Many]
+    -> ROX [Read Only Many]
+    -> RWO-Pod [Read Write Once Pod]
+
+# What RWO
+-> It will mount the volume by Single Node
+-> It is best for pod is running in same node
+-> EBS will support
+
+# What RWX
+-> It will mount the volume by mulitple Nodes
+-> It is best for share the data accross multiple pods on different nodes
+
+# What ROX
+-> It will mount volume as read only by multiple nodes
+-> It is best for static data
+
+# What RWO-Pod
+-> It will mount the volume as read write Once pod by single pod, even if multiple pods are running on node
+-> Useful for strong isolation — only one pod in the entire cluster can read/write.
+
+# What is Storage Class
+-> Define How Dynamically provisioned persistence volume
+-> Automatically create PV when PVC are request
+
+

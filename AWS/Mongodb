@@ -640,4 +640,4 @@ WantedBy=multi-user.target
 
 # Download the s3 bucket from AWS to Local
 -> aws configure
--> aws s3 cp s3://frissly-mongo-backup/02-05-2025_10-20/ D:\bucket --recursive
+-> aws s3 cp s3://frissly-prod-mongodb-backup-1/16-08-2025_18-14/ D:\mongodb_backup --recursive

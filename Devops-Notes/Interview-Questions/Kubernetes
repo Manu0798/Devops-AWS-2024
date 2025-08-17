@@ -372,3 +372,201 @@ Note: The above two are ephemeral it's not recommend
 -> Automatically create PV when PVC are request
 
 
+# What is Liveness probe and readness probe in kubernetes
+🔹 1. Liveness Probe
+Purpose: Checks if the container is still running (alive).
+If the liveness probe fails → Kubernetes kills the container and restarts it.
+
+🔹 2. Readiness Probe
+Purpose: Checks if the container is ready to accept requests.
+If the readiness probe fails → Kubernetes removes the Pod’s IP from the Service’s endpoints.
+
+
+# How does two conatier can communicate in single node
+-> In Kubernetes, when two containers run in the same Pod (on the same node), they communicate with each other using localhost (127.0.0.1)` because they share the same network namespace.
+
+# How does two pods can communicate in single node
+-> It can communicate with each other via their Pod IPs
+
+🔹 1. Each Pod gets its own IP
+Kubernetes uses a CNI plugin (Container Network Interface) like Flannel, Calico, Weave, etc.
+Every Pod gets a unique IP address in the cluster network, even if they are on the same node.
+
+# How Pods on Different Nodes Communicate
+When Pods are on different worker nodes, they still need to talk to each other with the help of Container Network Interface (CNI) plugin.
+
+
+# What is CNI?
+-> CNI = Container Network Interface
+-> It’s a standard (defined by CNCF) for configuring network interfaces in Linux containers.
+-> Kubernetes doesn’t implement networking itself — instead, it relies on CNI plugins to provide Pod networking.
+
+# What does a CNI plugin do?
+When a Pod is created:
+-> Assigns an IP address to the Pod (so every Pod has its own IP).
+-> Sets up networking rules so Pods can send/receive traffic.
+-> Handles cross-node communication (routing/encapsulation).
+-> Manages Pod-to-Service communication when combined with kube-proxy.
+
+
+# What is the difference between Docker container and kubernetes pod?
+🐳 Docker Container
+-> Docker Container Runs a single application/process (e.g., Nginx, MySQL, Node.js service).
+-> Focused only on containerizing applications.
+
+☸️ Kubernetes Pod
+A Pod Runs one or more containers.
+Pods are managed by higher-level objects like Deployments, StatefulSets, DaemonSets.
+Focused on orchestration, scaling, and self-healing of containers.
+
+# How do you handle the Kubernetes cluster Security
+Kubernetes security is about defense in depth:
+-> Secure cluster access (RBAC, API server).
+-> Secure workloads (Pod Security, least privilege).
+-> Secure networking (NetworkPolicies, mTLS).
+-> Secure data (Secrets encryption).
+-> Continuous monitoring (logging, scanning, auditing).
+
+
+# What is Service Mesh [If anyone ask i know how it will work but i don't work on particully 
+-> Service mesh is used for to communicate from one service to another service securaly
+-> Servie mesh is used for running east-west tarffic in cluster
+-> Enabling the mutual TLS
+-> Service mesh provides the some capabilities such as load balance, observability, tarcing, authentication and 
+   authorization etc
+
+# What is init container and why do we need it
+🚀 What is an Init Container in Kubernetes?
+-> An Init Container is a special type of container in a Kubernetes Pod that runs before the main application containers start.
+-> It always runs to completion (successfully exits) before the main container(s) are started.
+-> You can have one or multiple init containers in a pod.
+-> If an init container fails, Kubernetes will restart it until it succeeds (or the pod is deleted).
+
+⚙️ Why Do We Need Init Containers?
+They are useful for tasks that need to be done once, before the main app runs:
+Dependency Initialization
+Wait for another service (like a database) to be ready.
+Example: Ensure MySQL is up before starting the backend.
+
+
+# What Pod Disruption Budget  (Prevents too many pods from going down)
+-> A PodDisruptionBudget (PDB) in Kubernetes is a resource that ensures high availability of your application during voluntary disruptions like:
+     Node drains (e.g., during upgrades)
+     Cluster maintenance
+     Rolling updates
+
+
+# How do you scale your application dynamically based on the number of incoming requests in Kubernetes?
+-> By using Horizontal Pod Autoscalling
+
+
+# If you have 2 containers in the same pod and one container's liveness probe fails, what happens?
+-> In Kubernetes:
+	Each container in a Pod can have its own liveness probe.
+	If the liveness probe of Container A fails:
+	Kubernetes restarts only Container A.
+	Container B (in the same Pod) continues running unaffected.
+
+	🔁 What does "restarted" mean?
+	It does not recreate the Pod.
+	It simply kills and restarts the failing container inside the same Pod, retaining:
+	The same IP address
+	The same volume mounts
+	The same networking setup
+
+
+# How do you configure log file sharing when one container writes logs and another container accesses them in the same pod?
+
+✅ Use Case
+One container (e.g., app-container) writes logs to a file.
+Another container (e.g., log-agent) reads or ships those logs (like a sidecar).
+
+✅ Solution: Use emptyDir Volume
+emptyDir creates a temporary directory shared across containers in the same Pod.
+
+
+# How do you confirm if the second container has access to the logs generated by the first container?
+✅ 1. Use kubectl exec into the second container
+Run this command to open a shell inside the second container (e.g., log-reader):
+
+kubectl exec -it log-sharing-pod -c log-reader -- sh
+✅ 2. List the shared log directory
+Inside the second container's shell:
+ls -l /var/log/app
+You should see the log file (app.log) written by the first container.
+
+✅ 3. Tail or read the log file
+To confirm contents:
+cat /var/log/app/app.log
+or
+tail -f /var/log/app/app.log
+If logs are streaming, you’ll see the entries generated by the first container.
+
+
+
+# How do you configure permissions to delete pods in k3s using RBAC?
+To configure permissions to delete pods in k3s using RBAC (Role-Based Access Control), you need to:
+Create a Role (or ClusterRole) that allows delete on pods.
+Bind it to a ServiceAccount and role using RoleBinding (or ClusterRoleBinding).
+
+
+# How do you write a script to delete completed pods in Kubernetes?
+-> kubectl delete pod --all-namespaces \
+  --field-selector=status.phase==Succeeded,status.phase==Failed
+
+# How do you delete all pods in all states in a namespace or cluster-wide?
+-> kubectl delete pods --all -n <namespace>
+
+
+# What are StorageClasses in Kubernetes?
+-> A StorageClass in Kubernetes defines how storage is provisioned dynamically for PersistentVolume(PV).
+
+# A pod is CrashLoopBackOff. How do you troubleshoot?
+-> I do run the kubectl describe pod <pod-name> -n <namespace> to idenitfy the error, mostly we get this CrashLoopBackOff due to 
+   Non-zero exit code
+   Image pulling issues
+   Probe failures
+   Volume mount or permission errors
+
+
+# Your deployment is not scaling. What might be the reasons?
+-> Resource limits on the nodes
+-> Insufficient CPU/memory
+-> Misconfigured HPA
+
+
+# Network connectivity between pods is failing. How do you debug?
+-> Check CNI plugin status
+-> Ensure all pods are in same network space
+-> Try to Ping or Curl Between Pods
+   -> kubectl exec -it <source-pod> -n <namespace> -- ping <destination-pod-IP>
+   -> kubectl exec -it <source-pod> -n <namespace> -- curl http://<destination-pod-IP>:<port>
+
+#  Application is slow in Kubernetes. What areas do you check?
+-> Pod resource limits and usage
+-> Node health (kubectl get nodes)
+-> Network latency (Istio, Cilium metrics)
+-> Persistent storage I/O
+-> Liveness/Readiness probes delaying traffic
+
+
+# How would you implement blue-green deployment in Kubernetes?
+Answer: Deploy both versions (blue and green) and use Services or Ingress to switch traffic. Can also use labels and selectors dynamically.
+
+# How do you upgrade a Kubernetes cluster?
+-> Monitor the logs and health post-upgrade
+-> Use kubeadm upgrade plan (if using kubeadm)
+-> Upgrade control plane first
+-> Upgrade worker nodes one-by-one
+
+# ETCD is unhealthy, and API server is timing out. Steps to recover?
+-> Check etcd logs
+-> Verify disk/storage health
+-> Restore from etcd backup (etcdctl snapshot restore)
+-> Restart control plane components
+
+# You see high CPU usage in kubelet. What could be wrong?
+-> Too many pods on a node
+-> Frequent log rotation
+-> Heavy resource metrics scraping (Prometheus)
+-> Check logs, garbage collection, and kubelet flags

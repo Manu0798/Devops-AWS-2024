@@ -111,8 +111,17 @@
 -> We can create Multiple pods
 
 # What is the difference between Replica Controller and Replica Set
--> Replica Controller will support the single selector
--> Replica Set will support the multiple selectors
+-> We have two types of Selectors
+	 1) Equality Selector
+     2) Set-based Selector
+
+# Equality Selector
+-> If we use Equlity Selector you can give only one selector
+-> Replication controller will supports the Equality Selector
+
+# Set-based Selector
+-> If we use Set-based Selector you can give only multiple selector
+-> Replication set will supports the Set-based Selector
 
 -> kubectl scale <resource type> <deployment name> --replicas=<number of replicas>
 
@@ -206,7 +215,7 @@
    -> Headless
 
 # What Cluster Ip
--> Cluster It will work to access our pod only inside our cluster
+-> ClusterIP It will work to access our pod only inside our cluster
 
 # What NodePort
 -> NodePort It will work to access our pod inside and outside of cluster with node Ip and static port of each node
@@ -228,7 +237,7 @@
 -> Namespaces are primarily user for creating the isolated environment and prevent resource conflicts between different applications or users.
 -> We will create some namespace defaultly after setup cluster
     -> default
-    -> kube-system   --> It container Kubernetes control plane componenets
+    -> kube-system   --> It contains Kubernetes control plane componenets
     -> Kube-public  -> It is reserved for k8S system usage
 
 
@@ -271,7 +280,7 @@
 -> Without Ingress we can expose the service with load balancer and node port which is heavy cost and not scalable
 
 # What is Ingress Controller
--> The Pod running the inside the cluster that reads the ingress rules and configure the reverse proxy to handle the traffic
+-> The Pod running the inside the cluster that reads the ingress rules and configure the reverse proxy to handle the traffic.
 
 # What is ingress resource
 -> Define routing rules
@@ -358,6 +367,7 @@ Note: The above two are ephemeral it's not recommend
 # What RWX
 -> It will mount the volume by mulitple Nodes
 -> It is best for share the data accross multiple pods on different nodes
+-> EFS will support
 
 # What ROX
 -> It will mount volume as read only by multiple nodes

@@ -1,7 +1,7 @@
 ImagePullbackoff Error:
   ImagePull:- You will get this error when you keep the invid image name or non-existing image in your manifeast files you will get this kind of imagepull of error.
   Backoff error:- Due to any network issues kubectl are not able take the image at that you will get this Backoff error
-  You will get both error at a time but we have explore differently eaxh one.
+  You will get both error at a time but we have explore differently each one.
 
 https://youtu.be/vGab4v3RWEw?si=9F5sTjDGBwimK8bI
 
@@ -24,28 +24,99 @@ FailedScheduling Error:
   Based on below reasons we will get this error
   -> Node Selector [It will schedule the pod on particular Node]
   -> Node Affinity 
-        In Node Affinity we have two options 
-          -> Preffered:- Fisrt you will try to schedule the pod on particular Node if it not available you will schedule at anywhere
-          -> Required:- It will aslo work like Node Selector it will schedule the pod on specific Node
+    In Node Affinity we have two options 
+    # PreferredDuringSchedulingIgnoredDuringExecution (Preferred)
+    -> This is a soft rule.
+    -> The scheduler will try to place the Pod on nodes that match your affinity rules, but if none are available, it will fall back to any other node.
+    -> Example use case: “I prefer running my Pod on SSD nodes, but it can run elsewhere if needed.”
 
-  What is the difference between Node Selector and Node Affinity 
-  Node Selector: It will forcefully schedule the pod on particular node that we called hard match [Less flexible control]
-  Node Affinity: We have two Options one is Preffered and Required that we called hard and soft [More flexible control]
+    # RequiredDuringSchedulingIgnoredDuringExecution (Required)
+    This is a hard rule (just like NodeSelector, but more expressive).
+    The Pod must be scheduled on a node that matches the rule.
+    If no matching nodes exist, the Pod will stay Pending and never run until a suitable node is available.
+    Example use case: “This Pod must run on GPU nodes only.”
 
-  -> Taint [It would use if you dont want to shedule the pod on specific node at that momemt we have to apply the taint to that Node] [Noscheduling]
-      Mostly use for Upgrade the versions of Cluster and nodes, backup 
-      Exammple:- You have production cluster with 3 workernodes after few days do you want to update your cluster with laterst version.
-                 But Pods are running on all the three worker nodes whereas if you want to update you must face the some downtime, But in procution its not recommand at time
-                 First you will transfer pods from which is running one worker node to second worker node then you will attach the taint to the worker node one then pods will not schedule the workernode one until complete your update.
-      We have three types of taints
-        -> No Schedule  [It is used for the update the cluster and backup]
-        -> No execute   [When use No execute taint all the in workernode it will stop immediatly so that it will little bit risky]
-        -> Preferred Node  [In wrost cases you will use this node means if your work node is not working well then you will use preffered node taint]
+# What is Taint
+-> A taint is applied on a Node to repel Pods unless those Pods have a matching toleration.
+-> Purpose: “Don’t schedule Pods here unless they specifically tolerate this condition.”
+👉 Use cases (your cluster upgrade example is correct):
+-> When upgrading a node, you add a NoSchedule taint so that new Pods don’t land on that node.
+-> Existing Pods can be drained (kubectl drain) so that node becomes free for maintenance.
+-> Also used for dedicated workloads (e.g., GPU nodes, system nodes).
 
-  -> Toleration [Basically its given the some exception to certain pods means if you set the toleration to the pod manifest file it will schedule the pod even in taint means noschedule workernode]
+  # Taint effects (3 types):
+  -> NoSchedule → No new Pods are scheduled unless they tolerate.
+  -> NoExecute → Evicts existing Pods (without toleration) and blocks new ones.
+  -> PreferNoSchedule → Tries to avoid placing Pods here, but may schedule if no better option.
+
+# What is Toleration
+-> A toleration is set in the Pod spec.
+-> It allows the Pod to ignore the taint and still schedule on that Node.
+-> Example: If a node has NoSchedule taint, but a Pod has the correct toleration, it can still be scheduled there.
+👉 Basically, taints = rules from Node, and tolerations = exceptions from Pod.
 
 https://youtu.be/O61HDmGUBJM?si=l1O7IMkIqMPVFjDA
 
+# Pod YAML with NodeSelector
+apiVersion: v1
+kind: Pod
+metadata:
+  name: node-selector-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+  nodeSelector:
+    disktype: ssd
+
+# Pod YAML with NodeAffinity
+apiVersion: v1
+kind: Pod
+metadata:
+  name: node-affinity-example
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+
+  affinity:
+    nodeAffinity:
+      # --- Hard rule (Required) ---
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: disktype
+            operator: In
+            values:
+            - ssd
+
+      # --- Soft rule (Preferred) ---
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1a
+
+# Add a Taint to a Node
+-> kubectl taint nodes worker-node1 key1=value1:NoSchedule
+
+# Pod WITH Toleration (will schedule)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: toleration-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+  tolerations:
+  - key: "key1"
+    operator: "Equal"
+    value: "value1"
+    effect: "NoSchedule"
 
 
 

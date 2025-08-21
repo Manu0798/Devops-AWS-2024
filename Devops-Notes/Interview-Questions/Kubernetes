@@ -533,10 +533,54 @@ Bind it to a ServiceAccount and role using RoleBinding (or ClusterRoleBinding).
 
 # A pod is CrashLoopBackOff. How do you troubleshoot?
 -> I do run the kubectl describe pod <pod-name> -n <namespace> to idenitfy the error, mostly we get this CrashLoopBackOff due to 
+   Liveness and readness probe failures
+   Memroy Limit
    Non-zero exit code
    Image pulling issues
-   Probe failures
    Volume mount or permission errors
+
+# A pod is ImagePullbackoff Error:. How do you troubleshoot?
+-> I do run the kubectl describe pod <pod-name> -n <namespace> to idenitfy the error, mostly we get this ImagePullbackoff Error due to 
+  ImagePull:- You will get this error when you keep the invid image name or non-existing image in your manifeast files you will get this kind of imagepull of error.
+  Backoff error:- Due to any network issues kubectl are not able take the image at that you will get this Backoff error
+  You will get both error at a time but we have explore differently each one.
+
+# A pod is FailedScheduling Error:. How do you troubleshoot?
+-> I do run the kubectl describe pod <pod-name> -n <namespace> to idenitfy the error, mostly we get this FailedScheduling Error due to 
+  -> Node Selector 
+  -> Node Affinity 
+  -> Taint
+  -> Toleration
+
+# What is Node Selector
+-> It will schedule the pod on particular Node
+
+# What is Node Affinity
+-> In Node Affinity we have two options 
+   -> PreferredDuringSchedulingIgnoredDuringExecution (Preferred)
+   -> RequiredDuringSchedulingIgnoredDuringExecution (Required)
+
+# What is PreferredDuringSchedulingIgnoredDuringExecution (Preferred)
+-> This is soft rule
+-> It will try to schedule pod on node if that node does not have enough available resources it will schedule in another node
+-> The scheduler will try to place the Pod in zone=us-east-1a.
+
+# What is RequiredDuringSchedulingIgnoredDuringExecution (Required)
+-> This hard rule
+-> It will work as like Node Selector. It will only schedule the pod on specific node. It that node does not enough available resources, The Pod will stay Pending and never run until a suitable node is available.
+-> Pod will only run on nodes with label disktype=ssd.
+
+# What is taint
+-> Taint applies on node, it wont schedule the any pod unless those Pods have a matching toleration
+	# Taint effects (3 types):
+	-> NoSchedule → No new Pods are scheduled unless they tolerate.
+	-> NoExecute → Evicts existing Pods (without toleration) and blocks new ones.
+	-> PreferNoSchedule → Tries to avoid placing Pods here, but may schedule if no better option.
+
+# What is Toleration
+-> A toleration is set in the Pod spec.
+-> It will schedule the pod on that nodes ignore the taint.
+
 
 
 # Your deployment is not scaling. What might be the reasons?

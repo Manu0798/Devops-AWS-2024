@@ -1,0 +1,133 @@
+image: node:22
+
+pipelines:
+  branches:
+    feature/Refactoring-api-data:
+      - step:
+          name: Build, Test, Scan, and Push Docker Image to ECR (Dev)
+          deployment: Dev-Deployment
+          services:
+            - docker
+          caches:
+            - node
+          script:
+            # Install required dependencies
+            - apt-get update && apt-get install -y curl unzip awscli jq mutt
+
+            # Install Node.js dependencies, build, and run tests
+            - npm install
+            - npm run build --if-present
+            - npm test --if-present
+            
+            # Configure AWS CLI with provided credentials
+            - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+            - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+            - aws configure set region "$AWS_REGION"
+
+            # Verify AWS connection
+            - aws sts get-caller-identity
+
+            # Install Trivy for security scanning
+            - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.39.0/trivy_0.39.0_Linux-64bit.deb -o trivy.deb
+            - dpkg -i trivy.deb
+
+            # Set custom Trivy cache directory to prevent "no space left on device" error
+            - export TRIVY_CACHE_DIR=/tmp/trivy-cache
+            - mkdir -p $TRIVY_CACHE_DIR
+
+            # Run Trivy filesystem scan
+            - trivy fs --cache-dir $TRIVY_CACHE_DIR --format table -o fs-report.html .
+
+            # Build Docker image
+            - docker build -t "$DOCKER_IMAGE_NAME" .
+
+            # Run Trivy image scan
+            - trivy image --cache-dir $TRIVY_CACHE_DIR --format table -o image.html "$DOCKER_IMAGE_NAME"
+
+            # ECR repo management
+            - |
+              export ECR_REPO_NAME=$(echo "$ECR_REPO_NAME" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]//g')
+              aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" --region "$AWS_REGION" || \
+              aws ecr create-repository --repository-name "$ECR_REPO_NAME" --region "$AWS_REGION"
+
+            # Push to ECR
+            - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+            - docker tag "$DOCKER_IMAGE_NAME:latest" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
+            - docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
+
+            # Cleanup old images (keep only latest 3 by pushedAt timestamp)
+            - |
+              IMAGE_DETAILS=$(aws ecr describe-images \
+                --repository-name "$ECR_REPO_NAME" \
+                --region "$AWS_REGION" \
+                --query 'sort_by(imageDetails,& imagePushedAt)' \
+                --output json)
+
+              TOTAL=$(echo "$IMAGE_DETAILS" | jq length)
+              echo "Total images in repo: $TOTAL"
+
+              if [ "$TOTAL" -gt 3 ]; then
+                # Keep last 3 (newest), delete the rest
+                DELETE_IMAGES=$(echo "$IMAGE_DETAILS" | jq -r '.[0:-3] | .[] | {digest: .imageDigest, tag: .imageTags[0]}')
+
+                echo "Deleting old images..."
+                echo "$DELETE_IMAGES" | jq -c '.' | while read -r IMG; do
+                  DIGEST=$(echo "$IMG" | jq -r '.digest')
+                  TAG=$(echo "$IMG" | jq -r '.tag')
+
+                  if [ "$TAG" != "null" ]; then
+                    echo "Deleting tagged image: $TAG ($DIGEST)"
+                    aws ecr batch-delete-image \
+                      --repository-name "$ECR_REPO_NAME" \
+                      --region "$AWS_REGION" \
+                      --image-ids imageTag=$TAG imageDigest=$DIGEST || true
+                  else
+                    echo "Deleting untagged image: $DIGEST"
+                    aws ecr batch-delete-image \
+                      --repository-name "$ECR_REPO_NAME" \
+                      --region "$AWS_REGION" \
+                      --image-ids imageDigest=$DIGEST || true
+                  fi
+                done
+              else
+                echo "Nothing to delete. Only $TOTAL images present."
+              fi
+
+            # Prepare artifacts
+            - mkdir -p artifacts
+            - cp fs-report.html artifacts/
+            - cp image.html artifacts/
+            - tar -cvf artifacts.tar artifacts/
+
+          artifacts:
+            - artifacts/**
+
+      - step:
+          name: Send Deployment Email Notification with Reports
+          script:
+            # Install required dependencies
+            - apt-get update && apt-get install -y jq mutt
+            
+            # Send email using mutt
+            - |
+              SMTP_SERVER="$SMTP_SERVER"
+              SMTP_PORT="$SMTP_PORT"
+              SMTP_USER="$SMTP_USER"
+              SMTP_PASS="$SMTP_PASS"  # Use an App Password, not your actual Gmail password
+              TO_EMAIL="$TO_EMAIL"
+              FROM_EMAIL="$FROM_EMAIL"
+              SUBJECT="🚀 Dev Deployment Complete"
+              BODY="Hello Team,\n\nThe Dev deployment for branch 'dev' has been successfully completed and is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nAttached are the security scan reports.\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
+
+              # Send email with attachments
+              echo -e "$BODY" | mutt -s "$SUBJECT" \
+                -e "set from=\"$FROM_EMAIL\"" \
+                -e "set smtp_url=\"smtp://$SMTP_USER:$SMTP_PASS@$SMTP_SERVER:$SMTP_PORT/\"" \
+                -e "set smtp_pass=\"$SMTP_PASS\"" \
+                -e "set ssl_starttls=yes" \
+                -e "set ssl_force_tls=yes" \
+                -a "artifacts/fs-report.html" \
+                -a "artifacts/image.html" \
+                -- "$TO_EMAIL"
+
+            - echo "📧 Dev deployment notification email sent to ${TO_EMAIL}"

@@ -4,7 +4,8 @@ pipelines:
   branches:
     uat:
       - step:
-          name: Build, Test, Scan, and Push Docker Image to ECR (uat)
+          name: Build, Test, Scan, and Push Docker Image to ECR (Uat)
+          deployment: Uat-Deployment
           services:
             - docker
           caches:
@@ -53,6 +54,44 @@ pipelines:
             - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
             - docker tag "$DOCKER_IMAGE_NAME:latest" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
             - docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG"
+            
+            # Cleanup old images (keep only latest 3 by pushedAt timestamp)
+            - |
+              IMAGE_DETAILS=$(aws ecr describe-images \
+                --repository-name "$ECR_REPO_NAME" \
+                --region "$AWS_REGION" \
+                --query 'sort_by(imageDetails,& imagePushedAt)' \
+                --output json)
+
+              TOTAL=$(echo "$IMAGE_DETAILS" | jq length)
+              echo "Total images in repo: $TOTAL"
+
+              if [ "$TOTAL" -gt 3 ]; then
+                # Keep last 3 (newest), delete the rest
+                DELETE_IMAGES=$(echo "$IMAGE_DETAILS" | jq -r '.[0:-3] | .[] | {digest: .imageDigest, tag: .imageTags[0]}')
+
+                echo "Deleting old images..."
+                echo "$DELETE_IMAGES" | jq -c '.' | while read -r IMG; do
+                  DIGEST=$(echo "$IMG" | jq -r '.digest')
+                  TAG=$(echo "$IMG" | jq -r '.tag')
+
+                  if [ "$TAG" != "null" ]; then
+                    echo "Deleting tagged image: $TAG ($DIGEST)"
+                    aws ecr batch-delete-image \
+                      --repository-name "$ECR_REPO_NAME" \
+                      --region "$AWS_REGION" \
+                      --image-ids imageTag=$TAG imageDigest=$DIGEST || true
+                  else
+                    echo "Deleting untagged image: $DIGEST"
+                    aws ecr batch-delete-image \
+                      --repository-name "$ECR_REPO_NAME" \
+                      --region "$AWS_REGION" \
+                      --image-ids imageDigest=$DIGEST || true
+                  fi
+                done
+              else
+                echo "Nothing to delete. Only $TOTAL images present."
+              fi
 
             # Prepare artifacts
             - mkdir -p artifacts
@@ -77,8 +116,8 @@ pipelines:
               SMTP_PASS="$SMTP_PASS"  # Use an App Password, not your actual Gmail password
               TO_EMAIL="$TO_EMAIL"
               FROM_EMAIL="$FROM_EMAIL"
-              SUBJECT="🚀 UAT Deployment Complete"
-              BODY="Hello Team,\n\nThe UAT deployment for branch 'uat' has been successfully completed and is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nAttached are the security scan reports.\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
+              SUBJECT="🚀 Uat Deployment Complete"
+              BODY="Hello Team,\n\nThe Uat deployment for branch 'uat' has been successfully completed and is now live.\n\n🔗 Bitbucket Pipeline: https://bitbucket.org/workspace/repo/pipelines/\n\nAttached are the security scan reports.\n\nThank you for your support.\n\nBest Regards,\nThe DevOps Team."
 
               # Send email with attachments
               echo -e "$BODY" | mutt -s "$SUBJECT" \
@@ -91,4 +130,4 @@ pipelines:
                 -a "artifacts/image.html" \
                 -- "$TO_EMAIL"
 
-            - echo "📧 UAT deployment notification email sent to ${TO_EMAIL}"
+            - echo "📧 Uat deployment notification email sent to ${TO_EMAIL}"

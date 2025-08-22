@@ -1,3 +1,416 @@
 # What is Docker 
 -> Docker is a containerisation Platform that allow the application you to use package and distributed the software application in container
 -> Docker is used to manage the container based application
+
+# How docker will work
+-> Docker packages the developer’s code + dependencies into an image.
+-> That image is then used to run containers (your running apps).
+
+# What is Container
+-> Container is the way to package the application with all necessary dependencies and configuration
+-> It is light weight operating system because it only includes the application layer + necessary libraries/runtime.
+-> Containers don’t include a full OS Unlike VM. instead, it share the host operating system’s kernel(laptop), which makes them lightweight
+
+# What is Virtual Machine
+-> Virtual Machine is a software it has full operating system
+-> It rely on the host machine’s physical resources(laptop)
+-> You install a hypervisor like VirtualBox, VMware Workstation, or enable Hyper-V. To run the VM and multiple VM
+
+
+# What is Hypervisor
+-> A Hypervisor is special software that allows you to run multiple virtual machines (VMs) on host (laptop)
+-> It acts as a resource manager → dividing CPU, RAM, Disk among multiple VMs.
+-> This hypervisor sits on top of our laptop Windows OS and pretends to be “hardware” for virtual macines
+
+# Why Docker instead of VMs?
+
+| Feature         | Virtual Machines                  | Containers (Docker)        |
+| --------------- | --------------------------------- | -------------------------- |
+| **OS**          | Each VM has its own OS            | Share host OS kernel       |
+| **Size**        | GBs (big)                         | MBs (small)                |
+| **Startup**     | Minutes                           | Seconds                    |
+| **Efficiency**  | Uses more CPU/RAM                 | Uses less, lightweight     |
+| **Portability** | Difficult                         | “Build once, run anywhere” |
+| **Isolation**   | Strong isolation (via hypervisor) | Process-level isolation    |
+
+# What is the difference between Traditional VMs and AWS Ec2
+🔹 Traditional VMs (VirtualBox, VMware, Hyper-V)
+-> Run on top of your own laptop/desktop.
+-> You install a hypervisor (VirtualBox, VMware, Hyper-V).
+-> You create VMs (Ubuntu, Red Hat, Windows Server).
+-> Each VM is allocated CPU/RAM/Disk from your machine’s hardware.
+    # You are the one who has to:
+    -> Buy/maintain the physical machine.
+    -> Scale up/down manually.
+    -> Handle failures (if your laptop dies, all VMs die).
+
+🔹 AWS EC2 (Elastic Compute Cloud)
+-> EC2 is like a VM in the cloud — but managed by AWS.
+-> AWS has giant data centers with racks of servers.
+-> On those servers, AWS runs their own hypervisor (based on Nitro Hypervisor).
+   # When you launch an EC2 instance:
+   -> AWS hypervisor creates a virtual machine for you on their hardware.
+   -> You don’t see the hypervisor — AWS manages it.
+   -> You only see your Ubuntu / Windows Server instance and use it via SSH/RDP.
+
+
+# Docker Terminolory
+1) Docker file 
+2) Docker images
+3) Docker container
+4) Docker Registry
+5) Doker engine or Docker demon
+
+# What is Docker file
+-> A Dockerfile is a text file that contains a set of instructions/steps to build a Docker image.
+-> It uses domain-specific keywords like FROM, RUN, COPY, CMD, etc.
+
+    FROM → Defines the base image for your Docker image.
+    RUN → Executes commands during the image build process.
+    CMD → Sets the default command to run when a container starts (can be overridden). Only one CMD is allowed → if you write multiple, only the last one is used.
+    ENTRYPOINT → Defines the main command that always runs in the container (harder to override).
+    WORKDIR → Sets the working directory inside the container.
+    COPY → Copies files from host to container.
+    ADD → Like COPY, but can also fetch URLs and auto-extract archives.
+    EXPOSE → Documents which port the container will listen on (does not publish it).
+    ENV → Sets environment variables inside the image.
+
+# What is Docker image
+-> A Docker Image is a package (read-only template) that contains everything needed to run an application:
+        Code
+        Runtime (Node.js, Python, Java, etc.)
+        Dependencies
+        System tools & libraries
+
+# Docker image Corrected List
+-> docker images → Lists all local images.
+-> docker pull <imagename> → Pulls image from Docker Hub/registry.
+-> docker login → Logs into Docker Hub from terminal.
+-> docker tag <source_image> <username>/<repo>:<tag> → Tags an image before pushing.
+-> docker push <username>/<repo>:<tag> → Pushes the image to Docker Hub.
+-> docker build -t <imagename> . → Builds image from Dockerfile in current directory.
+-> docker build -f <path/to/Dockerfile> -t <imagename> . → Builds image from Dockerfile at custom location.
+-> docker rmi <imagename> → Deletes a specific image.
+-> docker rmi $(docker images -q) → Deletes all images.
+-> docker build --no-cache -t myapp:latest . → Builds image without using cache.
+
+
+# What is Docker container
+-> Docker conatainer is runnable instance of docker image
+-> It includes the application and all its dependencies.
+-> Containers are lightweight, because they share the host OS kernel.
+
+# Corrected Docker container commands
+docker run -d --name nameofcontainer -p 8081:80 imagename → Runs a container in detached mode with port mapping (8081 host → 80 container).
+docker run imagename → Runs container in foreground; exits when you press Ctrl+C.
+docker create imagename → Creates a container but does not start it.
+docker start containername → Starts a stopped container.
+docker stop containername → Gracefully stops a container.
+docker ps → Shows running containers.
+docker ps -a → Shows all containers (running + stopped).
+docker exec -it containername /bin/bash → Starts an interactive shell inside a running container.
+docker run -it --name con2 img1 /bin/bash → Creates + starts a container and directly attaches a shell.
+docker attach containername → Attach to a running container’s main process (not recommended if multiple processes run).
+docker rm containername → Deletes a stopped container.
+docker kill containername → Immediately kills a running container.
+docker rm -f $(docker ps -aq) → Removes all containers forcefully.
+docker stats → Shows real-time CPU, memory, network, I/O usage of containers.
+docker ps -s → Lists running containers with writable layer size.
+docker ps -as → Lists all containers (including stopped) with size details.
+docker top containerID → Shows running processes inside a container.
+
+# Writable Layer Size
+-> The writable layer is where all changes made by the container (after it starts) are stored:
+    Files created/modified/deleted inside the container
+    Logs written inside the container
+    Temporary files, cache, etc.
+-> Writable Layer Size = the amount of disk space used by those changes.
+
+# OOM (Out of Memory) check
+-> sudo dmesg | grep -i oom → Check if the Linux kernel killed a container due to low memory.
+✅ Correct: Example message like “Killed process 1234 (node)” means container was killed.
+
+# Preventing OOM (Best Practice)
+-> docker run --memory=512m --memory-swap=512m myapp
+
+# what is Docker registry
+-> Docker registry is a place where we can store our docker images
+
+# What is Docker Engine?
+-> Docker Engine is the main software that enables you to build and run containers.
+-> It’s a client-server application, made up of 3 main parts:
+-> Docker Daemon (dockerd)
+    Runs in the background on your machine.
+    Manages Docker objects → images, containers, networks, volumes.
+    Listens to Docker API requests.
+
+-> Docker CLI (docker)
+    The command-line tool you use (docker build, docker run, docker ps, etc.).
+    Sends commands to the Docker Daemon via the API.
+
+-> Docker API
+    REST API used by CLI or other programs to talk to the daemon.
+    Lets external tools (CI/CD, orchestration systems) integrate with Docker
+
+
+# What is a Docker Volume?
+-> A Docker volume is a storage mechanism used to persist data generated and used by Docker containers.
+-> Volumes are managed by Docker (stored under /var/lib/docker/volumes/) and survive container restarts or deletions.
+
+# Advantages of Volumes
+-> Persistent storage → Data is not lost when a container stops or is deleted.
+-> Shareable → Multiple containers can share the same volume.
+-> Decoupled → Data is stored outside the container filesystem, making it portable and safe.
+-> Managed by Docker → Unlike bind mounts, Docker volumes are controlled by Docker itself.
+
+# Ways to Create Volumes
+-> You mentioned Automation (via Dockerfile) and Manual (via command). Let’s clarify:
+-> For real projects, manual named volumes are preferred.
+-> Manual (Recommended / Real Usage)
+   -> one way
+      -> docker volume create mydata
+      -> docker run -it --name mycontainer --mount source=mydata,target=/data ubuntu /bin/bash
+      -> or (another way)
+      -> docker run -it --name mycontainer -v mydata:/data ubuntu /bin/bash
+
+-> Automatic (Anonymous volumes)
+   -> If you declare a volume in a Dockerfile:
+       FROM ubuntu:latest
+      VOLUME ["/data"]
+      CMD ["bash"]
+  -> When you build & run this image, Docker will automatically create a new anonymous volume mapped to /data
+
+# Useful Docker Volume Commands
+-> docker volume ls → list all volumes
+-> docker volume inspect mydata → details (path, usage)
+-> docker volume rm mydata → delete a volume
+-> docker volume prune → delete unused volumes
+-> Data is stored under:  /var/lib/docker/volumes/<volume-name>/_data
+
+# Difference Between Bind Mount and Volume
+🔹 Bind Mount
+-> Maps a host directory directly into a container.
+-> Example
+      docker run -v /home/user/data:/app/data nginx
+-> Whatever is in /home/user/data (on your laptop) appears in /app/data (inside container).
+-> Great for development (code syncing).
+
+🔹 Docker Volume
+-> Managed by Docker, stored under /var/lib/docker/volumes/.
+-> Example:
+      docker volume create mydata
+      docker run -v mydata:/app/data nginx
+-> Safer and better for production since Docker manages lifecycle.
+
+# Transferring Volumes
+# Container → Container
+-> docker run -it --name newcontainer --volumes-from oldcontainer ubuntu /bin/bash
+-> Both containers now share the same volume.
+-> Changes in one container are immediately visible in the other.
+
+# Host → Container
+-> docker run -it --name mycontainer -v /path/on/host:/path/in/container ubuntu /bin/bash
+-> Host directory is directly mounted into container.
+-> Useful for testing local files or configs.
+
+
+
+# What is Docker Network?
+-> A Docker network is a virtual network that allows Docker containers to communicate with each other and with the outside world.
+-> It provides isolation (so containers don’t clash with each other) and a way for containers to discover and talk to each other.
+-> A container can be attached to multiple networks at the same time.
+
+# Default Docker Networks (when Docker is installed)
+-> Bridge (default)
+   -> Default driver for containers if you don’t specify a network.
+   -> We can access from host with help of IP and port number
+   -> Example:
+         docker run -d --name myapp -p 8080:80 nginx
+
+-> Host
+  -> We can access from host with help of onle IP
+  -> Example:
+      docker run -d --name myapp --network host nginx
+
+-> None
+   -> Completely disables networking.
+   -> Useful for security or offline tasks.
+
+# Other Network Drivers
+-> Overlay
+   -> Used in Docker Swarm / multi-host setups.
+   -> Allows containers running on different Docker hosts to communicate securely.
+
+-> Macvlan
+   -> Assigns a MAC address to each container so it looks like a real physical device on the network.
+   -> Useful if containers need to appear as separate machines in your LAN.
+
+# Common Docker Network Commands
+-> docker network ls   --> List all networks
+-> docker network inspect <network-name>  --> Inspect a network
+-> docker inspect <container-name> | grep -i network    --> Inspect which networks a container is attached to
+-> docker network create --driver bridge mynetwork    --> Create a custom network
+-> docker run -d --name web1 --network mynetwork nginx   --> Run container on a custom network
+-> docker network connect mynetwork web1   --> Connect existing container to another network
+
+
+
+# What is Docker Compose?
+-> Docker Compose is a tool used to define and run multi-container applications.
+-> It uses a YAML file (by default docker-compose.yml) where you specify:
+      Services (containers)
+      Networks
+      Volumes
+-> With one command, you can start or stop your entire application stack.
+
+# Docker Compose Commands
+-> docker-compose up → Create and start containers.
+-> docker-compose down → Stop and remove containers, networks, volumes (created by compose).
+-> docker-compose ps → Show running containers.
+-> docker-compose images → Show images used by the services.
+-> docker-compose logs → View logs from all services.
+-> docker-compose -f <filename> up → Use a custom file instead of docker-compose.yml.
+
+
+# Docker Restart Policies
+When you start a container, you can specify a restart policy with --restart.
+
+🔹 1. no (default)
+-> Docker will not restart the container automatically.
+-> If it stops/crashes, it stays stopped until you manually run it again.
+
+🔹 2. always
+-> Container always restarts if it stops, no matter the exit code.
+-> Even if Docker daemon restarts, the container will start again.
+⚠️ Important: If you manually stop the container with docker stop, it will stay stopped.
+But if the daemon restarts, Docker will start it again.
+
+🔹 3. unless-stopped
+-> Same as always, but with one difference:
+👉 If you manually stop the container, Docker will not restart it again, even after a daemon restart.
+-> Good for services you don’t want auto-starting once you’ve stopped them.
+
+🔹 4. on-failure
+-> Container restarts only if it exits with a non-zero exit code (indicating a failure).
+-> You can optionally set a retry limit:
+   -> docker run --restart on-failure:5 myapp
+
+# Restart always
+docker run -d --name test1 --restart always busybox sleep 10  
+
+# Restart unless stopped
+docker run -d --name test2 --restart unless-stopped busybox sleep 10  
+
+# Restart on failure (max 3 retries)
+docker run -d --name test3 --restart on-failure:3 busybox sh -c "exit 1"
+
+
+# What are the different docker components
+-> Docker Engine
+      Docker Daemon
+      Docker CLI
+      Docker API
+-> Docker file
+-> Docker image
+-> Docker container
+-> Docker Registry
+-> Docker volume
+-> Docker network
+-> Docker compose 
+-> Docker Swarm
+
+# What is the difference between docker COPY and docker ADD 
+-> COPY → Copies files from host to container.
+-> ADD → Like COPY, but can also fetch URLs and auto-extract archives.
+
+# What is the difference between CMD and EntryPoint
+-> CMD → Sets the default command to run when a container starts (can be overridden). Only one CMD is allowed → if you write multiple, only the last one is used.
+   It can be overridden when you run the container.
+-> ENTRYPOINT → Defines the main command that always runs in the container (harder to override).
+
+# Example of CMD and ENTRYPOINT
+FROM ubuntu:20.04
+CMD ["sleep", "20"]
+
+docker build -t cmd-test3 .  --> Build
+docker run --name test3 cmd-test3 sleep 5  --> Run and override CMD:
+
+# What are the networking types in docker what is default network
+-> Bridge (Default)
+-> Host
+-> None
+-> Overlay
+-> Macvlan
+-> Custom Bridge
+
+# How Isolation Works in Docker
+-> By default, all containers attached to the same bridge network can communicate with each other.
+-> If you want containers NOT to talk to each other, you must place them in different networks.
+-> Containers on different networks are isolated unless you explicitly connect them.
+
+🔹 Example: Isolating Containers
+-> Create two separate networks
+    docker network create net1
+    docker network create net2
+
+-> Run containers in different networks
+    docker run -d --name app1 --network net1 nginx
+    docker run -d --name app2 --network net2 nginx
+
+-> Test communication
+   -> From app1, try to ping app2:
+       docker exec -it app1 ping app2
+   -> It will fail because they are in different networks.
+
+-> Optional: Connect Containers to Multiple Networks
+   docker network connect net1 app2
+   -> Now app2 belongs to net1 and net2, so it can talk to both sides.
+
+-> Strict Isolation (No Network at All)
+   docker run -d --name isolated --network none nginx
+
+
+# What is the multi stage build in docker
+A multi-stage build in Docker is a technique that allows you to use multiple FROM statements in a single Dockerfile to separate build-time and run-time environments.
+It helps you:
+✅ Reduce image size
+✅ Improve security (by not including build tools or secrets in final image)
+✅ Separate concerns (build tools vs runtime environment)
+
+
+# What are distro less images in docker
+Distroless images are Docker images that do not include an operating system package manager or standard Linux distribution tools like:
+bash
+apt / yum
+sh, curl, vi, etc.
+-> It contain only the application and its runtime dependencies
+-> We use distroless images in production to minimize our container attack surface. Since they contain only the runtime, they’re much smaller and more secure than traditional images
+
+
+# Real time challenges with docker
+-> Docker is single daemon process. which can cause the single point of failure. if the docker daemon goes down for some reason all the application are down.
+-> Container Networking Issues
+      Port conflicts on the host
+-> Large Image Sizes
+      ⚠️ Problems: Slower build, push, and pull times
+      🛠️ Solution: Use smaller base images like alpine or distroless
+-> Security Vulnerabilities
+      ⚠️ Problems: Using outdated base images
+      🛠️ Solution: Use tools like Trivy, Docker Scout, or Clair to scan images
+-> Persistent Data Handling
+       ⚠️ Problems: Containers are ephemeral — data is lost if not stored externally
+       🛠️ Solution: Use Docker volumes or bind mounts correctly
+
+
+# What stpes would you take to secure your container
+-> Use official or trusted images from Docker Hub or verified registries.
+-> Use minimal base images like alpine or distroless to reduce attack surface.
+-> Scan images regularly for vulnerabilities using tools like:
+    Trivy
+    Docker Scout
+    Clair
+-> Ensure that the networking configured properly. This is the one of the most comman reasons for security issues. If required configure custom network and assign them to isolated containers.
+
+
+# What would you do if a Docker container running an application suddenly stops or gets killed?
+"If a container running my application suddenly crashes, the first thing I’d do is run docker ps -a to confirm its state and check the exit code. Then I’d inspect the logs using docker logs to identify why it failed. If it’s a memory or config issue, I’d inspect the container with docker inspect or check dmesg for OOM events. I’d fix the root cause, restart the container, and ensure it has a proper restart policy like --restart unless-stopped to avoid future downtime. In a production setup, I’d also make sure monitoring and alerting are in place to detect and respond to container crashes proactively." ✅

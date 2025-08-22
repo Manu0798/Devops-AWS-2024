@@ -240,6 +240,15 @@ abc123         nginx        "nginx -g…"   ...   1.2MB (virtual 23.5MB)
 1.2MB → Changes made since container started (writable layer)
 23.5MB → Total size including base image
 
+📌 Writable Layer Size
+The writable layer is where all changes made by the container (after it starts) are stored:
+Files created/modified/deleted inside the container
+Logs written inside the container
+Temporary files, cache, etc.
+Writable Layer Size = the amount of disk space used by those changes.
+
+The base image size remains the same; the writable layer is unique per container.
+
 docker ps -as --> check even to stopped container also
 docker top containerID  --> The docker top command shows you the running processes inside a container
 

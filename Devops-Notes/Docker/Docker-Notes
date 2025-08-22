@@ -15,45 +15,82 @@ Docker will abstruct and package developer written code. After that it will crea
 we can run containers in multiple machines easily
 container will take every thing which is we required
 
+# Docket Example
+You install Docker Desktop on Windows.
+Docker internally runs a tiny Linux VM (because Docker requires Linux kernel features like namespaces & cgroups).
+Inside Docker → you run containers (Ubuntu container, Red Hat container, MySQL container, Node.js container, etc.).
 
-# What is Virtualization
-It is a old technique to run the application
-we need to install hydervisior software to use
+👉 Difference:
+Containers share the same OS kernel (from that tiny Linux VM that Docker Desktop runs).
+They don’t need to boot a full OS every time.
+Containers are just the application + its dependencies.
 
-Virtualization is a technology that allows a single physical computer (referred to as the host) to run multiple virtual computers, known as virtual machines (VMs).
+# VM Example
+🔹 Step 1: You have a Windows Laptop (Host Machine)
+This Windows system has CPU, RAM, Disk, and Network resources.
 
+🔹 Step 2: You Install a Hypervisor (VirtualBox / VMware Workstation)
+This hypervisor sits on top of Windows (Type 2 hypervisor).
+It acts as a resource manager → dividing CPU, RAM, Disk among multiple VMs.
 
-# What is hypervisior
--> Hypervisior is a software that install the virtual machine in azure like ec2 in aws in servers
--> A hypervisor is software that sits between the host machine's physical hardware and its virtual machines. 
--> It manages resource allocation and ensures each VM operates independently.
+🔹 Step 3: You Create Multiple VMs
+For example:
+VM1 → Ubuntu Linux (allocated 2GB RAM, 20GB Disk).
+VM2 → Red Hat Linux (allocated 3GB RAM, 30GB Disk).
+VM3 → Windows Server (allocated 4GB RAM, 40GB Disk).
 
-# What are the types of hypervisors
--> Type 1 (Bare-Metal): Runs directly on physical hardware, highly efficient for data centers (e.g., VMware ESXi, Microsoft Hyper-V).
--> Type 2 (Hosted): Operates on top of an existing operating system, suitable for testing (e.g., VirtualBox, VMware Workstation).
+🔹 How They Work
+Each VM behaves like a separate computer.
+Each VM has its own full operating system kernel.
+But none of them run directly on hardware → they get resources from Windows via the hypervisor.
 
-# Understanding Virtual Machines (VMs)
--> A virtual machine (VM) is a software-based computer that uses the physical resources of the host. Each VM operates independently, with its own OS and applications.
+👉 Example:
+If your laptop has 8GB RAM, you can split it like:
+Ubuntu VM → 2GB
+Red Hat VM → 3GB
+Windows Server VM → 3GB
+Windows host + hypervisor manages all that distribution.
+
+🔹 Important Point
+Yes, each VM has its own OS (full copy, with kernel).
+But they rely on the host machine’s physical resources (CPU, RAM, Disk).
+That’s why VMs are heavier (every VM duplicates a full OS).
 
 # you will watch below video to understand difference between VM and Sever
 -> https://youtu.be/ksDAQX6MbeE?si=FM_VAD9ZLenNs_Fm
 
-# What are the difference between Docker and  virtualization
-   Docker                  virtualization           
-1) Size is small         1) Size is big
-2) Startup is very fast  2) Startup is slow
-3) Integration is good   3) Integration is bad
+# Why Docker instead of VMs?
 
-Feature	                    Virtual Machines (VMs)	                    Containers
-Architecture	           Full OS with Hypervisor	                 Shared OS kernel, application only
-Resource Overhead	       High (full OS for each VM)	               Low (no full OS, only app and dependencies)
-Startup Time	           Slower (minutes)	                         Faster (seconds)
-Isolation	               Strong (full OS isolation)	               Weaker (shared OS kernel)
-Portability	             Portable, but large image sizes	         Highly portable (small images)
-Use Cases	               Legacy apps, different OS types	         Cloud-native apps, microservices, CI/CD
-Management	             Hypervisors (e.g., VMware, Hyper-V)	     Orchestration tools (e.g., Kubernetes, Docker Swarm)
-Storage	                 Persistent (virtual disks)	               Ephemeral (unless configured for persistence)
-Security	               Higher security (strong isolation)	        Lower security (shared kernel)
+| Feature         | Virtual Machines                  | Containers (Docker)        |
+| --------------- | --------------------------------- | -------------------------- |
+| **OS**          | Each VM has its own OS            | Share host OS kernel       |
+| **Size**        | GBs (big)                         | MBs (small)                |
+| **Startup**     | Minutes                           | Seconds                    |
+| **Efficiency**  | Uses more CPU/RAM                 | Uses less, lightweight     |
+| **Portability** | Difficult                         | “Build once, run anywhere” |
+| **Isolation**   | Strong isolation (via hypervisor) | Process-level isolation    |
+
+
+# What is the difference between Traditional VMs and AWS Ec2
+🔹 Traditional VMs (VirtualBox, VMware, Hyper-V)
+Run on top of your own laptop/desktop.
+You install a hypervisor (VirtualBox, VMware, Hyper-V).
+You create VMs (Ubuntu, Red Hat, Windows Server).
+Each VM is allocated CPU/RAM/Disk from your machine’s hardware.
+You are the one who has to:
+Buy/maintain the physical machine.
+Scale up/down manually.
+Handle failures (if your laptop dies, all VMs die).
+
+🔹 AWS EC2 (Elastic Compute Cloud)
+EC2 is like a VM in the cloud — but managed by AWS.
+AWS has giant data centers with racks of servers.
+On those servers, AWS runs their own hypervisor (based on Nitro Hypervisor).
+   When you launch an EC2 instance:
+   AWS hypervisor creates a virtual machine for you on their hardware.
+   You don’t see the hypervisor — AWS manages it.
+   You only see your Ubuntu / Windows Server instance and use it via SSH/RDP.
+
 
 # What is Docker Hub
 Docker is a cloud based repository where we can share and store images. its like a market place for conatainer
@@ -223,91 +260,123 @@ docker run --memory=512m --memory-swap=512m myapp
 # what is Docker registry
 Docker registry is a place where we can store our docker images
 
-# what is Docker engine or Docker daemon
-The Docker daemon (dockerd) listens for Docker API requests and manages Docker objects such as images, containers, networks, and volumes. A daemon can also communicate with other daemons to manage Docker services.
-Docker engine is a software using which we will create docker image and docker container
+# What is Docker Engine?
+-> Docker Engine is the core software platform that enables you to build and run containers.
+-> It’s a client-server application, made up of 3 main parts:
+-> Docker Daemon (dockerd)
+    Runs in the background on your machine.
+    Manages Docker objects → images, containers, networks, volumes.
+    Listens to Docker API requests.
 
-# What is Docker volume
-Docker volume are used to presist the data generated by docker container
+-> Docker CLI (docker)
+    The command-line tool you use (docker build, docker run, docker ps, etc.).
+    Sends commands to the Docker Daemon via the API.
 
-Advantages of container
-1) share volume amoung different container
-2) On deleting container volume will not deleted.
+-> Docker API
+    REST API used by CLI or other programs to talk to the daemon.
+    Lets external tools (CI/CD, orchestration systems) integrate with Docker
 
-we will create volume in two ways
-1) Automation
-2) manual
+# What is a Docker Volume?
+-> A Docker volume is a storage mechanism used to persist data generated and used by Docker containers.
+-> Volumes are managed by Docker (stored under /var/lib/docker/volumes/) and survive container restarts or deletions.
 
-Automation way means we will mention volume in docker file
-FROM amazonlinux:latest
-VOLUME ["/name1"]
-WORKDIR name1
-RUN manoj1
+# Advantages of Volumes
+-> Persistent storage → Data is not lost when a container stops or is deleted.
+-> Shareable → Multiple containers can share the same volume.
+-> Decoupled → Data is stored outside the container filesystem, making it portable and safe.
+-> Managed by Docker → Unlike bind mounts, Docker volumes are controlled by Docker itself.
 
-docker build -t imagename .
-docker run -it --name conatainername imagename /bin/bash
-after enter into the container we will check volume is created or not
+# Ways to Create Volumes
+-> You mentioned Automation (via Dockerfile) and Manual (via command). Let’s clarify:
+-> For real projects, manual named volumes are preferred.
+-> Manual (Recommended / Real Usage)
+   -> one way
+      -> docker volume create mydata
+      -> docker run -it --name mycontainer --mount source=mydata,target=/data ubuntu /bin/bash
+      -> or (another way)
+      -> docker run -it --name mycontainer -v mydata:/data ubuntu /bin/bash
 
-manual way means we will create the volume by using command
-docker run -it --name containername -v /volumename imagename /bin/bash
+-> Automatic (Anonymous volumes)
+   -> If you declare a volume in a Dockerfile:
+       FROM ubuntu:latest
+      VOLUME ["/data"]
+      CMD ["bash"]
+  -> When you build & run this image, Docker will automatically create a new anonymous volume mapped to /data
 
-After creating the volumes to see that volumes you will use below commands
-docker volume ls  --> To get the volumes
-docker inspect volume volumename --> you will get volume storage path and full details about volume
-cd /var/lib/docker/volumes/   --> we will get volume data in this path suppose if container will delete and stop
-docker volume create volumename --> To create volume name
-docker run -it --name=containername --mount source=volumename,destination=/data imagename  -> To attach the volume to container
-docker volume rm volumename  --> To delete the volumes
-docker volume prune -->  It will delete all unused volumes
+# Useful Docker Volume Commands
+-> docker volume ls → list all volumes
+-> docker volume inspect mydata → details (path, usage)
+-> docker volume rm mydata → delete a volume
+-> docker volume prune → delete unused volumes
+-> Data is stored under:  /var/lib/docker/volumes/<volume-name>/_data
 
-# what is the difference between bind mount and volume in docker
--> Bind Mount [A bind mount is another type of mount, which lets you share a directory from the host's filesystem into the container. When working on an application, you can use a bind mount to mount source code into the container]
+# Difference Between Bind Mount and Volume
+🔹 Bind Mount
+-> Maps a host directory directly into a container.
+-> Example
       docker run -v /home/user/data:/app/data nginx
-      Maps your local /home/user/data directory to /app/data in the container
--> Volume [A volume mount is a great choice when you need somewhere persistent to store your application data]
-        docker volume create mydata
-        docker run -v mydata:/app/data nginx
-        Docker stores mydata under /var/lib/docker/volumes/mydata/_data
-        Safe and controlled by Docker
+-> Whatever is in /home/user/data (on your laptop) appears in /app/data (inside container).
+-> Great for development (code syncing).
 
-we will transfer volumes in two ways
-1) Container to Container
-2) Host to Container
+🔹 Docker Volume
+-> Managed by Docker, stored under /var/lib/docker/volumes/.
+-> Example:
+      docker volume create mydata
+      docker run -v mydata:/app/data nginx
+-> Safer and better for production since Docker manages lifecycle.
 
-How to transfer volume from Container to Container
-docker run -it --name newcontainername --privileged=true --volumes-from existingcontainername imagename /bin/bash
-After executed above command when add the any files in newcontainer automatically it will add to the another container also
+# Transferring Volumes
+# Container → Container
+-> docker run -it --name newcontainer --volumes-from oldcontainer ubuntu /bin/bash
+-> Both containers now share the same volume.
+-> Changes in one container are immediately visible in the other.
 
-How to transfer volume from Host to Container
-docker run -it --name containername -v pathname:newvolumename imagename /bin/bash
+# Host → Container
+-> docker run -it --name mycontainer -v /path/on/host:/path/in/container ubuntu /bin/bash
+-> Host directory is directly mounted into container.
+-> Useful for testing local files or configs.
 
-# Docker network
-Docker netwrok is a virtual network that allows containers to communicate with each other.
-It provides the isolation and allows container to connect to each other using network interface
 
-Note: One container we will attach the muliple netwrok when we attached container to mulitple network then those container
-can communicate 
 
-when we installed the docker software by defaultly three networks drivers will avaliable[docker network ls]
-1) Bridge driver [It is default network driver, you can communicate by using portnumber]
-2) Host driver [It is default network driver, you can communicate without portnumber]
-3) None driver [No network access to the container]
-above three are defaultly
-4) overlay driver [we will use overlay driver when we have docker swaram]
-5) Macvlan Driver [We will use macvlan driver When we want mac address]
 
-whenever we create the container defaultly it conncet to the bridge driver
+# What is Docker Network?
+-> A Docker network is a virtual network that allows Docker containers to communicate with each other and with the outside world.
+-> It provides isolation (so containers don’t clash with each other) and a way for containers to discover and talk to each other.
+-> A container can be attached to multiple networks at the same time.
 
-How to create the network
-docker network ls --> To network drives
-docker inspect containername  --> To see what network driver has attached to that container
-docker inspect network containername --> same
-docker network create --driver <drivername> <networkname>  
-[Drivername means what do want brige or host or none or overlay or macvlain]
-docker run -d --name containername --network <drivername> -p 8080:80 imagename --> To add network drivers
-docker run -d --name containername --network host -p 8080:80 imagename --> To add the host network driver
-docker run -d --name containername --network none -p 8080:80 imagename --> To add the none network drivers
-docker run -d --name containername --network <newnetworkname> -p 8080:80 imagename --> To add different network name
+# Default Docker Networks (when Docker is installed)
+-> Bridge (default)
+   -> Default driver for containers if you don’t specify a network.
+   -> We can access from host with help of IP and port number
+   -> Example:
+         docker run -d --name myapp -p 8080:80 nginx
+
+-> Host
+  -> We can access from host with help of onle IP
+  -> Example:
+      docker run -d --name myapp --network host nginx
+
+-> None
+   -> Completely disables networking.
+   -> Useful for security or offline tasks.
+
+# Other Network Drivers
+-> Overlay
+   -> Used in Docker Swarm / multi-host setups.
+   -> Allows containers running on different Docker hosts to communicate securely.
+
+-> Macvlan
+   -> Assigns a MAC address to each container so it looks like a real physical device on the network.
+   -> Useful if containers need to appear as separate machines in your LAN.
+
+# Common Docker Network Commands
+-> docker network ls   --> List all networks
+-> docker network inspect <network-name>  --> Inspect a network
+-> docker inspect <container-name> | grep -i network    --> Inspect which networks a container is attached to
+-> docker network create --driver bridge mynetwork    --> Create a custom network
+-> docker run -d --name web1 --network mynetwork nginx   --> Run container on a custom network
+-> docker network connect mynetwork web1   --> Connect existing container to another network
+
 
 Sample project
 docker run -d --name con1 --network <newnetworkname> -p 8080:80 imagename
@@ -325,10 +394,15 @@ apt-get update
 apt-get install iputils-ping
 ping con1 ip  [Ip avaliable in docker inspect containername]
 
-# What is Docker Compose
-Docker-compose which is used to managed the multiple container based application
-Using docker compose we can define and deploy multi container based application
-Docker compose having yaml file. default file name is docker-compose.yml
+
+
+# What is Docker Compose?
+-> Docker Compose is a tool used to define and run multi-container applications.
+-> It uses a YAML file (by default docker-compose.yml) where you specify:
+      Services (containers)
+      Networks
+      Volumes
+-> With one command, you can start or stop your entire application stack.
 
 # How to install docker-compose
 sudo yum update -y
@@ -336,34 +410,50 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version
 
-Docker-compose commands
-docker-compose up --> To create and start the container
-docker-compose ps --> To see the docker container
-docker-compose down --> To stop and down the container
-docker-compose images --> To see the images
-docker-compose -f <filename> up --> To run the specify file
-docker-compose -f <filename> down --> To down the specify file
+# Docker Compose Commands
+-> docker-compose up → Create and start containers.
+-> docker-compose down → Stop and remove containers, networks, volumes (created by compose).
+-> docker-compose ps → Show running containers.
+-> docker-compose images → Show images used by the services.
+-> docker-compose logs → View logs from all services.
+-> docker-compose -f <filename> up → Use a custom file instead of docker-compose.yml.
+
+
 
 docker log containername
 
-# Restart policies
-we have four types of restart policies in container
--> no  --> Docker won’t restart the container automatically.
--> always   -->  Always restarts the container, even if you manually stop it.
--> unless-stopped --> automatically restarts if it crashes — unless you manually stop it.
--> on-failure  --> Docker to restart a container only when it exits with a non-zero exit code
+# Docker Restart Policies
+When you start a container, you can specify a restart policy with --restart.
 
-✅ What does "non-zero exit code" mean?
-In Linux (and Docker), processes return exit codes when they finish.
-0 means success
-1, 2, 137, etc. mean failure
+🔹 1. no (default)
+-> Docker will not restart the container automatically.
+-> If it stops/crashes, it stays stopped until you manually run it again.
 
-So:
-If your container exits cleanly (exit code 0): Docker will NOT restart it.
-If your container crashes (exit code ≠ 0): Docker WILL restart it.
+🔹 2. always
+-> Container always restarts if it stops, no matter the exit code.
+-> Even if Docker daemon restarts, the container will start again.
+⚠️ Important: If you manually stop the container with docker stop, it will stay stopped.
+But if the daemon restarts, Docker will start it again.
 
-docker run -d --name containername --restart always imagename sleep 10  -> it will restart the container eveny 10 sece Always restarts the container, even if you manually stop it.
-docker run -d --name containername --restart unless-stopped imagename  --> It will automatically restart the conatiner if it crashes — unless you manually stop it.
+🔹 3. unless-stopped
+-> Same as always, but with one difference:
+👉 If you manually stop the container, Docker will not restart it again, even after a daemon restart.
+-> Good for services you don’t want auto-starting once you’ve stopped them.
+
+🔹 4. on-failure
+-> Container restarts only if it exits with a non-zero exit code (indicating a failure).
+-> You can optionally set a retry limit:
+   -> docker run --restart on-failure:5 myapp
+
+# Restart always
+docker run -d --name test1 --restart always busybox sleep 10  
+
+# Restart unless stopped
+docker run -d --name test2 --restart unless-stopped busybox sleep 10  
+
+# Restart on failure (max 3 retries)
+docker run -d --name test3 --restart on-failure:3 busybox sh -c "exit 1"
+
 
 
 

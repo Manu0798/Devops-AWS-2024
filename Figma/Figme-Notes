@@ -1,0 +1,25 @@
+# What is Figma
+-> Figma is a cloud-based design and collaboration tool mainly used for UI (User Interface) and UX (User Experience) design
+-> It’s popular because it runs in the browser (and also has desktop & mobile apps), which makes it easy for multiple people to work together in real time
+
+Key Features of Figma:
+-> Real-time Collaboration: Multiple designers, developers, or stakeholders can work on the same file at the same time.
+-> Cross-Platform: Works on Windows, macOS, Linux (via browser), and has mobile apps for iOS and Android.
+-> Cloud-Based: No need to constantly send files back and forth—everything is saved in the cloud automatically.
+-> Version History: Tracks all changes made to a design.
+-> Prototyping: You can link screens and add interactions to show how an app or website will work, without writing code.
+-> Plugins & Widgets: Extend functionality with icons, stock photos, charts, AI tools, etc.
+-> Developer Handoff: Developers can inspect designs, view CSS properties, and download assets without needing special software.
+
+# Who Uses Figma?
+-> Designers → Create wireframes, UI/UX mockups, and prototypes.
+-> Developers → Inspect design specs and get assets.
+-> Product Managers & Clients → Review and comment directly on designs.
+
+
+-> We can UI related work in New Design file
+-> We can UI related work in New FigJam Board
+-> We can do PPT in New Slide Deck
+-> We Can Import Figma files from local
+
+-> Drafts -> If you want to design anything only by yourslef without sharing and collabrirate with anyone

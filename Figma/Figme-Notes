@@ -18,12 +18,13 @@ Key Features of Figma:
 
 
 -> We can UI related work in New Design file
--> We can UI related work in New FigJam Board
+-> We can UX related work in New FigJam Board
 -> We can do PPT in New Slide Deck
 -> We Can Import Figma files from local
 
 -> Drafts -> If you want to design anything only by yourslef without sharing and collabrirate with anyone
 -> All Projects -> You are giving chance with someone to work in your page
+-> Trash  --> Delete objects would in trash
 
 # What is the difference between Drafts and All projetcs
 # Drafts
@@ -37,4 +38,60 @@ Key Features of Figma:
 
 -> Mostly we will work in Drafts, If you want to share to someone then you will move into teams.
 
--> Suppose if you want more pages in all projects unlike Drafts, First we create project in Drafts and add pages then you move into All projects
+-> Suppose if you want more pages in all projects like Drafts, First we create project in Drafts and add pages then you move into All projects
+
+# We have four different types of Panels
+-> File panel  --> Before we used to call it layers panels
+-> Assets panel
+-> Design panel
+-> prototype panel
+
+# File Panel
+-> We can able to create multiple pages
+-> Whatever we draw in canvas it will appear in layer panel
+
+# Design Panel
+-> We can see to change the canvas coluor and obacity before select any object
+-> We can export our canvas
+
+-> We can see the below properties of object after select any object
+    -> We can see the name of the object in that place we have some options like
+        -> Create Component
+        -> Use as mask
+        -> Union
+        -> Edit in three ...
+
+    -> Position
+       -> We can change the position and rotate the angle
+    -> Layout
+       -> We can see the width and height of the object
+       -> If select link it will increase both width and depth at a time while we increasin width or depth
+    -> Appearance
+       -> We can see the obacity
+       -> We can change the shapes at corner places
+    -> Fill     -> We can fill up colour in object
+    -> Stroke   -> We can add the colours to boarders
+    -> Efforts  -> We can adjust the Shadow efforts
+    -> Export
+
+
+# When you click drop down arrow near to figma you can able to see the below options
+-> Show version history   :- It will show the previous deleted and changes made version, If we want we can retrive those versions [ Never use restore option. Use New version and Duplicate]
+-> Export
+-> Add to sidebar :- we can keep in our faviorate list
+-> Duplicate
+-> Rename
+-> Move
+-> Trash
+
+
+# Tool Bar
+-> Move tool -> V  -> We can move and select the objects in canvas
+   -> Hand tool -> H  -> We can move the objects in canvas without clicking
+   -> Scale tool -> k  -> We can scale the object bigger or smaller
+
+-> Frame tool -> F -> First we should select the frames to develop for moblie app and websites
+   -> Section tool  Shift+S  -> It would use to organize the frames. IF you want make it all the frames as a group, click on section and select [Change the background colour if frames not appear]
+   -> Slice tool  -> S -> It would to export the specific object -> you will look at 55.00 min in part 1 video
+
+

@@ -263,3 +263,31 @@ frontend:
     paths:
       - .npm/**/*
 
+
+
+
+# Hub Amplify
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Use Node.js 18 (required for modern Vite builds)
+        - nvm install 18
+        - nvm use 18
+
+        # Clean install using package-lock.json
+        - echo "Installing dependencies..."
+        - npm ci
+    build:
+      commands:
+        - echo "Running Vite build..."
+        - npm run build
+  artifacts:
+    # Vite always outputs to dist
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*

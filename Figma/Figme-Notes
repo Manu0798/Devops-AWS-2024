@@ -70,8 +70,8 @@ Key Features of Figma:
        -> We can see the obacity
        -> We can change the shapes at corner places
     -> Fill     -> We can fill up colour in object
-    -> Stroke   -> We can add the colours to boarders
-    -> Efforts  -> We can adjust the Shadow efforts
+    -> Stroke   -> We can add the colours to boarders, we can add the boarders with gaps
+    -> Efforts  -> We can get the Shadow efforts to the object
     -> Export
 
 
@@ -88,10 +88,27 @@ Key Features of Figma:
 # Tool Bar
 -> Move tool -> V  -> We can move and select the objects in canvas
    -> Hand tool -> H  -> We can move the objects in canvas without clicking
-   -> Scale tool -> k  -> We can scale the object bigger or smaller
+   -> Scale tool -> K  -> We can scale the object bigger or smaller [As equal]
 
 -> Frame tool -> F -> First we should select the frames to develop for moblie app and websites
    -> Section tool  Shift+S  -> It would use to organize the frames. IF you want make it all the frames as a group, click on section and select [Change the background colour if frames not appear]
    -> Slice tool  -> S -> It would to export the specific object -> you will look at 55.00 min in part 1 video
+
+-> Rectangle tool -> R -> We can create Rectangle   [we can watch video at 1.16]
+    -> line tool -> L  -> We can draw the line
+    -> Arrow  -> Shift+L  -> We can draw the Arrow
+    -> Elipse -> o  -> We can draw Elipse
+    -> Star  -> We can add the star
+    -> Image -> We can upload the image from local
+
+-> Pen Tool -> We can draw manually
+    -> Pencil tool -> We can draw manually 
+
+-> Text tool -> We can write the text
+
+-> comment tool -> We can write the comment
+
+-> Plugins  tool
+
 
 

@@ -111,7 +111,29 @@ Key Features of Figma:
 -> Plugins  tool
 
 
-# Components
+
+# Layout guide  --> It is use for grids
+-> We have three types of grids. It will help to work on icons
+   -> Grid
+   -> Column
+   -> Row
+-> Guter  --> It would use to give the space between colummns
+-> Margin  --> It would use to give margin space
+
+-> Autolayout -> Shift+A
+-> Appearance for share at cornar
+-> Stroke for boarcder and reduce the image weight
+-> Fill -> change the colour
+-> Ingorne autolayout in position option
+
+-> Component --> We should use component when we have multiple objects
+-> we should do component before prototype  --> It would available in frame
+-> we should select prototype after click the object
+
+-> We get bell notifications symbols from assests at actions in tool bar 
+
+Note: You will use nounproject website to download the icons  [Choose Atribution required, Download SVC
+# Constents  --> If you want to adjust the object in specific place, Available in position section
 
 
 

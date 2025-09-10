@@ -1,0 +1,351 @@
+# What is terraform
+-> Terraform is open source tool created by hashicrop that allow to you define and manage the infrastructure as a code. It automates the creating, updating and managent the resources like (VM, Networks and database) Across various cloud providers like(AWS, Azure and GCP).
+-> Go programming language is used to develop the terraform software
+-> HashiCorp Configuration Language (HCL) we use to write the terraform code
+
+# Why we use terraform
+-> Easy Setup:- Write a lift of what you need Terraform will take the creation.
+-> Automation:- Terraform will make the changes, update and remove the old resources.
+-> Consistency:- Ensure all the environment like (Testing, staging and production) setup the same way
+-> Team Collaboration:- Multiple people can work on same environment without conflict.
+-> Interact with multiple cloud providers like(AWS, Azure and GCP).
+
+
+# What is the difference between Terraform and Ansible
+# Terraform
+-> Developed by: HashiCorp
+-> Type: Infrastructure as Code (IaC) tool
+-> Purpose: Used for provisioning infrastructure (creating, modifying, and destroying servers, networks, databases, etc.)
+-> Best for: Creating new servers, VPCs, load balancers, security groups, etc.
+-> Example use case: Create 3 EC2 instances with a load balancer in AWS.
+
+# Ansible
+-> Developed by: Red Hat
+-> Type: Configuration Management tool (also supports automation & orchestration)
+-> Purpose: Used for configuring and managing software on already existing servers.
+-> Best for: Installing software, patching servers, deploying applications, managing users, etc.
+-> Example use case: Install Nginx on EC2 instances and configure it with custom settings.
+
+
+# Components of terraform
+-> Providers
+-> Resources
+-> Variables
+-> Modules
+-> Statefile
+-> Backends
+-> Provisioners
+-> Data Source
+-> Service Principals
+
+# Providers 
+-> Providers it act as a plugin to help us to interact with our cloud platform
+
+Ex:-
+provider "aws" {
+  region     = var.region
+  access_key = var.access_key
+  secret_key = var.secret_key
+}
+
+-> We have three types of providers
+    -> Multi Region provides
+    -> Multi Cloud provides
+    -> Required Provides
+
+# What is Multi Region provides
+-> In the providers.tf file, We have to create two providers blocks using alias keyword to implement multi region infrastructure setup.
+
+Ex:-
+provider "aws" {
+  alias = "us-east-1"
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias = "us-west-2"
+  region = "us-west-2"
+}
+
+resource "aws_instance" "example" {
+  ami = "ami-0123456789abcdef0"
+  instance_type = "t2.micro"
+  provider = "aws.us-east-1"
+}
+
+resource "aws_instance" "example2" {
+  ami = "ami-0123456789abcdef0"
+  instance_type = "t2.micro"
+  provider = "aws.us-west-2"
+}
+
+# What is Multi Cloud provides
+-> In the providers.tf file, define the AWS and Azure providers. we should create the resources for both AWS and Azure according their resources types.
+
+Ex:-
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+provider "azurerm" {
+  subscription_id = "your-azure-subscription-id"
+  client_id = "your-azure-client-id"
+  client_secret = "your-azure-client-secret"
+  tenant_id = "your-azure-tenant-id"
+}
+
+resource "aws_instance" "example" {
+  ami = "ami-0123456789abcdef0"
+  instance_type = "t2.micro"
+}
+
+resource "azurerm_virtual_machine" "example" {
+  name = "example-vm"
+  location = "eastus"
+  size = "Standard_A1"
+}
+
+
+# What is Required Provides
+-> The Required Provides It allows us to specify the provider name, source, and version constraints
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 2.0, < 3.0"
+    }
+  }
+}
+
+# What is Resources 
+-> Resources it help us to create infrastructure in cloud
+-> Resource are the most important element in the Terraform.
+
+Ex:-
+resource "aws_vpc" "vpc" {
+  cidr_block       = "10.0.0.0/16"
+  instance_tenancy = "default"
+
+  tags = {
+    Name = "vpc01"
+  }
+}
+
+# What is Variable
+-> Using variables in terraform configuration makes our deployment more dynamic.
+-> We use varibles instaed of writing the hardcoded values in terraform
+-> We have two types of varibles 
+    Input variable  --> It pass the information to terraform
+     Ex:-
+        variable "region" {
+          type    = string
+          default = "ap-south-1"
+        }
+      
+    Output variable  --> It Print the value after deployment.
+    Ex:-
+      output "public_ip" {
+      description = "Public IP address of the EC2 instance"
+      value       = aws_instance.example_instance.public_ip
+      }
+
+# What is Modules  
+-> It allows us to create group resources and reuse them across different projects or environments
+-> Using modules we can deploy the code into multiple environments
+
+🎯 Why use modules? or Advantages
+Reusability: Write once, use in multiple places.
+Organization: Clean, modular code.
+Consistency: Same setup across environments (dev, prod, etc.)
+Team collaboration: Easier for teams to work on specific parts.
+
+Ex:-
+module "module_test" {
+  source = "./module"
+}
+
+
+# What is Statefile
+-> Statefile is the heart of terraform. It will store the information about our infrastructure that it has created
+-> It compare the current state with desired state
+-> terraform.tfstate file will create after you apply the terraform apply command
+
+-> Disadvantages of Statefile
+   -> It is sensitive file, it will store the even sensitive information about our infrastruture that it has created like access key, secreat keys
+
+-> terraform show   --> This is command is use to show our statefile
+
+
+
+-> How to restore the terraform.tfstate file
+-> Terraform migration ( using import and then running terraform import command which will create a state file).
+terraform import aws_vpc.vpc vpc-0108ace4a127ec01e
+
+
+# What is Backend 
+-> By default, Terraform stores state locally on your machine, but in teams this can cause conflicts.
+-> Using Backend block store the state file (like AWS S3, Azure Blob, GCS, or Terraform Cloud) to work multiple people on same terraform code using terraform.tfstate file without conflicts
+-> If we use dynamodb state lock When Someone begins the Terraform operation  (plan, apply), it acquires a lock in DynamoDB and Another one must wait until the lock is released.
+
+Ex:-
+terraform {
+  backend "s3" {
+    bucket         = "manoj-9143"
+    key            = "global/mystate/terraform.tfstate"
+    region         = "ap-south-1"
+    encrypt        = true
+    dynamodb_table = "terraform-lock"
+  }
+}
+
+
+resource "aws_dynamodb_table" "terraform_lock" {
+  name           = "terraform-lock"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
+
+
+# What is Provisioners
+-> Provisioners are used to execute and implemenent the actions during the infrastructure creation
+-> we have three types of provisioners
+   -> file Provisioner:- The file provisioner is used to copy files or directories from the local machine to a remote machine
+      Ex:-
+       provisioner "file" {
+        source      = "local/path/to/localfile.txt"
+        destination = "/path/on/remote/instance/file.txt"
+        connection {
+          type     = "ssh"
+          user     = "ec2-user"
+          private_key = file("~/.ssh/id_rsa")
+        }
+      }
+
+   -> remote-exec Provisioner:- The remote-exec provisioner is used to run scripts or commands on a remote machine over SSH or WinRM connections
+      Ex:-
+       provisioner "remote-exec" {
+          inline = [
+            "sudo yum update -y",
+            "sudo yum install -y httpd",
+            "sudo systemctl start httpd",
+          ]
+        
+          connection {
+            type        = "ssh"
+            user        = "ec2-user"
+            private_key = file("~/.ssh/id_rsa")
+            host        = aws_instance.example.public_ip
+          }
+        }
+
+    -> local-exec Provisioner:- The local-exec provisioner is used to run scripts or commands locally on the machine where Terraform is executed
+     Ex:-
+      resource "null_resource" "example" {
+        triggers = {
+          always_run = "${timestamp()}"
+        }
+      
+        provisioner "local-exec" {
+          command = "echo 'This is a local command'"
+        }
+      }
+
+
+# Data Source 
+-> Data Source Block is used to fetch the information about existing infrastructure.
+
+data "aws_vpc" "vpc" {
+  cidr_block       = "10.0.0.0/16"
+  instance_tenancy = "default"
+
+  tags = {
+    Name = "vpc01"
+  }
+}
+
+
+# What is Terraform workspace (or) multiple env
+-> Terraform workspace it will save our terraform.tfstate file in different env
+-> This allows you to manage multiple environments (dev, stage, prod, etc.) using the same codebase but with different state files.
+-> You should create dev workspaec before you deploy the dev env
+     terraform workspace list   -> To show workspaces
+     terraform workspace new dev  -> To create the dev workspace
+     terraform workspace select dev  -> To switch the dev env
+     terraform workspace show       -> To have the in which workspace you would being
+     terraform apply -var-file dev.tfvars   -> To deploy the dev env
+
+
+# What is Terraform locals
+-> Terraform local type resources it will the reducer length of reference ids
+ex:-
+locals {
+  security = aws_security_group.example_security_group
+  vpc_id      = aws_vpc.vpc.id
+}
+
+vpc_security_group_ids      = [local.security.id]
+vpc_id = "${local.vpc_id.id}"
+subnets = [local.cidr_block_Public_1, local.cidr_block_Public_2]
+security = [local.security]
+
+
+# What is a Terraform Function?
+-> Terraform Function is a built-in helper that transforms values.
+Functions can:
+-> Combine or split strings
+-> Convert values (e.g., upper/lowercase)
+-> Do math or logical operations
+-> Work with lists, maps, and sets
+
+
+# Terraform vault
+-> Vault is a tool for managing secrets and sensitive data (like passwords, API keys, certificates, etc.). It allows you to store and access secrets securely, and manage access through policies.
+
+-> There are a few ways to manage sensitive information in Terraform files. Here are some of the most common methods:
+   -> sensitive attribute
+   -> Secret management system
+   -> Remote Backend
+   -> Environment Variables
+
+# What is Terraform Drift Detection
+-> if some one manually changed any settings for any resource, to detecting that change is called drift detection
+Example: Someone manually changes an EC2 instance type from t2.micro to t3.small in AWS console.
+-> terraform refresh → Updates local state file to match real-world resources.
+
+
+# How do you manage state locking and concurrent modifications in Terraform?
+-> Terraform supports state locking by default when using backends resources
+
+How It Works (Example: AWS S3 + DynamoDB)
+-> The state file is stored in an S3 bucket.
+-> A DynamoDB table is used for state locking.
+-> When a Terraform operation begins (plan, apply), it acquires a lock in DynamoDB.
+-> Other operations must wait until the lock is released.
+
+
+# Terraform Commands
+-> terraform init → Initialize working directory & download providers plugins and modules.
+-> terraform fmt → Format Terraform configuration files into canonical format and style.
+-> terraform validate → Validate syntax & configuration.
+-> terraform plan → Compares current state vs desired configuration and shows changes
+-> terraform apply → Apply changes to infrastructure.
+-> terraform apply -auto-approve → Apply changes without confirmation.
+-> terraform destroy → Destroy all managed infrastructure.
+-> terraform show → Show state or plan details.
+-> terraform refresh → Updates the state file to match real-world infrastructure. n new versions, terraform plan or terraform apply already refresh the state automatically.
+-> terraform state list → List resources in state file.
+-> terraform state show <resource> → Show details of a resource.
+-> terraform output → Display output values.
+-> terraform import → Import existing resource into state.
+-> terraform workspace → Manage multiple environments (dev, prod, etc.).

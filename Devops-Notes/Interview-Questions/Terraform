@@ -321,7 +321,7 @@ Functions can:
 # What is Terraform Drift Detection
 -> if some one manually changed any settings for any resource, to detecting that change is called drift detection
 Example: Someone manually changes an EC2 instance type from t2.micro to t3.small in AWS console.
--> terraform refresh → Updates local state file to match real-world resources.
+-> terraform refresh → Updates the local state file with latest changes from actual infrastructure.
 
 
 # How do you manage state locking and concurrent modifications in Terraform?

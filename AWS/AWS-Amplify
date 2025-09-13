@@ -291,3 +291,27 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+
+
+
+# production admin-ui
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing dependencies..."
+        - npm ci   # faster & reproducible installs
+    build:
+      commands:
+        - echo "Running build..."
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - ~/.npm   # cache npm downloads, NOT node_modules
+      # - ~/.yarn # (if you switch to yarn)

@@ -141,8 +141,9 @@ Note:- All Above revert commands will work same
 
 # Git restore
 -> git restore command is used to undo changes in your working directory or staging area (index) in Git.
--> git restore <filename>  --> Remove the content in files at working directory
--> git restore --staged <filename>   --> It take the file from stage area to working directory
+-> git restore <filename>  --> Discard the changes in working directory
+-> git restore --staged <filename>   --> It take the file from stage area to working directory   --> This is for modified files
+-> git rm --cached <filename>  --> It take the file from stage area to working directory  --> This is for newly created file
 
 
 # What is the difference between git fetch and git pull

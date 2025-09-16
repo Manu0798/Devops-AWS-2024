@@ -1,0 +1,83 @@
+# What is Gitlab
+-> GitLab is a web-based DevOps platform that provides tools for the entire software development lifecycle — from planning and coding to testing, deployment, and monitoring. 
+-> It’s similar to GitHub or Bitbucket but with a broader focus on end-to-end DevOps rather than just source code management.
+
+Here’s what GitLab offers:
+-> Version Control: Built on Git, so you can manage and track your source code, branches, and commits.
+-> CI/CD Pipelines: Automates building, testing, and deploying code using GitLab CI/CD.
+-> Project Management: Issue tracking, Kanban boards, milestones, and roadmaps for agile workflows.
+-> Collaboration: Merge requests (like pull requests in GitHub), code reviews, and inline comments.
+-> Security & Compliance: Built-in code scanning, vulnerability management, and auditing tools.
+-> Container & Cloud Support: Integrated Docker registry and Kubernetes support for deployments.
+-> Self-hosted or SaaS: You can use GitLab’s cloud service (gitlab.com) or install GitLab on your own servers for full control.
+
+👉 In short: GitLab = Git (source code control) + CI/CD + DevOps + Collaboration in one platform.
+
+
+# What is the difference between git, gitlab and github
+🔹 Git
+What it is: A distributed version control system (DVCS).
+Purpose: Lets developers track changes in source code, collaborate, branch, and merge.
+Scope: A tool installed locally (command-line or GUI).
+Types:
+GitHub-hosted runners → managed by GitHub, automatically scale, preloaded with common tools.
+Self-hosted runners → you install an agent on your own VM/server.
+
+🔹 GitLab
+What it is: A web-based DevOps platform built on top of Git.
+Purpose: Provides Git repository hosting plus CI/CD pipelines, project management, issue tracking, container registry, etc.
+Scope: A platform to manage and automate the software development lifecycle.
+Types:
+Shared runners → provided by GitLab (cloud).
+Specific/self-hosted runners → you install GitLab Runner on your server, VM, or Kubernetes.
+
+🔹 GitHub
+What it is: Another web-based Git repository hosting service (like GitLab).
+Purpose: Provides repo hosting, collaboration features, actions (CI/CD), project boards, code reviews, etc.
+Scope: Also a platform, mainly focused on collaboration and open-source communities.
+
+⚖️ Key Practical Difference
+GitLab: Native CI/CD, everything controlled via .gitlab-ci.yml. Pipelines are tightly coupled with GitLab UI.
+GitHub: Relies on GitHub Actions (YAML-based workflows). Very flexible and extensible with community actions.
+
+
+# What is the difference between Github actions and Gitlab
+🔹 GitHub Actions
+-> Style → Event-driven (triggers like push, PR, release).
+-> Feels Like → Chaining steps inside workflows.
+-> Strength → Huge Marketplace of ready-made actions, very quick to integrate.
+-> Best For → GitHub repos, open-source, fast automation.
+
+🔹 GitLab CI/CD
+-> Style → Structured pipeline with stages (build → test → deploy).
+-> Feels Like → Defining an assembly line for DevOps.
+-> Strength → Built-in DevOps tools (container registry, monitoring, approvals, security scans).
+-> Best For → Teams using GitLab end-to-end for source code + DevOps lifecycle.
+
+🔹 Jenkins
+-> Style → Server-based, jobs are defined with Jenkinsfile (Groovy syntax).
+-> Feels Like → Building pipelines with plugins (very customizable but more manual setup).
+-> Strength → Highly flexible via 1,800+ plugins, can integrate with almost any tool.
+-> Best For → Enterprises needing self-hosted, custom automation across many systems (not just Git).
+
+
+# Which is “better”?
+
+Choose GitHub Actions if:
+Your code is already on GitHub.
+You want quick setup with minimal maintenance.
+You prefer reusable actions from the marketplace.
+
+Choose GitLab CI/CD if:
+You use GitLab for repos + project management.
+You want all-in-one DevOps (code → CI/CD → monitoring → registry).
+You want flexibility with runners (Docker, Kubernetes).
+
+Choose Jenkins if:
+You need maximum flexibility and integration with non-GitHub/GitLab systems.
+You’re in an enterprise with complex legacy pipelines.
+You don’t mind managing servers, plugins, and agents yourself.
+
+# Simple answer:
+Modern teams → GitHub Actions or GitLab CI/CD (less maintenance, faster setup).
+Large enterprises/legacy systems → Jenkins (ultimate flexibility, but more work).

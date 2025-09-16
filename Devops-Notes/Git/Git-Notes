@@ -171,11 +171,16 @@ git pull: Downloads updates from the remote repository and directly merges them 
 -> rebase
 -> cherry-pick [Cheery-pick easy to merge one or two commits if we want to merge more commit its to difficult to merge all commit manually so that we will use merge and rebase]
 
-# How to use cherry-pick
--> if you want to merge the data from feature branch to master branch
--> give git log command and give copy the lastest commit id in feature branch and checkout the master branch and you use below command
--> git cherry-pick <commit-id>
--> git log
+# What is cherry-pick
+-> cherry-pick is a command that lets you pick a specific commit from one branch and apply it to another branch, without merging the entire branch.
+
+🔹 Example
+-> Let’s say you have this situation:
+-> feature-branch has 5 commits (A-B-C-D-E)
+-> main only needs commit C, not all the changes
+-> git checkout main
+-> git cherry-pick <commit-hash-of-C>
+-> Now commit C (and only C) is applied to main.
 
 
 

@@ -276,9 +276,9 @@ frontend:
         - nvm install 18
         - nvm use 18
 
-        # Clean install using package-lock.json
+        # Install dependencies (ignore lock file mismatch)
         - echo "Installing dependencies..."
-        - npm ci
+        - npm install --legacy-peer-deps
     build:
       commands:
         - echo "Running Vite build..."

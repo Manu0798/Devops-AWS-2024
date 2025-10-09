@@ -4,8 +4,9 @@
 
 # What is continuous integration
 -> It will automatically build code the with all dependencies and libraries Whenever developer changes the code 
-   and automatically test the code.
+   and automatically running the unit tests.
   Build -> unit -> merge
+-> This helps to avoid the integration challenges and check that the application is not broken whenever new commit are done.
 
 # What is continuous Delivery  [Prepod]
 -> Continuous delivery is the process in CI/CD. continous delivery is a process of making sure that the software is ready

@@ -81,3 +81,10 @@ You don’t mind managing servers, plugins, and agents yourself.
 # Simple answer:
 Modern teams → GitHub Actions or GitLab CI/CD (less maintenance, faster setup).
 Large enterprises/legacy systems → Jenkins (ultimate flexibility, but more work).
+
+# What is Gitlab Runner
+-> Gitlab runner is an application that pick up and execute the CI/CD jobs for gitlab
+-> Gitlab runner is a open source
+-> We have two types of runner 
+    Shared runners → provided by GitLab (cloud).
+    Specific/self-hosted runners → you install GitLab Runner on your server, VM, or Kubernetes.

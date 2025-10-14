@@ -226,5 +226,20 @@ Each issue helped us fine-tune the pipeline for better performance, security, an
 
 
 
+Using Sonarqube it will check code quality check and code coverage
+Code quality Check:- It find the is there any bugs, code smells and vulnerability in our source code written by developer
+Code Coverage:- It will find how much percentage of code is tested by running unit test cases
+
+Trivy it can perform two things to scan
+-> Files System Scan
+-> Image Scan
+
+What is File system scan
+It will scan our files and folders to detect the dependencies vulnerability and sensitive data. it will scan our dependencies we call libraries which is required for our application to run, it will check dependencies are safe to use or not if it not safe it will tell us what version is safe. Secrets If keep any secrets in our source code it will let us know don't expose any secrets in our code.
+
+What is Image scan
+It will scan our docker images to detect the vulnerability and It will check whether image build correctly or not.
+
+
 # 3 tier project link
 https://youtu.be/lh5f69t7L9A?si=se72MTCtaG1Iw1UI
